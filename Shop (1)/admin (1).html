@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REV — Admin Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;900&family=Barlow+Condensed:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./CSS/base.css">
+    <link rel="stylesheet" href="./CSS/components.css">
+    <link rel="stylesheet" href="./CSS/admin.css">
+  <link rel="stylesheet" href="./CSS/shop.css">
+  
+  
+  <style>
+
+
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .modal-2col { grid-template-columns: 1fr; }
+}
+
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .admin-body { flex-direction: column; }
+
+  .admin-nav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+    padding: 0.5rem 0;
+    display: flex;
+    overflow-x: auto;
+  }
+  .a-nav-item {
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .a-nav-item.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--gold);
+  }
+}
+
+  </style>
+</head>
+<body>
+
+  <!-- ══ NAVIGATION ══ -->
+  <nav id="main-nav">
+    <div class="nav-logo">
+      <div class="nav-logo-main">Rev</div>
+      <div class="nav-logo-sub">Precision Auto Parts</div>
+    </div>
+    <div class="nav-links">
+      <button class="nav-admin-btn" id="nav-admin">&#9881; Admin</button>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+  </nav>
+
+  <!-- ══ PAGE CONTAINER ══ -->
+  <div class="page active" id="page-admin"></div>
+
+  <!-- ══ PRODUCT MODAL ══ -->
+  <div class="modal-overlay" id="product-modal">
+    <div class="modal-box">
+      <div class="modal-hd">
+        <div class="modal-hd-title" id="modal-title">Add Product</div>
+        <button class="modal-x" onclick="Admin.closeModal()">&#x2715;</button>
+      </div>
+      <div class="modal-2col">
+        <div class="full">
+          <label class="f-label">Product Name *</label>
+          <input class="f-input" type="text" id="p-name" placeholder="e.g. Performance Brake Kit">
+        </div>
+        <div>
+          <label class="f-label">Category *</label>
+          <select class="f-select" id="p-cat">
+            <option value="Engine">Engine</option>
+            <option value="Brakes">Brakes</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Suspension">Suspension</option>
+            <option value="Accessories">Accessories</option>
+            <option value="Exhaust">Exhaust</option>
+          </select>
+        </div>
+        <div>
+          <label class="f-label">Icon / Emoji</label>
+          <input class="f-input" type="text" id="p-icon" placeholder="🔧">
+        </div>
+        <div>
+          <label class="f-label">Price ($) *</label>
+          <input class="f-input" type="number" id="p-price" placeholder="149.99">
+        </div>
+        <div>
+          <label class="f-label">Original Price ($)</label>
+          <input class="f-input" type="number" id="p-orig" placeholder="199.99">
+        </div>
+        <div>
+          <label class="f-label">Stock Qty *</label>
+          <input class="f-input" type="number" id="p-stock" placeholder="50">
+        </div>
+        <div>
+          <label class="f-label">SKU</label>
+          <input class="f-input" type="text" id="p-sku" placeholder="ENG-003">
+        </div>
+        <div>
+          <label class="f-label">Badge</label>
+          <input class="f-input" type="text" id="p-badge" placeholder="HOT / NEW / SALE">
+        </div>
+        <div class="full">
+          <label class="f-label">Image URL</label>
+          <input class="f-input" type="text" id="p-img" placeholder="https://images.unsplash.com/...">
+        </div>
+        <div class="full">
+          <label class="f-label">Description</label>
+          <input class="f-input" type="text" id="p-desc" placeholder="Short product description">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="m-cancel" onclick="Admin.closeModal()">Cancel</button>
+        <button class="m-save"   onclick="Admin.saveProduct()">Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOAST ══ -->
+  <div class="toast" id="toast">
+    <span class="toast-ico" id="t-ico"></span>
+    <span class="toast-txt" id="t-msg"></span>
+  </div>
+
+  <script src="./Javascript/data.js"></script>
+  
+  
+  <script>
+
+
+/* ============================================================
+   store.js — Centralised product state
+   Single source of truth. Exposes read methods and mutations.
+   Notifies subscribers (pages) whenever data changes.
+   ============================================================ */
+
+const Store = (() => {
+  // Deep-copy seed data so the original is never mutated
+  let _products = SEED_PRODUCTS.map(p => ({ ...p }));
+  let _nextId   = _products.length + 1;
+
+  // ── Subscriber registry ──────────────────────────────────
+  const _listeners = [];
+
+  function subscribe(fn) {
+    _listeners.push(fn);
+  }
+
+  function _notify() {
+    _listeners.forEach(fn => fn());
+  }
+
+  // ── Getters ──────────────────────────────────────────────
+
+  /** Return a shallow copy of all products */
+  function getAll() {
+    return [..._products];
+  }
+
+  /** Find a single product by id */
+  function getById(id) {
+    return _products.find(p => p.id === id) || null;
+  }
+
+  /**
+   * Return products filtered by category and/or search query.
+   * @param {Object} opts  { category: string, query: string }
+   */
+  function getFiltered({ category = 'all', query = '' } = {}) {
+    const q = query.toLowerCase().trim();
+    return _products.filter(p => {
+      const matchCat = category === 'all' || p.cat === category;
+      const matchQ   = !q
+        || p.name.toLowerCase().includes(q)
+        || p.cat.toLowerCase().includes(q)
+        || p.sku.toLowerCase().includes(q);
+      return matchCat && matchQ;
+    });
+  }
+
+  /** Products with stock at or below the given threshold */
+  function getLowStock(threshold = 5) {
+    return _products.filter(p => p.stock <= threshold);
+  }
+
+  function getTotalCount()    { return _products.length; }
+  function getCategories()    { return [...new Set(_products.map(p => p.cat))]; }
+
+  /** Rough revenue estimate based on simulated sales */
+  function getSimulatedRevenue() {
+    return _products.reduce((sum, p) => sum + p.price * Math.max(0, 50 - p.stock), 0);
+  }
+
+  // ── Mutations ────────────────────────────────────────────
+
+  function add(data) {
+    _products.push({ id: _nextId++, ...data });
+    _notify();
+  }
+
+  function update(id, data) {
+    const idx = _products.findIndex(p => p.id === id);
+    if (idx === -1) return false;
+    _products[idx] = { ..._products[idx], ...data };
+    _notify();
+    return true;
+  }
+
+  function remove(id) {
+    const before = _products.length;
+    _products = _products.filter(p => p.id !== id);
+    const removed = _products.length < before;
+    if (removed) _notify();
+    return removed;
+  }
+
+  function adjustStock(id, delta) {
+    const p = getById(id);
+    if (!p) return false;
+    return update(id, { stock: Math.max(0, p.stock + delta) });
+  }
+
+  // ── Public API ───────────────────────────────────────────
+  return {
+    subscribe,
+    getAll,
+    getById,
+    getFiltered,
+    getLowStock,
+    getTotalCount,
+    getCategories,
+    getSimulatedRevenue,
+    add,
+    update,
+    remove,
+    adjustStock,
+  };
+})();
+
+/* ============================================================
+   toast.js — Lightweight notification helper
+   Usage:
+     Toast.success('Item added to cart')
+     Toast.error('Invalid credentials')
+     Toast.info('Stock updated')
+   ============================================================ */
+
+const Toast = (() => {
+  let _timer = null;
+
+  function _show(type, icon, message) {
+    const el  = document.getElementById('toast');
+    const ico = document.getElementById('t-ico');
+    const msg = document.getElementById('t-msg');
+
+    ico.textContent = icon;
+    msg.textContent = message;
+    el.className    = `toast ${type === 'error' ? 'err' : ''} show`;
+
+    clearTimeout(_timer);
+    _timer = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+
+  return {
+    success: (msg) => _show('success', '✦',  msg),
+    error:   (msg) => _show('error',   '✕',  msg),
+    info:    (msg) => _show('info',    '→',  msg),
+  };
+})();
+
+/* ============================================================
+   pages/admin.js — Admin portal
+   Handles login/logout, dashboard overview, product CRUD,
+   inventory management, and the product modal.
+   ============================================================ */
+
+const AdminPage = (() => {
+  // ── Config ───────────────────────────────────────────────
+  const CREDENTIALS = { user: 'admin', pass: 'apex2024' };
+  const FALLBACK_IMG = 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=200&q=80';
+
+  // ── State ────────────────────────────────────────────────
+  let _loggedIn  = false;
+  let _activeTab = 'overview';
+  let _editingId = null;
+
+  // ── Public: render ───────────────────────────────────────
+
+  function render() {
+    document.getElementById('page-admin').innerHTML = _template();
+    if (_loggedIn) _refreshDashboard();
+  }
+
+  // ── Auth ─────────────────────────────────────────────────
+
+  function login() {
+    const u = document.getElementById('l-user')?.value;
+    const p = document.getElementById('l-pass')?.value;
+
+    if (u === CREDENTIALS.user && p === CREDENTIALS.pass) {
+      _loggedIn = true;
+      render();
+      Toast.success('Welcome back, Admin');
+    } else {
+      Toast.error('Invalid credentials');
+    }
+  }
+
+  function logout() {
+    _loggedIn = false;
+    render();
+    Toast.info('Signed out');
+  }
+
+  // ── Tab switching ─────────────────────────────────────────
+
+  function switchTab(tabId, el) {
+    _activeTab = tabId;
+    document.querySelectorAll('.a-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tabId)?.classList.add('active');
+    document.querySelectorAll('.a-nav-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+    _refreshDashboard();
+  }
+
+  // ── Product CRUD ──────────────────────────────────────────
+
+  function deleteProduct(id) {
+    if (!confirm('Delete this product?')) return;
+    Store.remove(id);
+    Toast.success('Product deleted');
+  }
+
+  function adjustStock(id, delta) {
+    Store.adjustStock(id, delta);
+  }
+
+  // ── Modal ─────────────────────────────────────────────────
+
+  function openModal(id = null) {
+    _editingId = id;
+    document.getElementById('modal-title').textContent = id ? 'Edit Product' : 'Add Product';
+
+    // Clear all fields
+    ['p-name','p-cat','p-icon','p-price','p-orig','p-stock','p-sku','p-badge','p-img','p-desc']
+      .forEach(fieldId => {
+        const el = document.getElementById(fieldId);
+        if (el) el.value = '';
+      });
+
+    // Populate if editing
+    if (id) {
+      const p = Store.getById(id);
+      if (!p) return;
+      document.getElementById('p-name').value  = p.name;
+      document.getElementById('p-cat').value   = p.cat;
+      document.getElementById('p-icon').value  = p.icon;
+      document.getElementById('p-price').value = p.price;
+      document.getElementById('p-orig').value  = p.orig  || '';
+      document.getElementById('p-stock').value = p.stock;
+      document.getElementById('p-sku').value   = p.sku;
+      document.getElementById('p-badge').value = p.badge || '';
+      document.getElementById('p-img').value   = p.img   || '';
+      document.getElementById('p-desc').value  = p.desc;
+    }
+
+    document.getElementById('product-modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('product-modal').classList.remove('open');
+    _editingId = null;
+  }
+
+  function saveProduct() {
+    const name  = document.getElementById('p-name').value.trim();
+    const price = parseFloat(document.getElementById('p-price').value);
+    const stock = parseInt(document.getElementById('p-stock').value);
+
+    if (!name || isNaN(price) || isNaN(stock)) {
+      Toast.error('Please fill in Name, Price and Stock');
+      return;
+    }
+
+    const data = {
+      name,
+      cat:   document.getElementById('p-cat').value,
+      icon:  document.getElementById('p-icon').value  || '🔧',
+      price,
+      orig:  parseFloat(document.getElementById('p-orig').value)  || null,
+      stock,
+      sku:   document.getElementById('p-sku').value   || `AUTO-${Date.now()}`,
+      badge: document.getElementById('p-badge').value || null,
+      img:   document.getElementById('p-img').value   || FALLBACK_IMG,
+      desc:  document.getElementById('p-desc').value,
+    };
+
+    if (_editingId) {
+      Store.update(_editingId, data);
+      Toast.success('Product updated');
+    } else {
+      Store.add(data);
+      Toast.success('Product added');
+    }
+
+    closeModal();
+  }
+
+  // ── Private: dashboard refresh ────────────────────────────
+
+  function _refreshDashboard() {
+    if (!_loggedIn) return;
+
+    const products = Store.getAll();
+
+    // Stat cards
+    _set('dc-total', Store.getTotalCount());
+    _set('dc-rev',   '$' + Math.round(Store.getSimulatedRevenue() / 1000) + 'K');
+    _set('dc-low',   Store.getLowStock().length);
+    _set('dc-cats',  Store.getCategories().length);
+
+    // Overview: last 5 products
+    _renderTable('ov-tbody', products.slice(-5).reverse(), _overviewRow);
+
+    // Products: all products
+    _renderTable('prod-tbody', products, _productRow);
+
+    // Inventory: all products
+    _renderTable('inv-tbody', products, _inventoryRow);
+  }
+
+  function _renderTable(tbodyId, rows, rowFn) {
+    const tbody = document.getElementById(tbodyId);
+    if (tbody) tbody.innerHTML = rows.map(rowFn).join('');
+  }
+
+  // ── Private: row templates ────────────────────────────────
+
+  function _overviewRow(p) {
+    return `
+      <tr>
+        <td><img class="td-img" src="${p.img}" alt="" onerror="this.src='${FALLBACK_IMG}'"></td>
+        <td><strong style="font-family:var(--font-display)">${p.name}</strong></td>
+        <td style="color:var(--muted);font-size:.78rem;letter-spacing:.5px">${p.cat}</td>
+        <td style="font-family:var(--font-display);font-size:1.05rem;color:var(--gold)">$${p.price.toFixed(2)}</td>
+        <td>${_stockBadge(p.stock)}</td>
+      </tr>`;
+  }
+
+  function _productRow(p) {
+    return `
+      <tr>
+        <td><img class="td-img" src="${p.img}" alt="" onerror="this.src='${FALLBACK_IMG}'"></td>
+        <td>
+          <strong style="font-family:var(--font-display)">${p.name}</strong><br>
+          <span style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted)">${p.sku}</span>
+        </td>
+        <td style="color:var(--muted);font-size:.78rem">${p.cat}</td>
+        <td style="font-family:var(--font-display);font-size:1.05rem;color:var(--gold)">$${p.price.toFixed(2)}</td>
+        <td>${p.stock}</td>
+        <td>${_stockBadge(p.stock)}</td>
+        <td style="display:flex;gap:.4rem;flex-wrap:wrap">
+          <button class="a-edit-btn" onclick="AdminPage.openModal(${p.id})">Edit</button>
+          <button class="a-del-btn"  onclick="AdminPage.deleteProduct(${p.id})">Delete</button>
+        </td>
+      </tr>`;
+  }
+
+  function _inventoryRow(p) {
+    return `
+      <tr>
+        <td><img class="td-img" src="${p.img}" alt="" onerror="this.src='${FALLBACK_IMG}'"></td>
+        <td><strong style="font-family:var(--font-display)">${p.name}</strong></td>
+        <td style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted)">${p.sku}</td>
+        <td><strong>${p.stock}</strong></td>
+        <td>${_stockBadge(p.stock)}</td>
+        <td>
+          <div class="inv-grp">
+            <button class="inv-b"        onclick="AdminPage.adjustStock(${p.id}, -1)">−</button>
+            <button class="inv-b inv-b-plus" onclick="AdminPage.adjustStock(${p.id},  1)">+</button>
+            <button class="inv-b-ten"    onclick="AdminPage.adjustStock(${p.id}, 10)">+10</button>
+          </div>
+        </td>
+      </tr>`;
+  }
+
+  function _stockBadge(stock) {
+    if (stock === 0)  return '<span class="st-badge st-out">Out of Stock</span>';
+    if (stock <= 5)   return '<span class="st-badge st-low">Low Stock</span>';
+    return '<span class="st-badge st-in">In Stock</span>';
+  }
+
+  function _set(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  // ── Private: page template ───────────────────────────────
+
+  function _template() {
+    return `
+      <!-- Login screen (shown when logged out) -->
+      <div class="admin-login-wrap" id="admin-login"
+           style="display:${_loggedIn ? 'none' : 'flex'}">
+        <div class="login-card">
+          <div class="login-card-logo">rev</div>
+          <div class="login-card-sub">Admin Portal</div>
+
+          <label class="f-label">Username</label>
+          <input class="f-input" type="text" id="l-user" placeholder="admin">
+
+          <label class="f-label">Password</label>
+          <input class="f-input" type="password" id="l-pass" placeholder="••••••••"
+            onkeydown="if(event.key==='Enter') AdminPage.login()">
+
+          <button class="btn-gold login-btn" onclick="AdminPage.login()">Sign In</button>
+          <div class="login-hint">
+            Credentials: <code>admin</code> / <code>apex2024</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard (shown when logged in) -->
+      <div class="admin-shell ${_loggedIn ? 'visible' : ''}" id="admin-shell">
+
+        <div class="admin-top">
+          <div class="admin-top-title">⚙ Admin Dashboard</div>
+          <div class="admin-top-right">
+            <span class="admin-top-user">Signed in as <strong>admin</strong></span>
+            <button class="logout-btn" onclick="AdminPage.logout()">Logout</button>
+          </div>
+        </div>
+
+        <div class="admin-body">
+
+          <!-- Sidebar -->
+          <div class="admin-nav">
+            <div class="a-nav-item ${_activeTab === 'overview'  ? 'active' : ''}"
+                 onclick="AdminPage.switchTab('overview', this)">📊 Overview</div>
+            <div class="a-nav-item ${_activeTab === 'products'  ? 'active' : ''}"
+                 onclick="AdminPage.switchTab('products', this)">📦 Products</div>
+            <div class="a-nav-item ${_activeTab === 'inventory' ? 'active' : ''}"
+                 onclick="AdminPage.switchTab('inventory', this)">🗃 Inventory</div>
+            <div class="a-nav-item ${_activeTab === 'orders'    ? 'active' : ''}"
+                 onclick="AdminPage.switchTab('orders', this)">🛒 Orders</div>
+          </div>
+
+          <!-- Content -->
+          <div class="admin-content">
+
+            <!-- Overview tab -->
+            <div class="a-tab ${_activeTab === 'overview' ? 'active' : ''}" id="tab-overview">
+              <div class="dash-grid">
+                <div class="dash-card">
+                  <div class="dc-label">Total Products</div>
+                  <div class="dc-val" id="dc-total">0</div>
+                  <div class="dc-sub">In catalog</div>
+                </div>
+                <div class="dash-card">
+                  <div class="dc-label">Revenue Est.</div>
+                  <div class="dc-val" id="dc-rev">$0</div>
+                  <div class="dc-sub">Simulated</div>
+                </div>
+                <div class="dash-card alert">
+                  <div class="dc-label">Low Stock</div>
+                  <div class="dc-val" id="dc-low">0</div>
+                  <div class="dc-sub">Need restock</div>
+                </div>
+                <div class="dash-card">
+                  <div class="dc-label">Categories</div>
+                  <div class="dc-val" id="dc-cats">0</div>
+                  <div class="dc-sub">Active</div>
+                </div>
+              </div>
+              <div class="sec-hd"><div class="sec-title">Recent Products</div></div>
+              <table class="a-table">
+                <thead>
+                  <tr><th></th><th>Product</th><th>Category</th><th>Price</th><th>Status</th></tr>
+                </thead>
+                <tbody id="ov-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- Products tab -->
+            <div class="a-tab ${_activeTab === 'products' ? 'active' : ''}" id="tab-products">
+              <div class="sec-hd">
+                <div class="sec-title">All Products</div>
+                <button class="btn-sm-gold" onclick="AdminPage.openModal()">+ Add Product</button>
+              </div>
+              <table class="a-table">
+                <thead>
+                  <tr>
+                    <th></th><th>Product</th><th>Category</th>
+                    <th>Price</th><th>Stock</th><th>Status</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="prod-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- Inventory tab -->
+            <div class="a-tab ${_activeTab === 'inventory' ? 'active' : ''}" id="tab-inventory">
+              <div class="sec-hd"><div class="sec-title">Inventory Management</div></div>
+              <table class="a-table">
+                <thead>
+                  <tr><th></th><th>Product</th><th>SKU</th><th>Stock</th><th>Status</th><th>Adjust</th></tr>
+                </thead>
+                <tbody id="inv-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- Orders tab -->
+            <div class="a-tab ${_activeTab === 'orders' ? 'active' : ''}" id="tab-orders">
+              <div class="sec-hd"><div class="sec-title">Order History</div></div>
+              <div class="orders-placeholder">
+                — Orders placed via cart will appear here in a live implementation —
+              </div>
+            </div>
+
+          </div><!-- /admin-content -->
+        </div><!-- /admin-body -->
+      </div><!-- /admin-shell -->
+    `;
+  }
+
+  // Re-render tables whenever store data changes
+  Store.subscribe(() => {
+    if (_loggedIn) _refreshDashboard();
+  });
+
+  // ── Public API ────────────────────────────────────────────
+  return {
+    render,
+    login,
+    logout,
+    switchTab,
+    openModal,
+    closeModal,
+    saveProduct,
+    deleteProduct,
+    adjustStock,
+  };
+})();
+
+// Alias used by HTML onclick handlers
+const Admin = AdminPage;
+
+/* Theme toggle + persistence for Apex Motors
+   - Stores choice in localStorage under 'apex_theme'
+   - Applies `data-theme="light"` to <html> for light mode
+*/
+(function(){
+  const KEY = 'apex_theme';
+  const html = document.documentElement;
+  const TOGGLE_ID = 'theme-toggle';
+
+  function applyTheme(theme){
+    if(theme === 'light') html.setAttribute('data-theme','light');
+    else html.removeAttribute('data-theme');
+
+    const btn = document.getElementById(TOGGLE_ID);
+    if(btn) btn.textContent = theme === 'light' ? '☀️' : '🌙';
+    try { localStorage.setItem(KEY, theme); } catch(e) {}
+  }
+
+  function init(){
+    const saved = localStorage.getItem(KEY);
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const defaultTheme = saved || (prefersDark ? 'dark' : 'dark');
+    applyTheme(defaultTheme);
+
+    document.addEventListener('click', (e)=>{
+      const t = e.target;
+      if(!t) return;
+      if(t.id === TOGGLE_ID){
+        const cur = html.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        applyTheme(cur === 'light' ? 'dark' : 'light');
+      }
+    });
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+
+  // Admin-only router — boots straight into the admin page
+  const Router = (() => {
+    function go(page) {
+      if (page === 'admin') AdminPage.render();
+    }
+    function init() {
+      AdminPage.render();
+    }
+    return { go, init };
+  })();
+
+  Router.init();
+  </script>
+
+</body>
+</html>

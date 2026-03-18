@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REV — Inventory</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #C9A84C; --gold-light: #F2DB94; --gold-dark: #A67F38;
+      --bg: #0a0a0b; --surface: #111113; --surface2: #18181b; --surface3: #1f1f23;
+      --border: rgba(201,168,76,0.12); --border-mid: rgba(201,168,76,0.22);
+      --text: #f0ece3; --muted: rgba(240,236,227,0.45);
+      --green: #34d399; --red: #f87171; --amber: #fbbf24;
+      --font-display: 'Barlow Condensed', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-ui: 'Rajdhani', sans-serif;
+      --grad-gold: linear-gradient(135deg,#F2E1AE 0%,#F2DB94 50%,#A67F38 100%);
+      --radius: 10px; --transition: 0.2s ease;
+    }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--surface2); } ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px; }
+
+    /* Header */
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .sec-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gold-light); }
+
+    /* Summary cards */
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+    .summary-card { background: linear-gradient(160deg, var(--surface2), var(--surface)); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; position: relative; overflow: hidden; }
+    .summary-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent); }
+    .summary-card .label { font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .summary-card .value { font-family: var(--font-display); font-size: 34px; font-weight: 800; line-height: 1; background: var(--grad-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .summary-card .value.alert { background: none; -webkit-text-fill-color: var(--red); color: var(--red); }
+    .summary-card .sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* Table */
+    .a-table { width: 100%; border-collapse: collapse; background: linear-gradient(160deg, var(--surface2), var(--surface)); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .a-table thead tr { border-bottom: 1px solid var(--border-mid); }
+    .a-table thead th { font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 12px 16px; text-align: left; }
+    .a-table tbody tr { border-bottom: 1px solid rgba(201,168,76,0.06); transition: background var(--transition); }
+    .a-table tbody tr:last-child { border-bottom: none; }
+    .a-table tbody tr:hover { background: rgba(201,168,76,0.04); }
+    .a-table tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
+    .td-img { width: 42px; height: 42px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface3); object-fit: cover; }
+    .st-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .st-in  { background: rgba(52,211,153,0.1);  color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+    .st-low { background: rgba(251,191,36,0.1);  color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+    .st-out { background: rgba(248,113,113,0.1); color: var(--red);   border: 1px solid rgba(248,113,113,0.2); }
+
+    /* Inventory controls */
+    .inv-grp { display: flex; align-items: center; gap: 4px; }
+    .inv-qty { font-family: var(--font-mono); font-size: 13px; min-width: 28px; text-align: center; font-weight: 600; }
+    .inv-b { width: 28px; height: 28px; background: var(--surface3); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+    .inv-b:hover { background: rgba(201,168,76,0.15); border-color: var(--gold-dark); }
+    .inv-b-plus { background: rgba(52,211,153,0.08); border-color: rgba(52,211,153,0.2); color: var(--green); }
+    .inv-b-plus:hover { background: rgba(52,211,153,0.18); }
+    .inv-b-ten { padding: 0 8px; height: 28px; background: rgba(201,168,76,0.08); border: 1px solid var(--border-mid); border-radius: 5px; color: var(--gold-light); font-family: var(--font-ui); font-size: 11px; font-weight: 700; cursor: pointer; transition: var(--transition); }
+    .inv-b-ten:hover { background: rgba(201,168,76,0.18); }
+    .inv-b-zero { padding: 0 8px; height: 28px; background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); border-radius: 5px; color: var(--red); font-family: var(--font-ui); font-size: 11px; font-weight: 700; cursor: pointer; transition: var(--transition); }
+    .inv-b-zero:hover { background: rgba(248,113,113,0.18); }
+
+    /* Low stock highlight row */
+    .row-low td { background: rgba(251,191,36,0.03); }
+    .row-out td { background: rgba(248,113,113,0.04); }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; z-index: 400; display: flex; align-items: center; gap: 10px; padding: 12px 18px; background: linear-gradient(160deg, var(--surface2), var(--surface)); border: 1px solid var(--border-mid); border-left: 3px solid var(--gold-dark); border-radius: var(--radius); font-size: 13px; min-width: 240px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); transform: translateX(80px); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease; }
+    .toast.show { transform: translateX(0); opacity: 1; }
+    .toast.err { border-left-color: var(--red); }
+    .toast.ok  { border-left-color: var(--green); }
+
+    @media (max-width: 700px) { .summary-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) { .summary-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <div class="sec-title">🗃 Inventory Management</div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">Total Products</div>
+      <div class="value" id="sum-total">0</div>
+      <div class="sub">In catalog</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Low Stock</div>
+      <div class="value alert" id="sum-low">0</div>
+      <div class="sub">≤ 5 units remaining</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Total Units</div>
+      <div class="value" id="sum-units">0</div>
+      <div class="sub">Across all products</div>
+    </div>
+  </div>
+
+  <table class="a-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Product</th>
+        <th>SKU</th>
+        <th>Stock</th>
+        <th>Status</th>
+        <th>Adjust</th>
+      </tr>
+    </thead>
+    <tbody id="inv-tbody"></tbody>
+  </table>
+
+  <div class="toast" id="toast"><span id="t-ico"></span><span id="t-msg"></span></div>
+
+  <script>
+    /*  data and logic for inventory management */
+    const FALLBACK_IMG = 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=200&q=80';
+    let products = [
+      {id:1,name:'Performance Brake Kit',cat:'Brakes',stock:23,sku:'BRK-001',img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80'},
+      {id:2,name:'Cold Air Intake',cat:'Engine',stock:41,sku:'ENG-002',img:'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=200&q=80'},
+      {id:3,name:'Coilover Suspension Kit',cat:'Suspension',stock:8,sku:'SUS-003',img:'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=200&q=80'},
+      {id:4,name:'LED Headlight Upgrade',cat:'Electrical',stock:55,sku:'ELE-004',img:'https://images.unsplash.com/photo-1591474200742-8e512e6f98f8?w=200&q=80'},
+      {id:5,name:'Cat-Back Exhaust System',cat:'Exhaust',stock:4,sku:'EXH-005',img:'https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=200&q=80'},
+      {id:6,name:'Short Throw Shifter',cat:'Accessories',stock:30,sku:'ACC-006',img:'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=200&q=80'},
+      {id:7,name:'Sport Air Filter',cat:'Engine',stock:2,sku:'ENG-007',img:'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80'},
+    ];
+
+    function stockBadge(stock) {
+      if (stock === 0) return '<span class="st-badge st-out">Out of Stock</span>';
+      if (stock <= 5)  return '<span class="st-badge st-low">Low Stock</span>';
+      return '<span class="st-badge st-in">In Stock</span>';
+    }
+
+    function rowClass(stock) {
+      if (stock === 0) return 'row-out';
+      if (stock <= 5)  return 'row-low';
+      return '';
+    }
+
+    function adjustStock(id, delta) {
+      const p = products.find(x => x.id === id);
+      if (!p) return;
+      const before = p.stock;
+      p.stock = Math.max(0, p.stock + delta);
+      if (p.stock !== before) {
+        toast(delta > 0 ? 'ok' : 'err', `${p.name}: ${before} → ${p.stock} units`);
+      }
+      render();
+    }
+
+    function render() {
+      document.getElementById('inv-tbody').innerHTML = products.map(p => `
+        <tr class="${rowClass(p.stock)}">
+          <td><img class="td-img" src="${p.img}" alt="" onerror="this.src='${FALLBACK_IMG}'"></td>
+          <td><strong style="font-family:var(--font-display)">${p.name}</strong><br><span style="font-size:11px;color:var(--muted)">${p.cat}</span></td>
+          <td style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted)">${p.sku}</td>
+          <td><strong style="font-size:15px;font-family:var(--font-display)">${p.stock}</strong></td>
+          <td>${stockBadge(p.stock)}</td>
+          <td>
+            <div class="inv-grp">
+              <button class="inv-b"            onclick="adjustStock(${p.id}, -1)" title="−1">−</button>
+              <button class="inv-b inv-b-plus" onclick="adjustStock(${p.id},  1)" title="+1">+</button>
+              <button class="inv-b-ten"        onclick="adjustStock(${p.id}, 10)" title="+10">+10</button>
+              <button class="inv-b-zero"       onclick="adjustStock(${p.id}, -p.stock)" title="Zero out" onclick="adjustStock(${p.id}, -${p.stock})">⬇ 0</button>
+            </div>
+          </td>
+        </tr>`).join('');
+
+      document.getElementById('sum-total').textContent = products.length;
+      document.getElementById('sum-low').textContent   = products.filter(p => p.stock <= 5).length;
+      document.getElementById('sum-units').textContent = products.reduce((a, p) => a + p.stock, 0);
+    }
+
+    let _toastTimer;
+    function toast(type, message) {
+      const el = document.getElementById('toast');
+      document.getElementById('t-ico').textContent = type === 'err' ? '✕' : type === 'ok' ? '✔' : '→';
+      document.getElementById('t-msg').textContent = message;
+      el.className = `toast ${type} show`;
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+    }
+
+    // Fix the zero-out button (dynamic value)
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('[data-zero]');
+      if (btn) { const id = parseInt(btn.dataset.zero); const p = products.find(x => x.id === id); if (p) adjustStock(id, -p.stock); }
+    });
+
+    render();
+  </script>
+</body>
+</html>

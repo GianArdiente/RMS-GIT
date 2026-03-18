@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REV — Admin Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;900&family=Barlow+Condensed:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- jsPDF + SheetJS for Services export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <link rel="stylesheet" href="Admin.css">
+
+  <style>
+    /* Page-specific styles can go here */
+  </style>
+</head>
+<body>
+
+  <!-- ══ NAVIGATION ══ -->
+  <nav id="main-nav">
+    <div class="nav-logo">
+      <div class="nav-logo-main">Rev</div>
+      <div class="nav-logo-sub">Precision Auto Parts</div>
+    </div>
+    <div class="nav-links">
+      <button class="nav-admin-btn" id="nav-admin">&#9881; Admin</button>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+  </nav>
+
+  <!-- ══ PAGE CONTAINER ══ -->
+  <div class="page active" id="page-admin"></div>
+
+  <!-- ══ PRODUCT MODAL ══ -->
+  <div class="modal-overlay" id="product-modal">
+    <div class="modal-box">
+      <div class="modal-hd">
+        <div class="modal-hd-title" id="modal-title">Add Product</div>
+        <button class="modal-x" onclick="Admin.closeModal()">&#x2715;</button>
+      </div>
+      <div class="modal-2col">
+        <div class="full"><label class="f-label">Product Name *</label><input class="f-input" type="text" id="p-name" placeholder="e.g. Performance Brake Kit"></div>
+        <div><label class="f-label">Category *</label><select class="f-select" id="p-cat"><option value="Engine">Engine</option><option value="Brakes">Brakes</option><option value="Electrical">Electrical</option><option value="Suspension">Suspension</option><option value="Accessories">Accessories</option><option value="Exhaust">Exhaust</option></select></div>
+        <div><label class="f-label">Icon / Emoji</label><input class="f-input" type="text" id="p-icon" placeholder="🔧"></div>
+        <div><label class="f-label">Price ($) *</label><input class="f-input" type="number" id="p-price" placeholder="149.99"></div>
+        <div><label class="f-label">Original Price ($)</label><input class="f-input" type="number" id="p-orig" placeholder="199.99"></div>
+        <div><label class="f-label">Stock Qty *</label><input class="f-input" type="number" id="p-stock" placeholder="50"></div>
+        <div><label class="f-label">SKU</label><input class="f-input" type="text" id="p-sku" placeholder="ENG-003"></div>
+        <div><label class="f-label">Badge</label><input class="f-input" type="text" id="p-badge" placeholder="HOT / NEW / SALE"></div>
+        <div class="full"><label class="f-label">Image URL</label><input class="f-input" type="text" id="p-img" placeholder="https://images.unsplash.com/..."></div>
+        <div class="full"><label class="f-label">Description</label><input class="f-input" type="text" id="p-desc" placeholder="Short product description"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="m-cancel" onclick="Admin.closeModal()">Cancel</button>
+        <button class="m-save"   onclick="Admin.saveProduct()">Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOAST (admin) ══ -->
+  <div class="toast" id="toast">
+    <span class="toast-ico" id="t-ico"></span>
+    <span class="toast-txt" id="t-msg"></span>
+  </div>
+
+  <!-- ══ SERVICES MODALS ══ -->
+
+  <!-- Add Service -->
+  <div class="modal-overlay" id="svcAddOverlay" onclick="svcBgClose(event,'svcAddOverlay')">
+    <div class="svc-modal">
+      <div class="svc-modal-header">
+        <div class="svc-modal-title">Add New Service</div>
+        <div class="svc-modal-close" onclick="svcHideModal('svcAddOverlay')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+      </div>
+      <div class="svc-form-group"><label class="svc-form-label">Service Name</label><input class="svc-form-input" id="svcAName" placeholder="e.g. Oil Change Premium"/></div>
+      <div class="svc-form-group">
+        <label class="svc-form-label">Service Image <span style="color:rgba(255,255,255,.2);font-weight:400">(optional)</span></label>
+        <div class="svc-img-upload-zone" id="svcAImgZone">
+          <input type="file" id="svcAImgInput" accept="image/*" onchange="svcHandleImg('a',event)"/>
+          <span class="svc-img-upload-icon">📷</span>
+          <span class="svc-img-upload-label">Click to upload</span>
+          <span class="svc-img-upload-sub">PNG, JPG, WEBP – max 5 MB</span>
+        </div>
+      </div>
+      <div class="svc-form-row">
+        <div class="svc-form-group">
+          <label class="svc-form-label">SKU ID</label>
+          <div class="svc-form-input" id="svcASkuPreview" style="opacity:.55;cursor:not-allowed;font-family:var(--font-ui);font-weight:700;color:var(--gold-light);display:flex;align-items:center;gap:5px;">Auto-generated</div>
+        </div>
+        <div class="svc-form-group"><label class="svc-form-label">Price ($)</label><input class="svc-form-input" id="svcAPrice" type="number" placeholder="49.99"/></div>
+      </div>
+      <div class="svc-form-group"><label class="svc-form-label">Status</label><select class="svc-form-input" id="svcAStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div class="svc-modal-actions">
+        <button class="svc-btn svc-btn-outline" onclick="svcHideModal('svcAddOverlay')">Cancel</button>
+        <button class="svc-btn svc-btn-primary" onclick="svcConfirmAdd()">Add Service</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Service -->
+  <div class="modal-overlay" id="svcViewOverlay" onclick="svcBgClose(event,'svcViewOverlay')">
+    <div class="svc-modal svc-modal-view">
+      <div class="svc-modal-header">
+        <div class="svc-modal-title">Service Details</div>
+        <div class="svc-modal-close" onclick="svcHideModal('svcViewOverlay')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+      </div>
+      <div class="svc-view-hero" id="svcVHero"><div class="svc-view-emoji" id="svcVEmoji"></div></div>
+      <div class="svc-view-body">
+        <div class="svc-view-row">
+          <div class="svc-view-field"><span class="svc-view-label">SKU ID</span><span class="svc-sku-badge" id="svcVId" style="margin-top:2px;display:inline-block"></span></div>
+          <div class="svc-view-field"><span class="svc-view-label">Status</span><span id="svcVStatus" style="margin-top:2px;display:inline-block"></span></div>
+        </div>
+        <div class="svc-view-field full"><span class="svc-view-label">Service Name</span><span class="svc-view-name" id="svcVName"></span></div>
+        <div class="svc-view-field full"><span class="svc-view-label">Price</span><span class="svc-view-price" id="svcVPrice"></span></div>
+      </div>
+      <div class="svc-modal-actions">
+        <button class="svc-btn svc-btn-outline" onclick="svcHideModal('svcViewOverlay')">Close</button>
+        <button class="svc-btn svc-btn-action" onclick="svcViewToEdit()">Edit Service</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Service -->
+  <div class="modal-overlay" id="svcEditOverlay" onclick="svcBgClose(event,'svcEditOverlay')">
+    <div class="svc-modal">
+      <div class="svc-modal-header">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div id="svcEEmoji" style="width:30px;height:30px;background:var(--grad-gold);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0"></div>
+          <div class="svc-modal-title">Edit Service</div>
+        </div>
+        <div class="svc-modal-close" onclick="svcHideModal('svcEditOverlay')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+      </div>
+      <input type="hidden" id="svcEId"/>
+      <div class="svc-form-group"><label class="svc-form-label">Service Name</label><input class="svc-form-input" id="svcEName"/></div>
+      <div class="svc-form-group">
+        <label class="svc-form-label">Service Image <span style="color:rgba(255,255,255,.2);font-weight:400">(optional)</span></label>
+        <div class="svc-img-upload-zone" id="svcEImgZone">
+          <input type="file" id="svcEImgInput" accept="image/*" onchange="svcHandleImg('e',event)"/>
+          <span class="svc-img-upload-icon">📷</span>
+          <span class="svc-img-upload-label">Click to upload</span>
+          <span class="svc-img-upload-sub">PNG, JPG, WEBP – max 5 MB</span>
+        </div>
+      </div>
+      <div class="svc-form-row">
+        <div class="svc-form-group"><label class="svc-form-label">SKU ID</label><input class="svc-form-input" id="svcESku" readonly style="opacity:.5;cursor:not-allowed"/></div>
+        <div class="svc-form-group"><label class="svc-form-label">Price ($)</label><input class="svc-form-input" id="svcEPrice" type="number" step="0.01"/></div>
+      </div>
+      <div class="svc-form-group"><label class="svc-form-label">Status</label><select class="svc-form-input" id="svcEStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div class="svc-modal-actions">
+        <button class="svc-btn svc-btn-outline" onclick="svcHideModal('svcEditOverlay')">Cancel</button>
+        <button class="svc-btn svc-btn-primary" onclick="svcSaveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Service -->
+  <div class="modal-overlay" id="svcDelOverlay" onclick="svcBgClose(event,'svcDelOverlay')">
+    <div class="svc-modal svc-modal-delete">
+      <div class="svc-del-icon-wrap"><div class="svc-del-icon-ring"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></div></div>
+      <div class="svc-del-title">Delete Service?</div>
+      <div class="svc-del-desc">Permanently delete <strong id="svcDName"></strong>. This cannot be undone.</div>
+      <div class="svc-del-preview">
+        <span id="svcDEmoji" style="font-size:20px;flex-shrink:0"></span>
+        <div style="flex:1"><div style="font-weight:600;font-size:13px" id="svcDNameCard"></div><div style="font-size:11px;color:var(--muted)" id="svcDIdCard"></div></div>
+        <span class="svc-price-tag" id="svcDPriceCard"></span>
+      </div>
+      <div class="svc-modal-actions" style="margin-top:18px">
+        <button class="svc-btn svc-btn-outline" style="flex:1;justify-content:center" onclick="svcHideModal('svcDelOverlay')">Cancel</button>
+        <button class="svc-btn-delete" onclick="svcConfirmDelete()">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Edit Service -->
+  <div class="modal-overlay" id="svcBulkEditOverlay" onclick="svcBgClose(event,'svcBulkEditOverlay')">
+    <div class="svc-modal svc-modal-bulk">
+      <div class="svc-modal-header">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div style="width:30px;height:30px;background:rgba(96,165,250,.18);border:1px solid rgba(96,165,250,.35);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✏️</div>
+          <div class="svc-modal-title">Bulk Edit</div>
+        </div>
+        <div class="svc-modal-close" onclick="svcHideModal('svcBulkEditOverlay')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+      </div>
+      <div class="svc-form-label" style="margin-bottom:7px">Selected Services</div>
+      <div class="svc-bulk-list" id="svcBulkEditList"></div>
+      <div class="svc-bulk-hint">Leave a field blank to keep each service's current value.</div>
+      <div class="svc-bulk-field-row">
+        <div class="svc-form-group"><label class="svc-form-label">Set Price ($)</label><input class="svc-form-input" id="svcBulkPrice" type="number" step="0.01" placeholder="— keep current —"/></div>
+        <div class="svc-form-group"><label class="svc-form-label">Set Status</label><select class="svc-form-input" id="svcBulkStatus"><option value="">— keep current —</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      </div>
+      <div class="svc-modal-actions">
+        <button class="svc-btn svc-btn-outline" onclick="svcHideModal('svcBulkEditOverlay')">Cancel</button>
+        <button class="svc-btn svc-btn-primary" onclick="svcConfirmBulkEdit()">Apply to All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Delete Service -->
+  <div class="modal-overlay" id="svcBulkDelOverlay" onclick="svcBgClose(event,'svcBulkDelOverlay')">
+    <div class="svc-modal svc-modal-bulk-del">
+      <div class="svc-del-icon-wrap"><div class="svc-del-icon-ring"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></div></div>
+      <div class="svc-bulk-del-count" id="svcBulkDelCount">0</div>
+      <div class="svc-del-title" style="margin-top:4px">Services Selected</div>
+      <div class="svc-del-desc">Permanently delete all selected services. This cannot be undone.</div>
+      <div class="svc-bulk-del-list" id="svcBulkDelList"></div>
+      <div class="svc-modal-actions" style="margin-top:4px">
+        <button class="svc-btn svc-btn-outline" style="flex:1;justify-content:center" onclick="svcHideModal('svcBulkDelOverlay')">Cancel</button>
+        <button class="svc-btn-delete" onclick="svcConfirmBulkDelete()">Delete All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services Lightbox -->
+  <div class="svc-lightbox" id="svcLightbox" onclick="svcCloseLightbox()">
+    <img class="svc-lightbox-img" id="svcLightboxImg" src="" alt=""/>
+    <button class="svc-lightbox-close" onclick="svcCloseLightbox()"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    <div class="svc-lightbox-caption" id="svcLightboxCaption"></div>
+  </div>
+
+  <!-- Services Toast Container -->
+  <div class="svc-toast-container" id="svcToasts"></div>
+
+  <!-- ══ SEED DATA ══ -->
+  <script src="Admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>REV — Auto Repair Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+/* ═══════════════════════════════════════════════
+   REV AUTO REPAIR — Landing Page Styles
+   landingpage.css
+═══════════════════════════════════════════════ */
+
+/* ── Root ── */
+:root {
+  --gold-light:  #F2E1AE;
+  --gold:        #F2DB94;
+  --gold-dark:   #D9B573;
+  --gold-deeper: #A67F38;
+  --gold-deep:   #7A5C20;
+  --black:       #080808;
+}
+
+/* ── Base ── */
+*,*::before,*::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family:'DM Sans',sans-serif; background:var(--black); color:#fff; overflow-x:hidden; margin:0; }
+
+/* ── Keyframes ── */
+@keyframes orbDrift  { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(60px,-40px) scale(1.1)} 66%{transform:translate(-40px,60px) scale(.9)} }
+@keyframes orbDrift2 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(-50px,40px) scale(1.05)} 66%{transform:translate(40px,-30px) scale(.95)} }
+@keyframes gridPulse { 0%,100%{opacity:.045} 50%{opacity:.09} }
+@keyframes scanLine  { 0%{top:-4px;opacity:0} 10%{opacity:.6} 90%{opacity:.3} 100%{top:100%;opacity:0} }
+@keyframes ticker    { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+@keyframes pulseGold { 0%,100%{box-shadow:0 0 0 0 rgba(166,127,56,.55)} 50%{box-shadow:0 0 0 9px rgba(166,127,56,0)} }
+@keyframes pulseDot  { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.6)} 50%{box-shadow:0 0 0 8px rgba(16,185,129,0)} }
+@keyframes pulseRed  { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.55)} 50%{box-shadow:0 0 0 7px rgba(220,38,38,0)} }
+@keyframes floatA    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+@keyframes floatB    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(12px)} }
+@keyframes floatC    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes spinRev   { to{transform:rotate(-360deg)} }
+@keyframes countUp   { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+@keyframes gearSpin  { to{transform:rotate(360deg)} }
+@keyframes heroBadge { from{opacity:0;transform:scale(.7) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+@keyframes heroWord  { from{opacity:0;transform:translateY(60px) skewY(8deg)} to{opacity:1;transform:translateY(0) skewY(0)} }
+@keyframes heroSub   { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+@keyframes heroCard  { from{opacity:0;transform:translateX(60px) scale(.94)} to{opacity:1;transform:translateX(0) scale(1)} }
+@keyframes modalIn   { from{opacity:0;transform:translateY(24px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+/* ── Utility ── */
+.gt {
+  background: linear-gradient(135deg,var(--gold-light),var(--gold),var(--gold-deeper));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.btn-shine { position:relative; overflow:hidden; }
+.btn-shine::after {
+  content:''; position:absolute; top:-50%; left:-75%; width:50%; height:200%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
+  transform:skewX(-20deg); transition:left .55s;
+}
+.btn-shine:hover::after { left:130%; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:#111; }
+::-webkit-scrollbar-thumb { background:var(--gold-deeper); border-radius:2px; }
+
+/* ── Nav ── */
+.nav-link { transition:color .2s; }
+.nav-link:hover  { color:var(--gold-dark) !important; }
+.nav-link.active { color:var(--gold) !important; }
+
+/* ── Hero ── */
+.hero-grid-bg {
+  background-image:linear-gradient(rgba(166,127,56,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(166,127,56,.045) 1px,transparent 1px);
+  background-size:64px 64px; animation:gridPulse 4s ease infinite;
+}
+.scan-container { position:relative; overflow:hidden; }
+.scan-line {
+  position:absolute; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,rgba(166,127,56,.6),transparent);
+  pointer-events:none; animation:scanLine 3s linear infinite;
+}
+.hud-corner { position:absolute; width:16px; height:16px; }
+.hud-tl { top:0;left:0;       border-top:2px solid var(--gold-deeper);  border-left:2px solid var(--gold-deeper); }
+.hud-tr { top:0;right:0;      border-top:2px solid var(--gold-deeper);  border-right:2px solid var(--gold-deeper); }
+.hud-bl { bottom:0;left:0;    border-bottom:2px solid var(--gold-deeper);border-left:2px solid var(--gold-deeper); }
+.hud-br { bottom:0;right:0;   border-bottom:2px solid var(--gold-deeper);border-right:2px solid var(--gold-deeper); }
+
+/* ── Stat card ── */
+.stat-card {
+  background:rgba(255,255,255,.025); border:1px solid rgba(166,127,56,.18);
+  border-radius:13px; padding:20px; position:relative; overflow:hidden;
+}
+.stat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-deeper),transparent);
+}
+
+/* ── Featured cards ── */
+.fc { position:relative; border-radius:14px; overflow:hidden; cursor:pointer; border:1px solid rgba(166,127,56,.11); transition:all .4s cubic-bezier(.25,.46,.45,.94); }
+.fc:hover { border-color:var(--gold-deeper); transform:translateY(-5px); box-shadow:0 20px 50px rgba(0,0,0,.5); }
+.fc:hover .fci { transform:scale(1.07); }
+.fc:hover .fco { opacity:1; }
+.fc:hover .fcc { bottom:0; }
+.fci { width:100%; height:100%; object-fit:cover; transition:transform .6s ease; position:absolute; inset:0; }
+.fco { position:absolute; inset:0; background:linear-gradient(180deg,transparent 25%,rgba(0,0,0,.88) 100%); opacity:.55; transition:opacity .4s; }
+.fcc { position:absolute; bottom:-70px; left:0; right:0; padding:18px; transition:bottom .4s cubic-bezier(.25,.46,.45,.94); }
+
+/* ── Promo card ── */
+.promo-card {
+  position:relative; border-radius:14px; overflow:hidden;
+  background:linear-gradient(135deg,#141414,#0e0e0e); border:1px solid rgba(166,127,56,.17);
+  padding:26px; transition:all .35s; cursor:pointer;
+}
+.promo-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-deeper),transparent);
+}
+.promo-card:hover { border-color:var(--gold-deeper); transform:translateY(-4px); box-shadow:0 24px 60px rgba(0,0,0,.5); }
+
+/* ── Scroll reveal ── */
+.rev { opacity:0; transform:translateY(32px); transition:opacity .75s ease,transform .75s ease; }
+.rev.lft { transform:translateX(-32px); }
+.rev.rgt { transform:translateX(32px); }
+.rev.sc  { transform:scale(.92); }
+.rev.vis { opacity:1 !important; transform:none !important; }
+
+/* ── About stat ── */
+.about-stat {
+  text-align:center; padding:19px; border:1px solid rgba(166,127,56,.17); border-radius:12px;
+  background:rgba(255,255,255,.017); position:relative; overflow:hidden;
+}
+.about-stat::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold-deeper),transparent);
+}
+
+/* ── Contact input ── */
+.ci {
+  width:100%; background:rgba(255,255,255,.026); border:1px solid rgba(166,127,56,.17);
+  border-radius:10px; padding:12px 15px; color:#fff; font-family:'DM Sans',sans-serif;
+  font-size:13.5px; transition:border-color .2s,background .2s; outline:none; display:block;
+}
+.ci:focus { border-color:var(--gold-deeper); background:rgba(166,127,56,.04); }
+.ci::placeholder { color:#555; }
+
+/* ── Ticker ── */
+.ticker-wrap { overflow:hidden; background:rgba(166,127,56,.05); border-top:1px solid rgba(166,127,56,.09); border-bottom:1px solid rgba(166,127,56,.09); padding:9px 0; }
+.ticker-track { display:flex; width:max-content; animation:ticker 32s linear infinite; }
+.t-item { white-space:nowrap; padding:0 44px; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; gap:14px; }
+
+/* ── Word clip ── */
+.word-clip { display:inline-block; overflow:hidden; line-height:1; }
+.word-inner { display:inline-block; }
+
+/* ══════════════════════════════════════════════
+   Z-INDEX MASTER STACK
+   coming-soon : 500
+   auth        : 400
+   notif-panel : 300
+   notif-overlay: 299
+   bell FAB    : 200
+   header      : 50
+══════════════════════════════════════════════ */
+
+/* ── Modal shared backdrop ── */
+.modal-wrap {
+  position:fixed; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none;
+  transition:opacity .28s;
+}
+.modal-wrap.open { opacity:1; pointer-events:all; }
+.modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.78); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+.modal-box { position:relative; z-index:1; animation:modalIn .35s cubic-bezier(.25,.46,.45,.94) both; }
+.modal-topbar { position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#A67F38,#F2DB94,#A67F38,transparent); }
+
+#comingSoonModal { z-index:500; }
+#authModal       { z-index:400; }
+
+/* ── Notification ── */
+#notifOv {
+  position:fixed; inset:0; z-index:299;
+  background:rgba(0,0,0,.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  opacity:0; pointer-events:none; transition:opacity .28s;
+}
+#notifOv.open { opacity:1; pointer-events:all; }
+
+.notif-panel {
+  position:fixed; top:0; right:0; bottom:0; z-index:300;
+  width:380px;
+  background:linear-gradient(180deg,#0f0f0f,#161616);
+  border-left:1px solid rgba(166,127,56,.2);
+  display:flex; flex-direction:column;
+  transform:translateX(100%);
+  transition:transform .35s cubic-bezier(.25,.46,.45,.94);
+}
+.notif-panel.open { transform:translateX(0); }
+
+/* ── Bell FAB — bottom-right corner ── */
+#bellBtn {
+  position:fixed; right:24px; bottom:28px; z-index:200;
+  width:52px; height:52px; border-radius:50%; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,#A67F38,#D9B573);
+  box-shadow:0 8px 28px rgba(166,127,56,.45);
+  transition:transform .2s;
+  animation:pulseGold 3s infinite;
+}
+#bellBtn:hover { transform:scale(1.1); }
+
+/* ── Header ── */
+#siteHeader {
+  position:sticky; top:0; z-index:50;
+  background:linear-gradient(90deg,rgba(8,8,8,.97),rgba(14,14,14,.97));
+  border-bottom:1px solid rgba(166,127,56,.1);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+}
+
+/* ── Social icons ── */
+.social-icon {
+  width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; background:#111; border:1px solid rgba(255,255,255,.05);
+  color:#3a3a3a; text-decoration:none; transition:color .2s,border-color .2s;
+}
+.social-icon:hover { color:var(--gold); border-color:var(--gold-deeper); }
+
+/* ── Responsive ── */
+@media (max-width:640px) { .notif-panel { width:100%; } }
+
+</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: { light:'#F2E1AE', DEFAULT:'#F2DB94', dark:'#D9B573', deeper:'#A67F38', deep:'#7A5C20' }
+          },
+          fontFamily: {
+            barlow:['"Barlow Condensed"','sans-serif'],
+            dm:['"DM Sans"','sans-serif'],
+            raj:['Rajdhani','sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body>
+
+<!-- ════════════════════════════════════
+     COMING SOON MODAL  z-index:500
+════════════════════════════════════ -->
+<div id="comingSoonModal" class="modal-wrap">
+  <div class="modal-backdrop" onclick="closeComingSoon()"></div>
+  <div class="modal-box w-[90%] max-w-[440px] rounded-2xl overflow-hidden"
+       style="background:linear-gradient(150deg,#1c1c1c,#101010);border:1px solid rgba(166,127,56,.32);box-shadow:0 50px 120px rgba(0,0,0,.85);">
+    <div class="modal-topbar"></div>
+    <button onclick="closeComingSoon()"
+            class="absolute top-4 right-4 z-10 text-gray-600 hover:text-white transition-colors text-lg">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="p-10 text-center">
+      <div class="relative w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+        <div class="absolute inset-0 rounded-full"
+             style="background:linear-gradient(135deg,rgba(166,127,56,.2),rgba(166,127,56,.04));border:1px solid rgba(166,127,56,.3);"></div>
+        <i class="fas fa-cog text-3xl" style="color:#A67F38;animation:gearSpin 4s linear infinite;"></i>
+      </div>
+      <h2 class="font-barlow text-4xl font-black mb-3 gt">Coming Soon</h2>
+      <p class="text-sm mb-1" style="color:#aaa;">This feature is currently under construction.</p>
+      <p class="text-xs mb-8" style="color:#888;">We're working hard to bring this to you. Stay tuned!</p>
+      <div class="mb-8">
+        <div class="flex justify-between text-xs mb-2" style="color:#A67F38;">
+          <span>Progress</span><span>72%</span>
+        </div>
+        <div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(166,127,56,.1);">
+          <div id="csBar" class="h-full rounded-full transition-all duration-1000"
+               style="width:0%;background:linear-gradient(90deg,#A67F38,#F2DB94);"></div>
+        </div>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <input type="email" class="ci flex-1" placeholder="Get notified when ready..." style="padding:10px 14px;font-size:13px;">
+        <button class="btn-shine px-4 py-2 rounded-lg font-raj font-bold text-black text-sm"
+                style="background:linear-gradient(135deg,#A67F38,#D9B573);white-space:nowrap;">Notify</button>
+      </div>
+      <button onclick="closeComingSoon()" class="text-xs text-gray-600 hover:text-gray-400 transition-colors underline">
+        Maybe later
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     AUTH MODAL  z-index:400
+════════════════════════════════════ -->
+<div id="authModal" class="modal-wrap">
+  <div class="modal-backdrop" onclick="closeModal()"></div>
+  <div class="modal-box w-[90%] max-w-[460px] rounded-2xl overflow-hidden"
+       style="background:linear-gradient(150deg,#1c1c1c,#101010);border:1px solid rgba(166,127,56,.3);box-shadow:0 50px 120px rgba(0,0,0,.8);">
+    <div class="modal-topbar"></div>
+    <button onclick="closeModal()"
+            class="absolute top-4 right-4 z-10 text-gray-600 hover:text-white transition-colors text-lg">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="p-10 text-center">
+      <div class="w-16 h-16 rounded-full mx-auto mb-5 flex items-center justify-center"
+           style="background:linear-gradient(135deg,rgba(166,127,56,.2),rgba(166,127,56,.04));border:1px solid rgba(166,127,56,.28);">
+        <i class="fas fa-lock text-2xl" style="color:#A67F38;"></i>
+      </div>
+      <h2 class="font-barlow text-[32px] font-black gt mb-2">Members Only</h2>
+      <p class="text-sm mb-1" style="color:#aaa;">Please log in or create an account to continue.</p>
+      <p class="text-xs mb-8" style="color:#888;">
+        To access <span id="mfeat" class="text-yellow-600">this feature</span>, you need to be signed in.
+      </p>
+      <div class="flex gap-3">
+        <button onclick="closeModal()"
+                class="btn-shine flex-1 py-3 rounded-lg font-raj font-bold text-black text-base"
+                style="background:linear-gradient(135deg,#A67F38,#D9B573);">
+          <i class="fas fa-sign-in-alt mr-2"></i>Log In
+        </button>
+        <button onclick="closeModal()"
+                class="flex-1 py-3 rounded-lg font-raj font-semibold text-base transition-all"
+                style="background:transparent;color:#F2E1AE;border:1px solid rgba(166,127,56,.42);">
+          <i class="fas fa-user-plus mr-2 text-sm"></i>Create Account
+        </button>
+      </div>
+      <p class="text-[10px] mt-5 tracking-wide" style="color:#666;">Trusted by 500+ auto shops nationwide</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     NOTIF OVERLAY  z-index:299
+════════════════════════════════════ -->
+<div id="notifOv" onclick="closeNotif()"></div>
+
+<!-- ════════════════════════════════════
+     NOTIF PANEL  z-index:300
+════════════════════════════════════ -->
+<div id="notifPanel" class="notif-panel">
+  <!-- Header -->
+  <div class="flex-shrink-0 p-5"
+       style="border-bottom:1px solid rgba(166,127,56,.12);background:linear-gradient(135deg,#141414,#0d0d0d);">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="font-barlow text-xl font-bold gt">Notifications</h3>
+      <button onclick="closeNotif()" class="text-gray-600 hover:text-white transition-colors text-base leading-none">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <p class="text-xs" style="color:#999;">Sign in to receive personalized updates.</p>
+  </div>
+  <!-- Empty state -->
+  <div class="flex-1 flex flex-col items-center justify-center gap-5 p-8 text-center">
+    <div class="w-20 h-20 rounded-full flex items-center justify-center"
+         style="background:rgba(166,127,56,.06);border:1px solid rgba(166,127,56,.15);">
+      <i class="fas fa-bell-slash text-2xl" style="color:#2e2e2e;"></i>
+    </div>
+    <div>
+      <p class="text-sm font-semibold mb-1.5" style="color:#484848;">No notifications yet</p>
+      <p class="text-xs leading-relaxed" style="color:#777;">
+        Create an account to get service updates,<br>promo alerts, and booking reminders.
+      </p>
+    </div>
+    <button onclick="closeNotif(); openModal('notifications')"
+            class="btn-shine px-6 py-2.5 rounded-lg font-raj font-bold text-black text-sm"
+            style="background:linear-gradient(135deg,#A67F38,#D9B573);">
+      Sign Up Free
+    </button>
+  </div>
+  <!-- Footer strip -->
+  <div class="flex-shrink-0 p-4 text-center" style="border-top:1px solid rgba(166,127,56,.07);">
+    <p class="text-[10px]" style="color:#555;">REV Auto Repair © 2024</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     BELL FAB  z-index:200  (bottom-right)
+════════════════════════════════════ -->
+<button id="bellBtn" onclick="openNotif()" aria-label="Notifications">
+  <i class="fas fa-bell text-black text-lg"></i>
+</button>
+
+<!-- ════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════ -->
+<main>
+
+  <!-- ── HEADER ── -->
+  <header id="siteHeader">
+    <div class="max-w-[1280px] mx-auto px-6 h-16 flex items-center justify-between">
+      <!-- Logo + Nav -->
+      <div class="flex items-center gap-8">
+        <a href="#home" class="flex items-center gap-2.5 no-underline">
+          <div class="w-8 h-8 rounded-[7px] flex items-center justify-center"
+               style="background:linear-gradient(135deg,#A67F38,#D9B573);">
+            <span class="font-barlow font-black text-black text-base">R</span>
+          </div>
+          <span class="font-barlow font-black text-lg tracking-wide gt">REV</span>
+        </a>
+        <nav class="hidden md:flex gap-6 items-center">
+          <a href="#home"          class="nav-link text-sm font-medium" style="color:#aaa;">Home</a>
+          <a href="#catalogue"     class="nav-link text-sm font-medium" style="color:#aaa;">Catalogue</a>
+          <a href="#about-contact" class="nav-link text-sm font-medium" style="color:#aaa;">About & Contact</a>
+        </nav>
+      </div>
+      <!-- Auth -->
+      <div class="flex items-center gap-2.5">
+        <button onclick="openModal('your account')"
+                class="px-5 py-2 rounded-lg font-raj font-semibold text-sm transition-all"
+                style="background:transparent;color:#F2E1AE;border:1px solid rgba(166,127,56,.42);">
+          Log In
+        </button>
+        <button onclick="openModal('all features')"
+                class="btn-shine px-5 py-2 rounded-lg font-raj font-bold text-black text-sm flex items-center gap-1.5"
+                style="background:linear-gradient(135deg,#A67F38,#D9B573);">
+          <i class="fas fa-user-plus text-xs"></i>Sign Up Free
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════
+       HERO
+  ════════════════════════════════════ -->
+  <section id="home" class="relative min-h-screen flex items-center overflow-hidden">
+    <!-- BG photo -->
+    <div class="absolute inset-0"
+         style="background:url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1920&h=1080&fit=crop') center/cover;
+                filter:brightness(.15) saturate(.4);"></div>
+    <!-- Dark overlay -->
+    <div class="absolute inset-0"
+         style="background:linear-gradient(135deg,rgba(8,8,8,.95) 52%,rgba(20,12,0,.7) 100%);"></div>
+    <!-- Grid -->
+    <div class="absolute inset-0 hero-grid-bg"></div>
+    <!-- Orbs -->
+    <div class="absolute pointer-events-none rounded-full"
+         style="width:600px;height:600px;top:-180px;left:-150px;
+                background:radial-gradient(circle,rgba(166,127,56,.13),transparent 70%);
+                filter:blur(80px);animation:orbDrift 8s ease-in-out infinite;"></div>
+    <div class="absolute pointer-events-none rounded-full"
+         style="width:400px;height:400px;bottom:-80px;right:10%;
+                background:radial-gradient(circle,rgba(166,127,56,.08),transparent 70%);
+                filter:blur(80px);animation:orbDrift2 10s ease-in-out infinite 2s;"></div>
+    <!-- Rings -->
+    <div class="absolute pointer-events-none rounded-full"
+         style="width:560px;height:560px;top:50%;left:56%;transform:translate(-50%,-50%);
+                border:1px dashed rgba(166,127,56,.1);animation:spin 32s linear infinite;"></div>
+    <div class="absolute pointer-events-none rounded-full"
+         style="width:820px;height:820px;top:50%;left:56%;transform:translate(-50%,-50%);
+                border:1px solid rgba(166,127,56,.06);animation:spinRev 55s linear infinite;"></div>
+    <!-- Scan -->
+    <div class="scan-container absolute inset-0 pointer-events-none">
+      <div class="scan-line"></div>
+    </div>
+
+    <div class="max-w-[1280px] mx-auto px-6 relative z-10 w-full pb-24 pt-10">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+
+        <!-- LEFT COPY -->
+        <div>
+          <!-- Badge -->
+          <div class="anim-badge inline-flex items-center gap-2.5 rounded-full px-4 py-2 mb-6"
+               style="background:rgba(166,127,56,.08);border:1px solid rgba(166,127,56,.28);">
+            <span class="w-2 h-2 rounded-full inline-block" style="background:#EAB308;animation:pulseGold 2s infinite;"></span>
+            <span class="font-raj font-semibold text-xs tracking-[3px] uppercase" style="color:#F2DB94;">System Online — v2.0</span>
+            <span class="w-2 h-2 rounded-full inline-block bg-emerald-500" style="animation:pulseDot 2s infinite;"></span>
+          </div>
+          <!-- Accent line -->
+          <div class="anim-line mb-5 origin-left"
+               style="width:80px;height:2px;background:linear-gradient(90deg,#A67F38,transparent);"></div>
+          <!-- Headline -->
+          <h1 class="font-barlow font-black mb-5" style="line-height:.9;letter-spacing:-2px;">
+            <div class="word-clip" style="font-size:clamp(58px,7.5vw,100px);">
+              <div class="word-inner anim-word1 gt">DRIVE</div>
+            </div>
+            <div class="word-clip" style="font-size:clamp(58px,7.5vw,100px);">
+              <div class="word-inner anim-word2 text-white">YOUR SHOP</div>
+            </div>
+            <div class="word-clip" style="font-size:clamp(58px,7.5vw,100px);">
+              <div class="word-inner anim-word3"
+                   style="color:rgba(255,255,255,.18);-webkit-text-stroke:1px rgba(255,255,255,.1);">FORWARD</div>
+            </div>
+          </h1>
+          <!-- Sub -->
+          <p class="anim-sub text-sm leading-relaxed max-w-[400px] mb-8" style="color:#aaa;">
+            The complete web-based repair management system for modern auto shops —
+            track repairs, manage bookings, keep customers in the loop in real time.
+          </p>
+          <!-- CTA buttons -->
+          <div class="anim-btns flex flex-wrap gap-3 mb-10">
+            <button onclick="openModal('all features')"
+                    class="btn-shine px-7 py-3.5 rounded-lg font-raj font-bold text-black text-base flex items-center gap-2"
+                    style="background:linear-gradient(135deg,#A67F38,#D9B573);">
+              Get Started Free <i class="fas fa-arrow-right text-xs"></i>
+            </button>
+            <button onclick="openModal('book a service')" class="btn-shine px-6 py-3.5 rounded-lg font-raj font-bold text-black text-base flex items-center gap-2"
+                    style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);color:#F2DB94;border:1px solid rgba(166,127,56,.5);">
+              <i class="fas fa-calendar-check text-xs"></i> Book Now
+            </button>
+          </div>
+          <!-- Trust row -->
+          <div class="anim-trust flex items-center gap-4">
+            <div class="flex">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 border-[#080808]" style="background:#1e1e1e;">🔧</div>
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 border-[#080808] -ml-2" style="background:#1e1e1e;">🔩</div>
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 border-[#080808] -ml-2" style="background:#1e1e1e;">🚗</div>
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-[9px] font-black text-black border-2 border-[#080808] -ml-2"
+                   style="background:linear-gradient(135deg,#7A5C20,#D9B573);">+</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold" style="color:#bbb;">500+ shops trust REV</div>
+              <div class="flex items-center gap-0.5 mt-1">
+                <i class="fas fa-star text-[10px]" style="color:#F2DB94;"></i>
+                <i class="fas fa-star text-[10px]" style="color:#F2DB94;"></i>
+                <i class="fas fa-star text-[10px]" style="color:#F2DB94;"></i>
+                <i class="fas fa-star text-[10px]" style="color:#F2DB94;"></i>
+                <i class="fas fa-star text-[10px]" style="color:#F2DB94;"></i>
+                <span class="text-[10px] ml-1.5" style="color:#888;">4.9 / 5</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: HUD PANEL -->
+        <div class="hidden lg:block anim-card">
+          <div class="relative scan-container rounded-2xl p-5"
+               style="background:rgba(10,10,10,.7);border:1px solid rgba(166,127,56,.2);backdrop-filter:blur(12px);">
+            <div class="hud-corner hud-tl"></div>
+            <div class="hud-corner hud-tr"></div>
+            <div class="hud-corner hud-bl"></div>
+            <div class="hud-corner hud-br"></div>
+            <div class="scan-line"></div>
+            <!-- HUD header -->
+            <div class="flex items-center justify-between mb-4 pb-3"
+                 style="border-bottom:1px solid rgba(166,127,56,.1);">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-emerald-500" style="animation:pulseDot 1.5s infinite;"></div>
+                <span class="font-raj font-semibold text-xs tracking-widest uppercase" style="color:#A67F38;">REV Dashboard — Live</span>
+              </div>
+              <span id="liveTime" class="text-[10px] font-dm" style="color:#3a3a3a;">00:00:00</span>
+            </div>
+            <!-- Big stat cards -->
+            <div class="grid grid-cols-2 gap-3 mb-3">
+              <div class="stat-card float-a">
+                <div class="text-[9px] tracking-widest uppercase mb-1" style="color:#888;">Active Repairs</div>
+                <div class="font-barlow text-4xl font-black gt count-up">247</div>
+                <div class="text-[10px] mt-1" style="color:#10b981;">↑ 12 new today</div>
+              </div>
+              <div class="stat-card float-b">
+                <div class="text-[9px] tracking-widest uppercase mb-1" style="color:#888;">Total Done</div>
+                <div class="font-barlow text-4xl font-black gt count-up" style="animation-delay:.1s;">50K+</div>
+                <div class="text-[10px] mt-1" style="color:#A67F38;">All-time record</div>
+              </div>
+            </div>
+            <!-- Live feed -->
+            <div class="rounded-xl overflow-hidden mb-3"
+                 style="background:rgba(0,0,0,.3);border:1px solid rgba(166,127,56,.08);">
+              <div class="px-3 py-2 flex items-center justify-between"
+                   style="border-bottom:1px solid rgba(166,127,56,.06);">
+                <span class="text-[9px] tracking-widest uppercase font-raj font-bold" style="color:#A67F38;">Live Activity</span>
+                <div class="flex gap-1">
+                  <div class="w-1.5 h-1.5 rounded-full bg-emerald-500" style="animation:pulseDot 1.2s infinite;"></div>
+                  <div class="w-1.5 h-1.5 rounded-full" style="background:#A67F38;animation:pulseGold 1.8s infinite .3s;"></div>
+                  <div class="w-1.5 h-1.5 rounded-full bg-red-500" style="animation:pulseRed 2.2s infinite .6s;"></div>
+                </div>
+              </div>
+              <div id="liveFeed" class="p-2 space-y-1.5 max-h-[140px] overflow-hidden"></div>
+            </div>
+            <!-- Mini stats row -->
+            <div class="grid grid-cols-3 gap-2">
+              <div class="rounded-lg p-3 text-center"
+                   style="background:rgba(166,127,56,.06);border:1px solid rgba(166,127,56,.1);">
+                <div class="font-barlow text-xl font-black gt float-c">98%</div>
+                <div class="text-[9px] mt-0.5" style="color:#888;">Satisfaction</div>
+              </div>
+              <div class="rounded-lg p-3 text-center"
+                   style="background:rgba(166,127,56,.06);border:1px solid rgba(166,127,56,.1);">
+                <div class="font-barlow text-xl font-black gt float-a" style="animation-delay:.5s;">500+</div>
+                <div class="text-[9px] mt-0.5" style="color:#888;">Shops</div>
+              </div>
+              <div class="rounded-lg p-3 text-center"
+                   style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);">
+                <div class="flex items-center justify-center gap-1">
+                  <div class="w-1.5 h-1.5 rounded-full bg-emerald-500" style="animation:pulseDot 1.5s infinite;"></div>
+                  <span class="font-barlow text-base font-black text-emerald-400">LIVE</span>
+                </div>
+                <div class="text-[9px] mt-0.5" style="color:#888;">Status</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end grid -->
+
+      <!-- Scroll cue -->
+      <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5"
+           style="color:#2a2a2a;">
+        <span class="text-[9px] tracking-[3px] uppercase font-raj">Scroll</span>
+        <div class="w-px h-10" style="background:linear-gradient(180deg,#A67F38,transparent);"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TICKER -->
+  <div class="ticker-wrap">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       CATALOGUE — Featured + Promo
+  ════════════════════════════════════ -->
+  <section id="catalogue" style="background:#101010;padding:96px 0;">
+    <div class="max-w-[1280px] mx-auto px-6">
+
+      <!-- Header row -->
+      <div class="flex items-end justify-between mb-10 rev">
+        <div>
+          <div class="text-[10.5px] tracking-[4px] uppercase mb-2" style="color:#F2DB94;">Our Catalogue</div>
+          <h2 class="font-barlow font-black" style="font-size:clamp(38px,5vw,62px);line-height:1;letter-spacing:-1px;">
+            <span class="gt">Featured</span> <span class="text-white">Products & Deals</span>
+          </h2>
+        </div>
+        <button onclick="openComingSoon()"
+                class="mb-1.5 px-5 py-2 rounded-lg font-raj font-semibold text-sm transition-all"
+                style="background:transparent;color:#F2E1AE;border:1px solid rgba(166,127,56,.4);">
+          View All <i class="fas fa-arrow-right ml-1 text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Featured image grid -->
+      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:13px;">
+
+        <div class="fc rev" style="grid-column:span 7;min-height:460px;" onclick="openComingSoon()">
+          <img src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop" class="fci" alt="Engine">
+          <div class="fco"></div>
+          <div class="absolute top-0 right-3 font-barlow font-black pointer-events-none select-none"
+               style="font-size:70px;color:rgba(166,127,56,.07);line-height:1;">01</div>
+          <div class="fcc">
+            <span class="inline-block text-black text-[9px] font-black tracking-[2px] uppercase px-2.5 py-1 rounded mb-2"
+                  style="background:#A67F38;">Best Seller</span>
+            <h3 class="font-barlow text-[28px] font-black leading-tight text-white mb-1">Premium Engine<br>Components</h3>
+            <p class="text-[11.5px] mb-3" style="color:#aaa;">OEM-spec parts for peak performance</p>
+            <div class="flex items-center justify-between">
+              <span class="font-barlow text-xl font-bold gt">Starting $149</span>
+              <button class="btn-shine px-4 py-2 rounded-lg font-raj font-bold text-black text-sm"
+                      style="background:linear-gradient(135deg,#A67F38,#D9B573);">Shop Now</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="fc rev" style="grid-column:span 5;min-height:218px;transition-delay:.1s;" onclick="openComingSoon()">
+          <img src="https://images.unsplash.com/photo-1625047509168-a7026f36de04?w=600&h=400&fit=crop" class="fci" alt="Brakes">
+          <div class="fco"></div>
+          <div class="fcc">
+            <span class="inline-block text-black text-[9px] font-black tracking-[2px] uppercase px-2.5 py-1 rounded mb-2"
+                  style="background:#A67F38;">Hot Deal</span>
+            <h3 class="font-barlow text-xl font-black text-white">Brake Systems</h3>
+            <span class="font-barlow text-base font-bold gt">From $89</span>
+          </div>
+        </div>
+
+        <div class="fc rev" style="grid-column:span 5;min-height:218px;transition-delay:.18s;" onclick="openComingSoon()">
+          <img src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&h=400&fit=crop" class="fci" alt="Suspension">
+          <div class="fco"></div>
+          <div class="fcc">
+            <span class="inline-block text-black text-[9px] font-black tracking-[2px] uppercase px-2.5 py-1 rounded mb-2"
+                  style="background:#A67F38;">New Arrival</span>
+            <h3 class="font-barlow text-xl font-black text-white">Suspension Kits</h3>
+            <span class="font-barlow text-base font-bold gt">From $220</span>
+          </div>
+        </div>
+
+        <div class="fc rev" style="grid-column:span 4;min-height:218px;transition-delay:.08s;" onclick="openComingSoon()">
+          <img src="https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=500&h=350&fit=crop" class="fci" alt="Tires">
+          <div class="fco"></div>
+          <div class="fcc">
+            <span class="inline-block text-black text-[9px] font-black tracking-[2px] uppercase px-2.5 py-1 rounded mb-2"
+                  style="background:#A67F38;">Popular</span>
+            <h3 class="font-barlow text-lg font-black text-white">Tires & Rims</h3>
+            <span class="font-barlow text-sm font-bold gt">From $65</span>
+          </div>
+        </div>
+
+        <div class="fc rev" style="grid-column:span 4;min-height:218px;transition-delay:.16s;" onclick="openComingSoon()">
+          <img src="https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=500&h=350&fit=crop" class="fci" alt="Filters">
+          <div class="fco"></div>
+          <div class="fcc">
+            <span class="inline-block text-black text-[9px] font-black tracking-[2px] uppercase px-2.5 py-1 rounded mb-2"
+                  style="background:#A67F38;">Value</span>
+            <h3 class="font-barlow text-lg font-black text-white">Filters & Fluids</h3>
+            <span class="font-barlow text-sm font-bold gt">From $12</span>
+          </div>
+        </div>
+
+        <div class="fc rev" style="grid-column:span 4;min-height:218px;transition-delay:.24s;" onclick="openComingSoon()">
+          <img src="https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=500&h=350&fit=crop" class="fci" alt="Electrical">
+          <div class="fco"></div>
+          <div class="fcc">
+            <span class="inline-block text-black text-[9px] font-black tracking-[2px] uppercase px-2.5 py-1 rounded mb-2"
+                  style="background:#A67F38;">Tech</span>
+            <h3 class="font-barlow text-lg font-black text-white">Electrical Parts</h3>
+            <span class="font-barlow text-sm font-bold gt">From $35</span>
+          </div>
+        </div>
+
+      </div><!-- end featured grid -->
+
+      <!-- ── PROMO DIVIDER ── -->
+      <div class="flex items-center gap-5 mt-16 mb-12 rev">
+        <div class="flex-1 h-px" style="background:linear-gradient(90deg,transparent,rgba(166,127,56,.2));"></div>
+        <div class="text-center">
+          <div class="text-[9.5px] tracking-[4px] uppercase mb-0.5" style="color:#F2DB94;">Limited Time</div>
+          <div class="font-barlow text-2xl font-black gt">Special Promotions</div>
+        </div>
+        <div class="flex-1 h-px" style="background:linear-gradient(90deg,rgba(166,127,56,.2),transparent);"></div>
+      </div>
+
+      <!-- Promo cards -->
+      <div class="grid md:grid-cols-3 gap-5">
+
+        <div class="promo-card rev" onclick="openComingSoon()">
+          <div class="absolute top-4 right-4 bg-red-600 text-white text-[9.5px] font-black px-3 py-0.5 rounded-full">20% OFF</div>
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
+               style="background:linear-gradient(135deg,rgba(166,127,56,.18),rgba(166,127,56,.03));">🛢️</div>
+          <h3 class="font-barlow text-2xl font-bold gt mb-1.5">Oil Change Special</h3>
+          <p class="text-xs leading-relaxed mb-4" style="color:#999;">Full synthetic oil change with free 21-point inspection.</p>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-barlow text-2xl font-black text-white">$39.99</span>
+              <span class="text-xs line-through ml-1.5" style="color:#383838;">$49.99</span>
+            </div>
+            <button class="btn-shine px-4 py-2 rounded-lg font-raj font-bold text-black text-sm"
+                    style="background:linear-gradient(135deg,#A67F38,#D9B573);">Book Now</button>
+          </div>
+        </div>
+
+        <div class="promo-card rev" style="transition-delay:.1s;" onclick="openComingSoon()">
+          <div class="absolute top-4 right-4 bg-red-600 text-white text-[9.5px] font-black px-3 py-0.5 rounded-full">15% OFF</div>
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
+               style="background:linear-gradient(135deg,rgba(166,127,56,.18),rgba(166,127,56,.03));">🔋</div>
+          <h3 class="font-barlow text-2xl font-bold gt mb-1.5">Battery Service</h3>
+          <p class="text-xs leading-relaxed mb-4" style="color:#999;">Testing, cleaning, and full replacement services available.</p>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-barlow text-2xl font-black text-white">$89.99</span>
+              <span class="text-xs line-through ml-1.5" style="color:#383838;">$105.99</span>
+            </div>
+            <button class="btn-shine px-4 py-2 rounded-lg font-raj font-bold text-black text-sm"
+                    style="background:linear-gradient(135deg,#A67F38,#D9B573);">Book Now</button>
+          </div>
+        </div>
+
+        <div class="promo-card rev" style="transition-delay:.2s;" onclick="openComingSoon()">
+          <div class="absolute top-4 right-4 text-[9.5px] font-black px-3 py-0.5 rounded-full text-black"
+               style="background:linear-gradient(135deg,#A67F38,#D9B573);">FREE</div>
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
+               style="background:linear-gradient(135deg,rgba(166,127,56,.18),rgba(166,127,56,.03));">🔍</div>
+          <h3 class="font-barlow text-2xl font-bold gt mb-1.5">Free Inspection</h3>
+          <p class="text-xs leading-relaxed mb-4" style="color:#999;">Comprehensive vehicle health check — no appointment needed.</p>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-barlow text-2xl font-black text-white">FREE</span>
+              <span class="text-xs line-through ml-1.5" style="color:#383838;">$29.99</span>
+            </div>
+            <button class="btn-shine px-4 py-2 rounded-lg font-raj font-bold text-black text-sm"
+                    style="background:linear-gradient(135deg,#A67F38,#D9B573);">Schedule</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Category pills -->
+      <div class="flex items-center gap-4 mt-14 rev">
+        <div class="flex-1 h-px" style="background:linear-gradient(90deg,transparent,rgba(166,127,56,.2));"></div>
+        <span class="text-[9.5px] tracking-[3px] uppercase" style="color:#666;">Browse by Category</span>
+        <div class="flex-1 h-px" style="background:linear-gradient(90deg,rgba(166,127,56,.2),transparent);"></div>
+      </div>
+      <div id="pills" class="flex flex-wrap gap-2.5 mt-5 justify-center rev"></div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════
+       ABOUT + CONTACT Combined
+  ════════════════════════════════════ -->
+  <section id="about-contact" style="padding:96px 0;background:linear-gradient(180deg,#101010,#080808);">
+    <div class="max-w-[1280px] mx-auto px-6">
+
+      <!-- Header -->
+      <div class="text-center mb-16 rev">
+        <div class="text-[10.5px] tracking-[4px] uppercase mb-2" style="color:#F2DB94;">Who We Are & How To Reach Us</div>
+        <h2 class="font-barlow font-black"
+            style="font-size:clamp(38px,5vw,62px);line-height:1;letter-spacing:-1px;">
+          About <span class="gt">REV</span> <span class="text-white">& Contact</span>
+        </h2>
+      </div>
+
+      <!-- About grid -->
+      <div class="grid lg:grid-cols-2 gap-16 items-center mb-20">
+        <div class="rev lft">
+          <p class="text-sm leading-relaxed mb-3" style="color:#aaa;">
+            REV is your trusted partner in automotive service excellence. With 15+ years of combined experience,
+            we've built a platform that truly revolutionizes how shops operate.
+          </p>
+          <p class="text-sm leading-relaxed mb-8" style="color:#999;font-style:italic;">
+            From booking to billing — we empower auto repair businesses with technology,
+            streamlined workflows, and customer satisfaction.
+          </p>
+          <div class="grid grid-cols-3 gap-2.5 mb-8">
+            <div class="about-stat rev sc" style="transition-delay:.1s;">
+              <div class="font-barlow text-3xl font-black gt">500+</div>
+              <div class="text-[10.5px] mt-1" style="color:#aaa;">Active Shops</div>
+            </div>
+            <div class="about-stat rev sc" style="transition-delay:.2s;">
+              <div class="font-barlow text-3xl font-black gt">50K+</div>
+              <div class="text-[10.5px] mt-1" style="color:#aaa;">Repairs Done</div>
+            </div>
+            <div class="about-stat rev sc" style="transition-delay:.3s;">
+              <div class="font-barlow text-3xl font-black gt">98%</div>
+              <div class="text-[10.5px] mt-1" style="color:#aaa;">Satisfaction</div>
+            </div>
+          </div>
+          <button onclick="openModal('all features')"
+                  class="btn-shine px-7 py-3 rounded-lg font-raj font-bold text-black text-base flex items-center gap-2 w-fit"
+                  style="background:linear-gradient(135deg,#A67F38,#D9B573);">
+            Get Started Free <i class="fas fa-arrow-right text-xs"></i>
+          </button>
+        </div>
+
+        <div class="rev rgt relative">
+          <img src="https://images.unsplash.com/photo-1632823469850-1b0fabc8e00b?w=600&h=500&fit=crop"
+               alt="About REV" class="w-full rounded-2xl" style="border:1px solid rgba(166,127,56,.16);">
+          <div class="absolute inset-0 rounded-2xl"
+               style="background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.65));"></div>
+          <div class="absolute bottom-5 left-5 p-3.5 rounded-xl"
+               style="background:rgba(0,0,0,.82);border:1px solid rgba(166,127,56,.28);backdrop-filter:blur(14px);">
+            <div class="font-barlow text-lg font-black gt">15+ Years Experience</div>
+            <div class="text-[11px] mt-0.5" style="color:#aaa;">In automotive service technology</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact divider -->
+      <div class="flex items-center gap-5 mb-14 rev">
+        <div class="flex-1 h-px" style="background:linear-gradient(90deg,transparent,rgba(166,127,56,.2));"></div>
+        <span class="font-barlow text-2xl font-black gt">Get In Touch</span>
+        <div class="flex-1 h-px" style="background:linear-gradient(90deg,rgba(166,127,56,.2),transparent);"></div>
+      </div>
+
+      <!-- Contact grid -->
+      <div class="grid lg:grid-cols-2 gap-8">
+
+        <!-- Form -->
+        <div class="rev lft relative rounded-2xl overflow-hidden p-8"
+             style="background:linear-gradient(135deg,#131313,#0d0d0d);border:1px solid rgba(166,127,56,.16);">
+          <div class="absolute top-0 left-0 right-0 h-px"
+               style="background:linear-gradient(90deg,transparent,#A67F38,transparent);"></div>
+          <h3 class="font-barlow text-[26px] font-bold gt mb-5">Send a Message</h3>
+          <div class="flex flex-col gap-3.5">
+            <div>
+              <label class="block text-[9.5px] tracking-[2px] uppercase mb-2" style="color:#999;">Your Name</label>
+              <input type="text" class="ci" placeholder="John Doe">
+            </div>
+            <div>
+              <label class="block text-[9.5px] tracking-[2px] uppercase mb-2" style="color:#999;">Email</label>
+              <input type="email" class="ci" placeholder="john@example.com">
+            </div>
+            <div>
+              <label class="block text-[9.5px] tracking-[2px] uppercase mb-2" style="color:#999;">Message</label>
+              <textarea class="ci" rows="4" placeholder="How can we help?" style="resize:none;"></textarea>
+            </div>
+            <button class="btn-shine w-full py-3 rounded-lg font-raj font-bold text-black text-base"
+                    style="background:linear-gradient(135deg,#A67F38,#D9B573);">
+              Send Message <i class="fas fa-paper-plane ml-2 text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Info tiles -->
+        <div class="flex flex-col gap-3 rev rgt">
+
+          <div class="rounded-xl p-5 flex gap-3.5 items-start"
+               style="background:linear-gradient(135deg,#131313,#0d0d0d);border:1px solid rgba(166,127,56,.11);">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                 style="background:linear-gradient(135deg,rgba(166,127,56,.17),rgba(166,127,56,.03));">
+              <i class="fas fa-map-marker-alt" style="color:#F2DB94;"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-sm gt mb-1">Address</div>
+              <div class="text-xs leading-relaxed" style="color:#aaa;">123 Auto Street, Workshop City, ST 12345</div>
+            </div>
+          </div>
+
+          <div class="rounded-xl p-5 flex gap-3.5 items-start"
+               style="background:linear-gradient(135deg,#131313,#0d0d0d);border:1px solid rgba(166,127,56,.11);">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                 style="background:linear-gradient(135deg,rgba(166,127,56,.17),rgba(166,127,56,.03));">
+              <i class="fas fa-phone" style="color:#F2DB94;"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-sm gt mb-1">Phone</div>
+              <div class="text-xs" style="color:#aaa;">+1 (555) 123-4567</div>
+              <div class="text-xs" style="color:#aaa;">+1 (555) 987-6543</div>
+            </div>
+          </div>
+
+          <div class="rounded-xl p-5 flex gap-3.5 items-start"
+               style="background:linear-gradient(135deg,#131313,#0d0d0d);border:1px solid rgba(166,127,56,.11);">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                 style="background:linear-gradient(135deg,rgba(166,127,56,.17),rgba(166,127,56,.03));">
+              <i class="fas fa-envelope" style="color:#F2DB94;"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-sm gt mb-1">Email</div>
+              <div class="text-xs" style="color:#aaa;">info@rev-auto.com</div>
+              <div class="text-xs" style="color:#aaa;">support@rev-auto.com</div>
+            </div>
+          </div>
+
+          <div class="rounded-xl p-5 flex gap-3.5 items-start"
+               style="background:linear-gradient(135deg,#131313,#0d0d0d);border:1px solid rgba(166,127,56,.11);">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                 style="background:linear-gradient(135deg,rgba(166,127,56,.17),rgba(166,127,56,.03));">
+              <i class="fas fa-clock" style="color:#F2DB94;"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-sm gt mb-1">Hours</div>
+              <div class="text-xs" style="color:#aaa;">Mon – Fri: 8:00 AM – 6:00 PM</div>
+              <div class="text-xs" style="color:#aaa;">Sat: 9:00 AM – 4:00 PM</div>
+              <div class="text-xs" style="color:#666;">Sun: Closed</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="background:#050505;border-top:1px solid rgba(166,127,56,.09);padding:36px 24px;">
+    <div class="max-w-[1280px] mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center"
+             style="background:linear-gradient(135deg,#A67F38,#D9B573);">
+          <span class="font-barlow font-black text-black text-base">R</span>
+        </div>
+        <div>
+          <div class="font-barlow font-black text-base gt">REV Auto Repair</div>
+          <div class="text-[9.5px] tracking-wider" style="color:#555;">Management System</div>
+        </div>
+      </div>
+      <div class="text-xs" style="color:#666;">© 2024 REV Auto Repair. All rights reserved.</div>
+      <div class="flex gap-2">
+        <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+        <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+      </div>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+/* ═══════════════════════════════════════════════
+   REV AUTO REPAIR — Landing Page Scripts
+   landingpage.js
+═══════════════════════════════════════════════ */
+
+/* ══════════════════
+   COMING SOON MODAL
+══════════════════ */
+function openComingSoon() {
+  document.getElementById('comingSoonModal').classList.add('open');
+  setTimeout(() => { document.getElementById('csBar').style.width = '72%'; }, 100);
+}
+function closeComingSoon() {
+  document.getElementById('comingSoonModal').classList.remove('open');
+  document.getElementById('csBar').style.width = '0%';
+}
+
+/* ══════════════════
+   AUTH MODAL
+══════════════════ */
+function openModal(feature) {
+  document.getElementById('mfeat').textContent = feature || 'this feature';
+  document.getElementById('authModal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('authModal').classList.remove('open');
+}
+function requireAuth(feature) { openModal(feature); }
+
+/* ══════════════════
+   NOTIFICATION PANEL
+══════════════════ */
+function openNotif() {
+  document.getElementById('notifPanel').classList.add('open');
+  document.getElementById('notifOv').classList.add('open');
+}
+function closeNotif() {
+  document.getElementById('notifPanel').classList.remove('open');
+  document.getElementById('notifOv').classList.remove('open');
+}
+
+/* ══════════════════
+   ESC KEY
+══════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  closeNotif();
+  closeModal();
+  closeComingSoon();
+});
+
+/* ══════════════════
+   TICKER
+══════════════════ */
+(function buildTicker() {
+  const items = [
+    'New Promo: 20% Off Oil Change',
+    'Free Inspection — No Appointment Needed',
+    '247 Vehicles Serviced Today',
+    'Book Your Slot — Limited Availability',
+    'Trusted by 500+ Auto Shops',
+    '15% Off Battery Service',
+    'Shop Opens Soon — Get Notified',
+  ];
+  const track = document.getElementById('tickerTrack');
+  [...items, ...items].forEach(text => {
+    const span = document.createElement('span');
+    span.className = 't-item';
+    span.style.fontFamily = "'Rajdhani', sans-serif";
+    span.style.fontWeight = '600';
+    span.innerHTML = `<span style="width:4px;height:4px;border-radius:50%;background:#A67F38;display:inline-block;flex-shrink:0;"></span>${text}`;
+    track.appendChild(span);
+  });
+})();
+
+/* ══════════════════
+   CATEGORY PILLS
+══════════════════ */
+(function buildPills() {
+  const cats = ['Engine','Brakes','Suspension','Transmission','Electrical','Exhaust','Body Parts','Filters','Oils'];
+  const container = document.getElementById('pills');
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.textContent = cat;
+    btn.onclick = openComingSoon;
+    Object.assign(btn.style, {
+      padding: '8px 20px',
+      borderRadius: '999px',
+      fontSize: '13px',
+      fontFamily: "'DM Sans', sans-serif",
+      fontWeight: '500',
+      cursor: 'pointer',
+      transition: 'all .2s',
+      border: '1px solid rgba(166,127,56,.16)',
+      background: 'rgba(166,127,56,.025)',
+      color: '#585858',
+    });
+    btn.onmouseover = () => { btn.style.borderColor='#A67F38'; btn.style.color='#F2E1AE'; btn.style.background='rgba(166,127,56,.07)'; };
+    btn.onmouseout  = () => { btn.style.borderColor='rgba(166,127,56,.16)'; btn.style.color='#585858'; btn.style.background='rgba(166,127,56,.025)'; };
+    container.appendChild(btn);
+  });
+})();
+
+/* ══════════════════
+   SCROLL REVEAL
+══════════════════ */
+(function initReveal() {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
+  }, { threshold: 0.07 });
+  document.querySelectorAll('.rev').forEach(el => obs.observe(el));
+})();
+
+/* ══════════════════
+   NAV ACTIVE STATE
+══════════════════ */
+(function initNav() {
+  const links    = document.querySelectorAll('.nav-link');
+  const ids      = ['home', 'catalogue', 'about-contact'];
+  const sections = ids.map(id => document.getElementById(id));
+  window.addEventListener('scroll', () => {
+    const sy = window.scrollY + 90;
+    sections.forEach((sec, i) => {
+      if (sec && sec.offsetTop <= sy && sec.offsetTop + sec.offsetHeight > sy) {
+        links.forEach(l => l.classList.remove('active'));
+        if (links[i]) links[i].classList.add('active');
+      }
+    });
+  }, { passive: true });
+})();
+
+/* ══════════════════
+   SMOOTH SCROLL
+══════════════════ */
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const t = document.querySelector(a.getAttribute('href'));
+    if (t) t.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+/* ══════════════════
+   LIVE CLOCK
+══════════════════ */
+function updateClock() {
+  const el = document.getElementById('liveTime');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ══════════════════
+   LIVE FEED
+══════════════════ */
+const feedItems = [
+  { label:'Toyota Camry',  status:'In Service', color:'#10b981' },
+  { label:'Honda Civic',   status:'Diagnosing', color:'#A67F38' },
+  { label:'Ford F-150',    status:'Completed',  color:'#F2DB94' },
+  { label:'BMW 3 Series',  status:'Waiting',    color:'#8b5cf6' },
+  { label:'Kia Sorento',   status:'Invoiced',   color:'#F2DB94' },
+  { label:'Chevy Malibu',  status:'In Queue',   color:'#3b82f6' },
+];
+function renderFeed() {
+  const c = document.getElementById('liveFeed');
+  if (!c) return;
+  c.innerHTML = '';
+  feedItems.slice(0, 5).forEach((item, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;align-items:center;justify-content:space-between;
+      padding:4px 6px;border-radius:6px;background:rgba(255,255,255,.02);
+      animation:countUp .4s ease ${i * .08}s both;`;
+    row.innerHTML = `
+      <span style="font-size:11px;color:#aaa;font-family:'DM Sans',sans-serif;">${item.label}</span>
+      <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+        color:${item.color};font-family:'Rajdhani',sans-serif;">${item.status}</span>`;
+    c.appendChild(row);
+  });
+}
+renderFeed();
+setInterval(() => { feedItems.push(feedItems.shift()); renderFeed(); }, 4000);
+
+/* ══════════════════
+   CANVAS PARTICLES
+══════════════════ */
+(function initParticles() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;';
+  document.body.prepend(canvas);
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  class P {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * W; this.y = H + 10;
+      this.r = Math.random() * 1.4 + .4;
+      this.vy = -(Math.random() * .5 + .2);
+      this.vx = (Math.random() - .5) * .25;
+      this.life = 0; this.maxLife = Math.random() * 320 + 150;
+    }
+    update() {
+      this.x += this.vx; this.y += this.vy; this.life++;
+      const t = this.life / this.maxLife;
+      this.alpha = t < .1 ? t * 6 : t > .72 ? (1 - t) * 3.4 : .55;
+      if (this.life >= this.maxLife) this.reset();
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(166,127,56,${this.alpha})`;
+      ctx.fill();
+    }
+  }
+  const ps = Array.from({ length: 55 }, () => new P());
+  (function loop() { ctx.clearRect(0, 0, W, H); ps.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(loop); })();
+})();
+
+</script>
+</body>
+</html>

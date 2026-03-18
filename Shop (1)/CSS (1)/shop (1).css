@@ -1,0 +1,506 @@
+/* ============================================================
+   SHOP.CSS
+   Home page hero section, stats strip, shop page header,
+   filter buttons, search row, and product grid / cards.
+   ============================================================ */
+
+
+/* ── Hero Section ────────────────────────────────────────── */
+.hero {
+  min-height: calc(100vh - var(--nav-h));
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding: 4rem 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Radial gold ambient glow */
+.hero-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 70% 50%, rgba(201,168,76,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.04) 0%, transparent 50%);
+}
+
+/* Vertical divider line */
+.hero-bg-lines {
+  position: absolute; inset: 0; z-index: 0; overflow: hidden;
+}
+.hero-bg-lines::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 1px; height: 100%;
+  background: linear-gradient(to bottom, transparent, var(--gold-border), transparent);
+}
+
+.hero-left { position: relative; z-index: 1; }
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 2rem;
+  animation: fadeUp 0.8s ease both;
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 30px; height: 1px;
+  background: var(--gold);
+}
+
+.hero-h1 {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 6vw, 6.5rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: 1px;
+  color: var(--white);
+  animation: fadeUp 0.8s 0.1s ease both;
+}
+.hero-h1 strong {
+  font-weight: 900;
+  display: block;
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-divider {
+  width: 80px; height: 1px;
+  background: linear-gradient(to right, var(--gold), transparent);
+  margin: 2rem 0;
+  animation: fadeUp 0.8s 0.2s ease both;
+}
+
+.hero-p {
+  font-size: 1rem;
+  color: var(--silver);
+  line-height: 1.75;
+  max-width: 440px;
+  letter-spacing: 0.2px;
+  font-weight: 300;
+  animation: fadeUp 0.8s 0.3s ease both;
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  animation: fadeUp 0.8s 0.4s ease both;
+}
+
+/* Right column — framed image */
+.hero-right {
+  position: relative; z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 1.2s 0.3s ease both;
+}
+
+.hero-img-frame {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+}
+.hero-img-frame img {
+  width: 100%; height: 460px;
+  object-fit: cover;
+  filter: brightness(0.85) contrast(1.1);
+  display: block;
+}
+/* Offset border effect */
+.hero-img-frame::before {
+  content: '';
+  position: absolute;
+  top: -10px; left: -10px; right: 10px; bottom: 10px;
+  border: 1px solid var(--gold-border);
+  z-index: -1;
+}
+/* Bottom fade on image */
+.hero-img-frame::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(8,8,8,0.5) 0%, transparent 50%);
+}
+
+/* Caption tag overlaid on hero image */
+.hero-img-tag {
+  position: absolute;
+  bottom: 20px; left: 20px;
+  z-index: 2;
+  background: rgba(8, 8, 8, 0.9);
+  border: 1px solid var(--gold-border);
+  padding: 0.75rem 1.25rem;
+  backdrop-filter: blur(10px);
+}
+.hero-img-tag-label {
+  font-size: 0.68rem;
+  letter-spacing: 2.5px;
+  color: var(--gold);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.hero-img-tag-value {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-top: 3px;
+  letter-spacing: 0.5px;
+}
+
+
+/* ── Stats Strip ─────────────────────────────────────────── */
+.stats-strip {
+  border-top: 1px solid rgba(201, 168, 76, 0.15);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.stat-item {
+  padding: 2.5rem 2rem;
+  text-align: center;
+  border-right: 1px solid rgba(201, 168, 76, 0.1);
+  position: relative;
+}
+.stat-item:last-child { border-right: none; }
+
+/* Gold tick above each stat */
+.stat-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 1px; height: 3px;
+  background: var(--gold);
+}
+
+.stat-n {
+  font-family: var(--font-display);
+  font-size: 3.2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+.stat-l {
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 0.4rem;
+  font-weight: 500;
+}
+
+
+/* ── Shop Page Header ────────────────────────────────────── */
+.shop-bar {
+  padding: 3rem 3rem 2rem;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.shop-title {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+.shop-title span {
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+}
+
+/* ── Filter Pills ─────────────────────────────────────────── */
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.f-btn {
+  background: none;
+  border: 1px solid var(--steel);
+  color: var(--muted);
+  padding: 0.45rem 1.1rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all var(--transition);
+}
+.f-btn:hover { border-color: var(--gold); color: var(--gold); }
+.f-btn.active {
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: var(--black);
+  border-color: transparent;
+}
+
+
+/* ── Search & Sort Row ───────────────────────────────────── */
+.search-row {
+  padding: 1.5rem 3rem;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.search-wrap {
+  flex: 1;
+  position: relative;
+}
+.search-icon {
+  position: absolute;
+  left: 1rem; top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+.s-input {
+  width: 100%;
+  background: var(--charcoal);
+  border: 1px solid var(--steel);
+  border-radius: var(--radius);
+  color: var(--white);
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.s-input:focus { border-color: var(--gold); }
+.s-input::placeholder { color: var(--steel); }
+
+.sort-sel {
+  background: var(--charcoal);
+  border: 1px solid var(--steel);
+  color: var(--silver);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+
+/* ── Product Grid ────────────────────────────────────────── */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* spacing between slots so cards don’t touch */
+  gap: 1rem;
+  /* optional outer padding to keep cards off the container edges */
+  padding: 0.5rem;
+  /* drop the faint line effect now that there's more space */
+  background: none;
+}
+
+/* No results message */
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 6rem 2rem;
+  color: var(--muted);
+}
+.no-results .big {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  color: var(--steel);
+  margin-bottom: 1rem;
+}
+
+
+/* ── Product Card ────────────────────────────────────────── */
+.p-card {
+  background: var(--dark);
+  overflow: hidden;
+  transition: background var(--transition);
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+.p-card:hover { background: var(--charcoal); }
+
+/* Image wrapper */
+.p-img-wrap {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+}
+.p-img-wrap img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  filter: brightness(0.85) contrast(1.05) saturate(0.9);
+}
+.p-card:hover .p-img-wrap img { transform: scale(1.06); }
+
+.p-img-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(8,8,8,0.7) 0%, rgba(8,8,8,0.1) 50%, transparent 100%);
+}
+
+.p-badge {
+  position: absolute;
+  top: 14px; left: 14px;
+  z-index: 2;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: var(--black);
+  font-size: 0.58rem;
+  font-weight: 900;
+  padding: 0.25rem 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.p-category-tag {
+  position: absolute;
+  bottom: 14px; right: 14px;
+  z-index: 2;
+  border: 1px solid var(--gold-border);
+  background: rgba(8, 8, 8, 0.8);
+  color: var(--gold);
+  font-size: 0.58rem;
+  padding: 0.2rem 0.6rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+}
+
+/* Card body */
+.p-body {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.p-sku {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 1.5px;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.p-name {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.25;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.3px;
+}
+
+.p-desc {
+  font-size: 0.875rem;
+  color: var(--silver);
+  line-height: 1.65;
+  flex: 1;
+  margin-bottom: 1rem;
+  font-weight: 300;
+}
+
+.p-stock-warn {
+  font-size: 0.72rem;
+  color: #c87533;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+/* Price + CTA row */
+.p-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(201, 168, 76, 0.1);
+}
+
+.p-price {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.p-orig {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-decoration: line-through;
+  margin-left: 6px;
+  font-family: var(--font-sans);
+}
+
+.add-btn {
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: var(--black);
+  border: none;
+  width: 42px; height: 42px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  font-weight: 900;
+}
+.add-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(201, 168, 76, 0.4);
+}
+
+.out-label {
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--steel);
+}
+
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hero                { grid-template-columns: 1fr; }
+  .hero-right          { display: none; }
+  .shop-bar,
+  .search-row          { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+@media (max-width: 600px) {
+  .stats-strip { grid-template-columns: repeat(2, 1fr); }
+}

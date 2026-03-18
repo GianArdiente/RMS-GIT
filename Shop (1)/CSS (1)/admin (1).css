@@ -1,0 +1,417 @@
+/* ============================================================
+   ADMIN.CSS
+   Admin login card, dashboard shell, sidebar navigation,
+   stat cards, data tables, and inventory controls.
+   ============================================================ */
+
+
+/* ── Login Screen ────────────────────────────────────────── */
+.admin-login-wrap {
+  min-height: calc(100vh - var(--nav-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+/* Ambient glow behind the card */
+.admin-login-wrap::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 50% 60% at 50% 50%, rgba(201,168,76,0.05) 0%, transparent 70%);
+}
+
+.login-card {
+  background: var(--charcoal);
+  border: 1px solid var(--gold-border);
+  padding: 3rem;
+  width: 400px;
+  max-width: 95vw;
+  position: relative;
+  z-index: 1;
+  animation: scaleIn 0.4s ease both;
+}
+/* Gold top-line accent */
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--gold), transparent);
+}
+
+.login-card-logo {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: 5px;
+  margin-bottom: 0.25rem;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.login-card-sub {
+  font-size: 0.75rem;
+  letter-spacing: 2.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 2.5rem;
+  font-weight: 500;
+}
+
+.login-hint {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 1.5rem;
+}
+.login-hint code {
+  background: var(--graphite);
+  color: var(--gold);
+  padding: 0.1rem 0.4rem;
+  font-family: var(--font-mono);
+}
+
+.login-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+
+/* ── Dashboard Shell ─────────────────────────────────────── */
+.admin-shell { display: none; }
+.admin-shell.visible { display: block; }
+
+/* Top bar inside admin */
+.admin-top {
+  background: var(--charcoal);
+  border-bottom: 1px solid var(--gold-border);
+  padding: 0 2rem;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-top-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+
+.admin-top-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-top-user {
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+.admin-top-user strong { color: var(--gold); }
+
+.logout-btn {
+  background: none;
+  border: 1px solid var(--steel);
+  color: var(--muted);
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  font-weight: 600;
+  transition: all var(--transition);
+}
+.logout-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+
+/* ── Two-Column Layout ───────────────────────────────────── */
+.admin-body {
+  display: flex;
+  min-height: calc(100vh - var(--nav-h) - 52px);
+}
+
+
+/* ── Sidebar Navigation ──────────────────────────────────── */
+.admin-nav {
+  width: 210px;
+  background: var(--charcoal);
+  border-right: 1px solid rgba(201, 168, 76, 0.1);
+  padding: 1.5rem 0;
+  flex-shrink: 0;
+}
+
+.a-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all var(--transition);
+}
+.a-nav-item:hover {
+  color: var(--silver);
+  background: rgba(255, 255, 255, 0.02);
+}
+.a-nav-item.active {
+  color: var(--gold);
+  border-left-color: var(--gold);
+  background: var(--gold-glow);
+}
+
+
+/* ── Content Area ────────────────────────────────────────── */
+.admin-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+
+/* ── Tab Visibility ──────────────────────────────────────── */
+.a-tab { display: none; }
+.a-tab.active { display: block; animation: fadeIn 0.3s ease; }
+
+
+/* ── Dashboard Stat Cards ────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.dash-card {
+  background: var(--charcoal);
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+/* Coloured left accent bar */
+.dash-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: linear-gradient(to bottom, var(--gold), var(--gold-dark));
+}
+.dash-card.alert::before {
+  background: linear-gradient(to bottom, #c87533, #a05020);
+}
+
+.dc-label {
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.dc-val {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+.dash-card.alert .dc-val {
+  background: linear-gradient(135deg, #e8953c, #c87533);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dc-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+  font-weight: 400;
+}
+
+
+/* ── Section Header ──────────────────────────────────────── */
+.sec-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+}
+
+.sec-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--white);
+}
+
+
+/* ── Data Tables ─────────────────────────────────────────── */
+.a-table { width: 100%; border-collapse: collapse; }
+
+.a-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 700;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+}
+
+.a-table td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.05);
+  font-size: 0.875rem;
+  vertical-align: middle;
+  line-height: 1.5;
+}
+
+.a-table tr:hover td { background: rgba(201, 168, 76, 0.02); }
+
+.td-img {
+  width: 52px; height: 40px;
+  object-fit: cover;
+  filter: brightness(0.85);
+}
+
+/* Status badges */
+.st-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.st-in  { background: rgba(100,200,100,0.08); color: #6dc87a; border: 1px solid rgba(100,200,100,0.2); }
+.st-low { background: rgba(200,120,50,0.1);   color: #c87533; border: 1px solid rgba(200,120,50,0.2); }
+.st-out { background: rgba(200,60,60,0.08);   color: #c84444; border: 1px solid rgba(200,60,60,0.2); }
+
+/* Row action buttons */
+.a-edit-btn {
+  background: none;
+  border: 1px solid var(--steel);
+  color: var(--muted);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.a-edit-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+.a-del-btn {
+  background: none;
+  border: 1px solid rgba(200, 60, 60, 0.3);
+  color: #c84444;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.a-del-btn:hover { background: rgba(200, 60, 60, 0.08); }
+
+
+/* ── Inventory Adjust Controls ───────────────────────────── */
+.inv-grp {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.inv-b {
+  background: var(--graphite);
+  border: 1px solid var(--steel);
+  color: var(--white);
+  width: 26px; height: 26px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: border-color var(--transition);
+}
+.inv-b:hover { border-color: var(--gold); }
+
+.inv-b-plus {
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: var(--black);
+  font-weight: 900;
+  border: none;
+}
+.inv-b-plus:hover { opacity: 0.88; }
+
+.inv-b-ten {
+  background: none;
+  border: 1px solid var(--steel);
+  color: var(--muted);
+  padding: 0 8px;
+  height: 26px;
+  border-radius: 2px;
+  font-size: 0.65rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.inv-b-ten:hover { border-color: var(--gold); color: var(--gold); }
+
+
+/* ── Orders placeholder ──────────────────────────────────── */
+.orders-placeholder {
+  text-align: center;
+  padding: 4rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .admin-body { flex-direction: column; }
+
+  .admin-nav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+    padding: 0.5rem 0;
+    display: flex;
+    overflow-x: auto;
+  }
+  .a-nav-item {
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .a-nav-item.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--gold);
+  }
+}

@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>REV — Reports</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config={theme:{extend:{
+  colors:{gold:{DEFAULT:'#F2DB94',dark:'#A67F38',deeper:'#7A5C20',light:'#F2E1AE',mid:'#D9B573'},ink:{DEFAULT:'#080808',1:'#0b0b0b',2:'#111111',3:'#141414',4:'#1a1a1a',5:'#222222'}},
+  fontFamily:{condensed:['"Barlow Condensed"','sans-serif'],sans:['"DM Sans"','sans-serif'],raj:['Rajdhani','sans-serif']},
+  keyframes:{
+    fadeUp:{from:{opacity:'0',transform:'translateY(14px)'},to:{opacity:'1',transform:'translateY(0)'}},
+    glowG:{'0%,100%':{boxShadow:'0 0 0 0 rgba(16,185,129,.5)'},'50%':{boxShadow:'0 0 0 6px rgba(16,185,129,0)'}},
+    slideIn:{from:{opacity:'0',transform:'translateX(20px)'},to:{opacity:'1',transform:'translateX(0)'}},
+  },
+  animation:{fadeUp:'fadeUp .35s ease both',glowG:'glowG 1.8s infinite',slideIn:'slideIn .3s ease both'}
+}}}
+</script>
+<style>
+*{box-sizing:border-box}
+body{overflow:hidden}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#A67F38;border-radius:2px}
+.gt{background:linear-gradient(135deg,#F2E1AE,#F2DB94,#A67F38);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.card-shine{position:relative}
+.card-shine::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(166,127,56,.22),transparent);pointer-events:none;z-index:1}
+.ni-active{background:linear-gradient(90deg,rgba(166,127,56,.15),rgba(166,127,56,.02));border:1px solid rgba(166,127,56,.22);color:#F2DB94}
+.ni-bar{position:absolute;left:-7px;top:22%;height:56%;width:3px;border-radius:0 2px 2px 0;background:linear-gradient(180deg,#A67F38,#F2DB94)}
+.tog-wrap{display:inline-flex;align-items:center;gap:10px;padding:5px 12px;border-radius:8px;background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:all .3s;user-select:none}
+.tog-wrap:hover{background:linear-gradient(135deg,rgba(166,127,56,.12),rgba(166,127,56,.06));border-color:rgba(166,127,56,.25)}
+.tog-wrap:has(input:checked){background:linear-gradient(135deg,rgba(166,127,56,.2),rgba(166,127,56,.1));border-color:rgba(166,127,56,.4);box-shadow:0 2px 8px rgba(166,127,56,.2)}
+.tog-track{width:40px;height:22px;background:rgba(255,255,255,.12);border-radius:11px;border:2px solid rgba(255,255,255,.18);position:relative;transition:all .3s;flex-shrink:0}
+.tog-knob{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#e0e0e0,#bdbdbd);position:absolute;top:2px;left:2px;transition:left .25s cubic-bezier(.68,-.55,.265,1.55);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+input:checked~.tog-track{background:linear-gradient(135deg,#A67F38,#D9B573);border-color:#A67F38;box-shadow:0 0 10px rgba(166,127,56,.5)}
+input:checked~.tog-track .tog-knob{left:20px;background:linear-gradient(135deg,#fff,#f5f5f5)}
+.chart-btn{padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#fff;font-size:.8rem;cursor:pointer;transition:all .2s;font-family:'Rajdhani',sans-serif;font-weight:700;white-space:nowrap}
+.chart-btn:hover{background:rgba(166,127,56,.18);border-color:rgba(166,127,56,.4);transform:translateY(-1px)}
+.chart-btn.active{background:rgba(166,127,56,.28);border-color:rgba(166,127,56,.55);box-shadow:0 3px 10px rgba(166,127,56,.2)}
+.page-btn{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.08);padding:5px 9px;border-radius:7px;cursor:pointer;font-size:.8rem;font-family:'Rajdhani',sans-serif;font-weight:700;transition:transform .15s}
+.page-btn:hover:not(:disabled){transform:translateY(-2px)}
+.page-btn:disabled{opacity:.4;cursor:default}
+.page-btn.curr{background:linear-gradient(135deg,#A67F38,#D9B573);border-color:transparent;color:#080808;box-shadow:0 4px 12px rgba(166,127,56,.25)}
+
+/* Generic modal */
+.rev-modal{position:fixed;inset:0;z-index:9999;display:none}
+.rev-modal.open{display:block}
+.rev-modal__bd{position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px)}
+.rev-modal__panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(500px,93%);max-height:82vh;overflow:auto;background:linear-gradient(160deg,#161616,#0d0d0d);color:#fff;border-radius:16px;padding:24px;box-shadow:0 16px 60px rgba(0,0,0,.9);border:1px solid rgba(166,127,56,.18)}
+@keyframes modalIn{from{opacity:0;transform:translate(-50%,-60%)}to{opacity:1;transform:translate(-50%,-50%)}}
+.rev-modal.open .rev-modal__panel{animation:modalIn .28s ease-out}
+
+/* Compare modal */
+#compareModal{display:none;position:fixed;z-index:1001;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,93%);background:linear-gradient(160deg,#161616,#0d0d0d);border:1px solid rgba(166,127,56,.22);border-radius:16px;padding:22px;box-shadow:0 20px 70px rgba(0,0,0,.9);animation:modalIn .28s ease-out}
+#compareOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;backdrop-filter:blur(3px)}
+
+/* Events modal */
+#eventsModal{display:none;position:fixed;z-index:1000;left:50%;top:50%;transform:translate(-50%,-50%);width:96%;max-width:1080px;max-height:90vh;overflow-y:auto;background:linear-gradient(135deg,rgba(15,6,25,.97),rgba(8,4,14,.98));border:1px solid rgba(166,127,56,.22);border-radius:18px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.85);animation:modalIn .3s ease-out}
+#eventsOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:999}
+
+/* Export panel */
+.exp-panel{position:fixed;right:-480px;top:57px;width:360px;max-width:calc(100% - 20px);height:calc(100% - 97px);background:rgba(8,8,8,.97);backdrop-filter:blur(16px);color:#fff;border-left:1px solid rgba(166,127,56,.14);box-shadow:-10px 18px 48px rgba(0,0,0,.6);padding:18px;z-index:9999;transition:right .32s cubic-bezier(.2,.9,.2,1),opacity .25s;border-radius:10px 0 0 10px;overflow:auto;opacity:0;display:flex;flex-direction:column;gap:14px}
+.exp-panel.open{right:10px;opacity:1}
+.exp-panel.closing{right:-480px!important;opacity:0!important}
+.exp-prog{height:7px;background:rgba(255,255,255,.04);border-radius:5px;overflow:hidden}
+.exp-prog-fill{display:block;height:100%;width:0%;background:linear-gradient(90deg,#A67F38,#F2DB94);transition:width 220ms ease}
+
+.tr-hover:hover{background:rgba(166,127,56,.05)}
+.day-slot{transition:box-shadow .12s,transform .1s,background .12s,border-color .12s;cursor:pointer}
+.day-slot.active-day{box-shadow:0 6px 18px rgba(166,127,56,.2);transform:translateY(-4px);background:linear-gradient(180deg,rgba(166,127,56,.12),rgba(166,127,56,.04))!important;border-color:rgba(166,127,56,.3)!important}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23A67F38'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px!important;-webkit-appearance:none;appearance:none}
+.yr-step{display:inline-flex;align-items:center;border:1px solid rgba(166,127,56,.28);border-radius:8px;overflow:hidden}
+.yr-step button{background:rgba(166,127,56,.08);border:none;color:#F2DB94;padding:5px 11px;cursor:pointer;font-size:1rem;line-height:1;transition:background .15s;font-family:'Rajdhani',sans-serif;font-weight:700}
+.yr-step button:hover{background:rgba(166,127,56,.22)}
+.yr-step span{padding:4px 14px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.88rem;color:#F2DB94;background:rgba(0,0,0,.25);min-width:60px;text-align:center;border-left:1px solid rgba(166,127,56,.18);border-right:1px solid rgba(166,127,56,.18)}
+.no-data-box{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(8,8,8,.88);border-radius:8px;z-index:9}
+.no-data-box i{font-size:2.2rem;color:rgba(255,255,255,.1)}
+.no-data-box span{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.95rem;color:rgba(255,255,255,.2);letter-spacing:.06em}
+.no-data-box small{font-family:'Rajdhani',sans-serif;font-size:.75rem;color:rgba(255,255,255,.12)}
+.sbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:20px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.72rem}
+.sb-completed{background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.2)}
+.sb-walkin{background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.18)}
+.sb-online{background:rgba(168,85,247,.1);color:#c084fc;border:1px solid rgba(168,85,247,.18)}
+.sb-pending{background:rgba(234,179,8,.1);color:#fbbf24;border:1px solid rgba(234,179,8,.18)}
+.sb-cancelled{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.16)}
+
+/* Compare week cards */
+.cmp-card{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);cursor:pointer;transition:all .2s;font-family:'Rajdhani',sans-serif}
+.cmp-card:hover{border-color:rgba(166,127,56,.4);background:rgba(166,127,56,.08);transform:translateY(-2px)}
+.cmp-card.selected{border-color:#A67F38;background:rgba(166,127,56,.15);box-shadow:0 4px 14px rgba(166,127,56,.2)}
+.cmp-card .wk-num{font-size:1.4rem;font-weight:900;color:#F2DB94;line-height:1}
+.cmp-metric-btn{padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.6);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .18s;user-select:none}
+.cmp-metric-btn:hover{border-color:rgba(166,127,56,.35);background:rgba(166,127,56,.1);color:#F2DB94}
+.cmp-metric-btn.sel{background:rgba(166,127,56,.22);border-color:#A67F38;color:#F2DB94;box-shadow:0 2px 10px rgba(166,127,56,.2)}
+</style>
+</head>
+<body class="bg-ink font-sans text-white" style="height:100vh">
+
+<!-- LEGEND MODAL -->
+<div id="revLegendModal" class="rev-modal">
+  <div class="rev-modal__bd" onclick="closeLegend()"></div>
+  <div class="rev-modal__panel">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="revLegendTitle" class="font-condensed text-xl font-black gt">Chart Legend</h3>
+      <button onclick="closeLegend()" class="text-white/40 hover:text-gold text-xl bg-transparent border-0 cursor-pointer">&times;</button>
+    </div>
+    <div id="revLegendContent" class="flex flex-col gap-2"></div>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div id="compareOverlay" onclick="closeCompareModal()"></div>
+<div id="compareModal">
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <h3 class="font-condensed text-2xl font-black gt">Compare Weeks</h3>
+      <p class="text-xs text-white/35 font-raj mt-0.5">Select a week to overlay on the current chart</p>
+    </div>
+    <button onclick="closeCompareModal()" class="text-white/35 hover:text-red-400 text-2xl leading-none bg-transparent border-0 cursor-pointer">&times;</button>
+  </div>
+  <!-- Current week info -->
+  <div class="mb-4 px-3 py-2 rounded-lg text-xs font-raj" style="background:rgba(166,127,56,.08);border:1px solid rgba(166,127,56,.2)">
+    <span class="text-gold-dark uppercase tracking-widest text-[9px]">Currently viewing:</span>
+    <span id="cmpCurrentLabel" class="text-gold ml-2 font-bold">—</span>
+  </div>
+  <!-- Metric to compare -->
+  <div class="mb-4">
+    <label class="text-[9px] font-raj uppercase tracking-widest text-white/30 mb-2 block">Metric to compare</label>
+    <div class="flex gap-2 flex-wrap" id="cmpMetricGroup">
+      <label class="cmp-metric-btn" onclick="setCmpMetric(this,'bookings')"><input type="radio" name="cmpMetric" value="bookings" checked class="sr-only">Bookings</label>
+      <label class="cmp-metric-btn" onclick="setCmpMetric(this,'jobOrders')"><input type="radio" name="cmpMetric" value="jobOrders" class="sr-only">Job Orders</label>
+      <label class="cmp-metric-btn" onclick="setCmpMetric(this,'walkIns')"><input type="radio" name="cmpMetric" value="walkIns" class="sr-only">Walk-ins</label>
+      <label class="cmp-metric-btn" onclick="setCmpMetric(this,'onlineSales')"><input type="radio" name="cmpMetric" value="onlineSales" class="sr-only">Online Sales</label>
+      <label class="cmp-metric-btn" onclick="setCmpMetric(this,'revenue')"><input type="radio" name="cmpMetric" value="revenue" class="sr-only">Revenue</label>
+    </div>
+  </div>
+  <!-- Week picker -->
+  <label class="text-[9px] font-raj uppercase tracking-widest text-white/30 mb-2 block">Select comparison week</label>
+  <div id="cmpWeekGrid" class="grid grid-cols-5 gap-2 mb-5"></div>
+  <!-- Actions -->
+  <div class="flex gap-2">
+    <button onclick="closeCompareModal()" class="flex-1 py-2.5 rounded-lg text-xs font-raj font-bold text-white/50" style="background:transparent;border:1px solid rgba(255,255,255,.07)">Cancel</button>
+    <button onclick="applyCompare()" class="flex-1 py-2.5 rounded-lg text-xs font-raj font-bold text-ink" style="background:linear-gradient(135deg,#A67F38,#D9B573)">Apply Comparison</button>
+  </div>
+</div>
+
+<!-- EVENTS MODAL -->
+<div id="eventsOverlay" onclick="closeEventsModal()"></div>
+<div id="eventsModal">
+  <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/[.06]">
+    <h2 class="font-condensed text-3xl font-black gt">Notable Shop Events</h2>
+    <button onclick="closeEventsModal()" class="text-white/40 hover:text-red-400 text-3xl leading-none bg-transparent border-0 cursor-pointer">&times;</button>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm" style="min-width:860px">
+      <thead>
+        <tr style="background:linear-gradient(90deg,#A67F38,#D9B573)">
+          <th class="px-3 py-2.5 text-ink font-raj text-[10px] tracking-widest uppercase text-center w-10"></th>
+          <th class="px-3 py-2.5 text-ink font-raj text-[10px] tracking-widest uppercase text-left">Event</th>
+          <th class="px-3 py-2.5 text-ink font-raj text-[10px] tracking-widest uppercase">Date</th>
+          <th class="px-3 py-2.5 text-ink font-raj text-[10px] tracking-widest uppercase">Bookings</th>
+          <th class="px-3 py-2.5 text-ink font-raj text-[10px] tracking-widest uppercase">Job Orders</th>
+          <th class="px-3 py-2.5 text-ink font-raj text-[10px] tracking-widest uppercase">Walk-ins</th>
+          <th class="px-3 py-2.5 text-ink font-raj text-[10px] tracking-widest uppercase">Online Sales</th>
+          <th class="px-3 py-2.5 text-ink font-raj text-[10px] tracking-widest uppercase">Revenue</th>
+          <th class="px-3 py-2.5 text-ink font-raj text-[10px] tracking-widest uppercase">Cancels</th>
+        </tr>
+      </thead>
+      <tbody id="eventsTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- EXPORT PANEL -->
+<div id="exportPanel" class="exp-panel">
+  <div class="flex items-center justify-between">
+    <h3 class="font-condensed text-lg font-black gt">Export Reports</h3>
+    <button onclick="closeExportPanel()" class="text-white/40 hover:text-gold text-xl bg-transparent border-0 cursor-pointer">&times;</button>
+  </div>
+  <p class="text-xs text-white/45 leading-relaxed">Choose format, then click <strong class="text-white/80">Start Export</strong>.</p>
+  <div class="flex gap-4">
+    <label class="flex items-center gap-2 text-sm cursor-pointer text-white/75"><input type="radio" name="exp_type" value="pdf" checked> PDF</label>
+    <label class="flex items-center gap-2 text-sm cursor-pointer text-white/75"><input type="radio" name="exp_type" value="excel"> Excel</label>
+  </div>
+  <label class="flex items-center gap-2 text-sm cursor-pointer text-white/65"><input type="checkbox" id="exp_inc_events" checked> Include Shop Events</label>
+  <div>
+    <label class="text-[10px] font-raj uppercase tracking-widest text-white/30 mb-1 block">Filename</label>
+    <input id="exp_filename" type="text" value="REV_AutoShop_Report" class="w-full px-3 py-2 rounded-lg text-sm text-white outline-none" style="background:#141414;border:1px solid rgba(166,127,56,.2)">
+  </div>
+  <div class="exp-prog"><i id="expProgFill" class="exp-prog-fill"></i></div>
+  <div id="expStatus" class="text-xs text-white/40">Ready</div>
+  <div class="flex gap-2 mt-auto">
+    <button onclick="closeExportPanel()" class="flex-1 py-2 rounded-lg text-xs font-raj font-bold text-white/60" style="background:transparent;border:1px solid rgba(255,255,255,.08)">Close</button>
+    <button onclick="startExport()" class="flex-1 py-2 rounded-lg text-xs font-raj font-bold text-ink" style="background:linear-gradient(135deg,#A67F38,#D9B573)">Start Export</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="flex h-screen overflow-hidden">
+  <!-- SIDEBAR -->
+  <aside class="w-[248px] flex-shrink-0 flex flex-col border-r border-gold-dark/[.1] z-50" style="background:linear-gradient(180deg,#0b0b0b,#111111)">
+    <div class="px-3.5 py-3 flex items-center gap-2.5 flex-shrink-0 border-b border-gold-dark/[.07]">
+      <div class="w-[35px] h-[35px] rounded-[9px] flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#A67F38,#D9B573)">
+        <span class="font-condensed text-xl font-black text-ink leading-none">R</span>
+      </div>
+      <div>
+        <div class="gt font-condensed text-lg font-black tracking-wide leading-none">REV</div>
+        <div class="text-[9px] tracking-[2.5px] uppercase text-ink-5 font-raj">Auto Repair</div>
+      </div>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-1.5">
+      <div class="px-3.5 pt-2 pb-1 text-[9px] tracking-[3px] uppercase font-raj font-black text-ink-5">Main</div>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-th-large w-4 text-center text-sm"></i><span>Dashboard</span></a>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-calendar-check w-4 text-center text-sm"></i><span>Booking</span><span class="ml-auto text-[9px] font-black text-ink px-1.5 py-0.5 rounded-full font-raj" style="background:linear-gradient(135deg,#A67F38,#D9B573)">15</span></a>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-folder w-4 text-center text-sm"></i><span>Records</span></a>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-clipboard-list w-4 text-center text-sm"></i><span>Job Orders</span><span class="ml-auto text-[9px] font-black text-ink px-1.5 py-0.5 rounded-full font-raj" style="background:linear-gradient(135deg,#A67F38,#D9B573)">30</span></a>
+      <div class="px-3.5 pt-2.5 pb-1 text-[9px] tracking-[3px] uppercase font-raj font-black text-ink-5">Publish</div>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-store w-4 text-center text-sm"></i><span>Shop</span></a>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-newspaper w-4 text-center text-sm"></i><span>Posts &amp; News</span></a>
+      <div class="px-3.5 pt-2.5 pb-1 text-[9px] tracking-[3px] uppercase font-raj font-black text-ink-5">People</div>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-user w-4 text-center text-sm"></i><span>Customers</span></a>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-wrench w-4 text-center text-sm"></i><span>Technicians</span></a>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-id-card w-4 text-center text-sm"></i><span>Staffs</span></a>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-user-lock w-4 text-center text-sm"></i><span>Accounts</span></a>
+      <div class="px-3.5 pt-2.5 pb-1 text-[9px] tracking-[3px] uppercase font-raj font-black text-ink-5">Finance</div>
+      <a class="flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-[#484848] text-sm font-medium hover:text-[#bbb] transition-all" href="#"><i class="fas fa-file-alt w-4 text-center text-sm"></i><span>Receipts</span></a>
+      <div class="px-3.5 pt-2.5 pb-1 text-[9px] tracking-[3px] uppercase font-raj font-black text-ink-5">Analytics</div>
+      <div class="ni-active relative flex items-center gap-2.5 mx-1.5 my-0.5 px-3 py-2 rounded-xl cursor-pointer text-sm font-semibold">
+        <span class="ni-bar"></span>
+        <i class="fas fa-chart-bar w-4 text-center text-sm" style="color:#F2DB94"></i>
+        <span class="text-gold">Reports</span>
+      </div>
+    </nav>
+    <div class="p-2 flex-shrink-0">
+      <div class="px-2.5 py-2 rounded-[9px]" style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.11)">
+        <div class="flex items-center gap-1.5 mb-0.5">
+          <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-glowG"></div>
+          <span class="font-raj font-black text-[9px] tracking-[2px] uppercase text-emerald-400">Shop Open</span>
+        </div>
+        <div class="text-[10px] text-ink-5">All systems running</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN COLUMN -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- TOPBAR -->
+    <header class="h-[57px] flex-shrink-0 flex items-center justify-between px-4 gap-2 sticky top-0 z-40" style="background:rgba(8,8,8,.97);border-bottom:1px solid rgba(166,127,56,.1);backdrop-filter:blur(20px)">
+      <div class="flex-shrink-0">
+        <div class="text-[9px] tracking-[3px] uppercase text-ink-5 font-raj">REV Auto Repair</div>
+        <div class="gt font-condensed text-base font-black leading-tight">Reports &amp; Analytics</div>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <select id="recordType" onchange="switchSection()" class="font-raj font-bold text-xs text-gold-light pl-3 py-2 rounded-lg outline-none cursor-pointer" style="background:#141414;border:1px solid rgba(166,127,56,.22)">
+          <option value="history">Daily History</option>
+          <option value="weekly">Weekly Records</option>
+          <option value="monthly">Monthly Records</option>
+        </select>
+        <label class="flex items-center gap-1.5 text-xs font-raj font-semibold text-white/50 cursor-pointer select-none">
+          <input type="checkbox" id="showEventsCheckbox" onchange="toggleEventsModal()">
+          <span>Notable Events</span>
+        </label>
+        <button onclick="openExportPanel()" class="flex items-center gap-1.5 px-3 py-2 rounded-lg font-raj font-bold text-xs text-ink" style="background:linear-gradient(135deg,#A67F38,#D9B573)">
+          <i class="fas fa-download text-[10px]"></i> Export
+        </button>
+        <div id="dateFilterWrap" class="flex items-center gap-1.5">
+          <select id="dateFilterType" class="font-raj font-bold text-xs text-white/60 px-2 py-1.5 rounded-lg outline-none" style="background:#141414;border:1px solid rgba(255,255,255,.08)">
+            <option value="day">Day</option><option value="week">Week</option><option value="month">Month</option>
+          </select>
+          <input type="date" id="dateInput" class="font-raj text-xs px-2 py-1.5 rounded-lg outline-none text-white/55" style="background:#141414;border:1px solid rgba(255,255,255,.08);color-scheme:dark">
+          <button onclick="applyDateFilter()" class="px-2.5 py-1.5 rounded-lg text-xs font-raj font-bold text-ink" style="background:linear-gradient(135deg,#A67F38,#D9B573)">Apply</button>
+          <button onclick="clearDateFilter()" class="px-2.5 py-1.5 rounded-lg text-xs font-raj font-semibold text-white/55" style="background:#1a1a1a;border:1px solid rgba(255,255,255,.07)">Clear</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div id="mainContent" class="flex-1 overflow-y-auto p-4" style="background:#080808">
+
+      <!-- HISTORY -->
+      <section id="sec-history" class="animate-fadeUp">
+        <div class="card-shine rounded-xl overflow-hidden mb-3" style="background:linear-gradient(135deg,#141414,#0e0e0e);border:1px solid rgba(166,127,56,.1)">
+          <div class="px-3 py-2.5 flex items-center justify-between border-b border-white/[.03]">
+            <span class="font-raj font-bold text-[10px] tracking-widest uppercase text-gold-dark">Daily Transaction History</span>
+            <span id="historyCountLabel" class="font-raj text-xs text-white/25">-- records</span>
+          </div>
+          <div id="historyTableWrapper" style="max-height:55vh;overflow-y:auto;overflow-x:auto">
+            <table class="w-full" style="min-width:800px">
+              <thead style="background:rgba(0,0,0,.3);position:sticky;top:0;z-index:1">
+                <tr>
+                  <th class="font-raj text-[9px] font-black tracking-[2px] uppercase text-[#2a2a2a] px-3 py-2.5 text-left">Date</th>
+                  <th class="font-raj text-[9px] font-black tracking-[2px] uppercase text-[#2a2a2a] px-3 py-2.5 text-left">Time</th>
+                  <th class="font-raj text-[9px] font-black tracking-[2px] uppercase text-[#2a2a2a] px-3 py-2.5 text-center">Bookings</th>
+                  <th class="font-raj text-[9px] font-black tracking-[2px] uppercase text-[#2a2a2a] px-3 py-2.5 text-center">Job Orders</th>
+                  <th class="font-raj text-[9px] font-black tracking-[2px] uppercase text-[#2a2a2a] px-3 py-2.5 text-center">Walk-ins</th>
+                  <th class="font-raj text-[9px] font-black tracking-[2px] uppercase text-[#2a2a2a] px-3 py-2.5 text-center">Online Sales</th>
+                  <th class="font-raj text-[9px] font-black tracking-[2px] uppercase text-[#2a2a2a] px-3 py-2.5 text-center">Revenue (₱)</th>
+                  <th class="font-raj text-[9px] font-black tracking-[2px] uppercase text-[#2a2a2a] px-3 py-2.5 text-center">Cancels</th>
+                  <th class="font-raj text-[9px] font-black tracking-[2px] uppercase text-[#2a2a2a] px-3 py-2.5 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody"></tbody>
+            </table>
+          </div>
+          <div id="historyPagination" class="flex items-center gap-2 px-3 py-2 border-t border-white/[.03] flex-wrap"></div>
+        </div>
+      </section>
+
+      <!-- WEEKLY -->
+      <section id="sec-weekly" class="hidden animate-fadeUp">
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <div class="yr-step">
+            <button onclick="stepWeeklyYear(-1)">&#8249;</button>
+            <span id="weeklyYearLabel">2025</span>
+            <button onclick="stepWeeklyYear(1)">&#8250;</button>
+          </div>
+          <select id="monthlyMonthSelector" onchange="onMonthChange()" class="font-raj font-bold text-xs text-gold-light pl-3 py-2 rounded-lg outline-none cursor-pointer" style="background:#141414;border:1px solid rgba(166,127,56,.22)"></select>
+          <select id="weeklyWeekSelector" onchange="onWeekChange()" class="font-raj font-bold text-xs text-gold-light pl-3 py-2 rounded-lg outline-none cursor-pointer" style="background:#141414;border:1px solid rgba(166,127,56,.22)">
+            <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="5">Extra days</option>
+          </select>
+          <label class="tog-wrap"><input type="checkbox" id="togBookings" checked class="sr-only" onchange="rebuildWeeklyChart()"><span class="tog-track"><span class="tog-knob"></span></span><span class="text-[11px] text-white/80 font-raj font-semibold">Bookings</span></label>
+          <label class="tog-wrap"><input type="checkbox" id="togJobOrders" checked class="sr-only" onchange="rebuildWeeklyChart()"><span class="tog-track"><span class="tog-knob"></span></span><span class="text-[11px] text-white/80 font-raj font-semibold">Job Orders</span></label>
+          <label class="tog-wrap"><input type="checkbox" id="togWalkIns" checked class="sr-only" onchange="rebuildWeeklyChart()"><span class="tog-track"><span class="tog-knob"></span></span><span class="text-[11px] text-white/80 font-raj font-semibold">Walk-ins</span></label>
+          <label class="tog-wrap"><input type="checkbox" id="togOnlineSales" checked class="sr-only" onchange="rebuildWeeklyChart()"><span class="tog-track"><span class="tog-knob"></span></span><span class="text-[11px] text-white/80 font-raj font-semibold">Online Sales</span></label>
+          <label class="tog-wrap"><input type="checkbox" id="togRevenue" checked class="sr-only" onchange="rebuildWeeklyChart()"><span class="tog-track"><span class="tog-knob"></span></span><span class="text-[11px] text-white/80 font-raj font-semibold">Revenue</span></label>
+          <label class="tog-wrap"><input type="checkbox" id="togCancellations" checked class="sr-only" onchange="rebuildWeeklyChart()"><span class="tog-track"><span class="tog-knob"></span></span><span class="text-[11px] text-white/80 font-raj font-semibold">Cancels</span></label>
+          <button id="btnTrend" class="chart-btn" onclick="toggleTrends()">📈 Trends</button>
+          <button id="btnAnnotate" class="chart-btn" onclick="addAnnotation()">📍 Note</button>
+          <button id="btnCompare" class="chart-btn" onclick="openCompareModal()">🔄 Compare</button>
+          <button onclick="openLegend('Weekly')" class="chart-btn">🎨 Legend</button>
+        </div>
+        <!-- Compare info bar -->
+        <div id="compareInfoBar" class="hidden mb-2 px-3 py-2 rounded-lg flex items-center justify-between text-xs font-raj" style="background:rgba(166,127,56,.08);border:1px solid rgba(166,127,56,.2)">
+          <span id="compareInfoText" class="text-gold"></span>
+          <button onclick="clearCompare()" class="text-white/40 hover:text-red-400 ml-4 font-bold">✕ Clear</button>
+        </div>
+        <div class="card-shine rounded-xl overflow-hidden mb-3" style="background:linear-gradient(135deg,#141414,#0e0e0e);border:1px solid rgba(166,127,56,.1)">
+          <div class="px-3 py-2.5 border-b border-white/[.03]">
+            <span class="font-raj font-bold text-[10px] tracking-widest uppercase text-gold-dark">Weekly Performance Chart</span>
+          </div>
+          <div class="p-3" style="height:280px;position:relative">
+            <canvas id="weeklyChart" style="width:100%;height:100%"></canvas>
+            <div id="weeklyNoData" class="no-data-box">
+              <i class="fas fa-calendar-times"></i>
+              <span>NO DATA FOR THIS PERIOD</span>
+              <small>Data is only available for the current year</small>
+            </div>
+          </div>
+        </div>
+        <div id="weeklyDatesRow" class="grid grid-cols-7 gap-1.5 mb-3"></div>
+        <div class="grid grid-cols-6 gap-2">
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Bookings</div><div class="font-condensed text-xl font-black gt" id="wBox_bookings">--</div></div>
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Job Orders</div><div class="font-condensed text-xl font-black gt" id="wBox_jobOrders">--</div></div>
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Walk-ins</div><div class="font-condensed text-xl font-black gt" id="wBox_walkIns">--</div></div>
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Online Sales</div><div class="font-condensed text-xl font-black gt" id="wBox_onlineSales">--</div></div>
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Revenue</div><div class="font-condensed text-xl font-black gt" id="wBox_revenue">--</div></div>
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Cancels</div><div class="font-condensed text-xl font-black gt" id="wBox_cancellations">--</div></div>
+        </div>
+      </section>
+
+      <!-- MONTHLY -->
+      <section id="sec-monthly" class="hidden animate-fadeUp">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="yr-step">
+            <button onclick="stepMonthlyYear(-1)">&#8249;</button>
+            <span id="monthlyYearLabel">2025</span>
+            <button onclick="stepMonthlyYear(1)">&#8250;</button>
+          </div>
+          <button onclick="openLegend('Monthly')" class="chart-btn">🎨 Legend</button>
+        </div>
+        <div class="card-shine rounded-xl overflow-hidden mb-3" style="background:linear-gradient(135deg,#141414,#0e0e0e);border:1px solid rgba(166,127,56,.1)">
+          <div class="px-3 py-2.5 border-b border-white/[.03]">
+            <span class="font-raj font-bold text-[10px] tracking-widest uppercase text-gold-dark">Monthly Performance Overview</span>
+          </div>
+          <div class="p-3" style="height:300px;position:relative">
+            <canvas id="monthlyChart" style="width:100%;height:100%"></canvas>
+            <div id="monthlyNoData" class="no-data-box">
+              <i class="fas fa-calendar-times"></i>
+              <span>NO DATA FOR THIS YEAR</span>
+              <small>Data is only available for the current year</small>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-6 gap-2">
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Bookings</div><div class="font-condensed text-2xl font-black gt" id="mBox_bookings">--</div></div>
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Job Orders</div><div class="font-condensed text-2xl font-black gt" id="mBox_jobOrders">--</div></div>
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Walk-ins</div><div class="font-condensed text-2xl font-black gt" id="mBox_walkIns">--</div></div>
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Online Sales</div><div class="font-condensed text-2xl font-black gt" id="mBox_onlineSales">--</div></div>
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Revenue (₱)</div><div class="font-condensed text-2xl font-black gt" id="mBox_revenue">--</div></div>
+          <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1)"><div class="text-[9px] font-raj uppercase tracking-widest text-gold-dark mb-1">Cancels</div><div class="font-condensed text-2xl font-black gt" id="mBox_cancellations">--</div></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===========================================================
+   REV AUTO SHOP — REPORTS JS
+   Features: rich sample data (Jan+Feb+beyond), working
+   Compare modal, animated charts (weekly+monthly)
+=========================================================== */
+const NOW=new Date(), CUR_YEAR=NOW.getFullYear(), CUR_MONTH=NOW.getMonth();
+function rnd(a,b){return Math.floor(a+(b-a)*Math.random());}
+const PHP=v=>v==null?'--':'₱'+Number(v).toLocaleString('en-PH');
+
+/* ─── SEEDED DATA GENERATOR ───
+   Uses a simple seeded random so Feb always has good distinct data.
+   Regular months use Math.random, Feb uses seeded values to ensure
+   visible data when user navigates there to compare. */
+function seededRnd(seed,a,b){
+  const x=Math.sin(seed)*10000;
+  return Math.floor(a+(x-Math.floor(x))*(b-a));
+}
+
+function generateShopRecords(){
+  const recs=[];
+  const END=new Date();
+  const STATUSES=['Completed','Completed','Completed','Walk-in','Online','Pending','Cancelled'];
+
+  for(let d=new Date(CUR_YEAR,0,1); d<=END; d.setDate(d.getDate()+1)){
+    const mo=d.getMonth();
+    // February: Valentine's promo — spike in online sales & bookings, fewer cancellations
+    const isFeb=(mo===1);
+    // January: solid baseline
+    const isJan=(mo===0);
+    // March onwards: normal with slight seasonal dip
+    const revMult = isFeb?1.9 : isJan?1.1 : 0.85+Math.random()*0.5;
+    const bkMult  = isFeb?1.7 : isJan?1.0 : 1.0;
+
+    const snaps=rnd(2,5);
+    for(let s=0;s<snaps;s++){
+      const hr=[8,11,14,17][s%4]+rnd(0,2);
+      const ts=new Date(d.getFullYear(),d.getMonth(),d.getDate(),hr,rnd(0,59),rnd(0,59)).getTime();
+      recs.push({
+        ts,
+        bookings:     Math.min(20, Math.round(rnd(2,9)*bkMult)),
+        jobOrders:    Math.min(25, Math.round(rnd(3,14)*revMult)),
+        walkIns:      rnd(0, isFeb?10:7),
+        onlineSales:  Math.round(rnd(isFeb?12:1, isFeb?40:20)*revMult),
+        revenue:      Math.round(rnd(3000,40000)*revMult),
+        cancellations:rnd(0, isFeb?1:4),
+        status:       STATUSES[rnd(0,STATUSES.length)],
+        type:'record'
+      });
+    }
+  }
+  return recs.sort((a,b)=>b.ts-a.ts);
+}
+
+const EV_DEFS=[
+  {emoji:'📅',label:'Peak Booking Day'},    {emoji:'🚐',label:'Fleet Service Day'},
+  {emoji:'🛒',label:'Valentine Promo Live'},{emoji:'🚶',label:'Walk-in Rush'},
+  {emoji:'💰',label:'Top Revenue Day'},     {emoji:'📋',label:'Job Order Backlog'},
+  {emoji:'⚠️',label:'Parts Shortage'},      {emoji:'❌',label:'Batch Cancellations'},
+  {emoji:'⭐',label:'VIP Customer Visit'},  {emoji:'🎓',label:'Staff Training'},
+  {emoji:'👷',label:'New Technician'},      {emoji:'🔍',label:'Monthly Audit'},
+  {emoji:'🛠️',label:'Fleet Maintenance'},   {emoji:'💸',label:'Online Flash Sale'},
+  {emoji:'🎉',label:'Shop Anniversary'},
+];
+function generateShopEvents(){
+  const evs=[];
+  // Scatter events across Jan–current month with some guaranteed in Feb
+  EV_DEFS.forEach((def,i)=>{
+    // Force first 5 events into February for visibility
+    const month=i<5?1:rnd(0,Math.max(1,CUR_MONTH+1));
+    const day=rnd(1,27);
+    const ts=new Date(CUR_YEAR,month,day,rnd(8,18),rnd(0,59)).getTime();
+    const isFeb=month===1;
+    evs.push({
+      ts,...def,
+      bookings:    rnd(isFeb?15:5,isFeb?40:30),
+      jobOrders:   rnd(isFeb?20:10,isFeb?60:50),
+      walkIns:     rnd(3,20),
+      onlineSales: rnd(isFeb?20:5,isFeb?80:60),
+      revenue:     rnd(isFeb?30000:10000,isFeb?180000:120000),
+      cancellations:rnd(0,8),type:'event'
+    });
+  });
+  return evs.sort((a,b)=>b.ts-a.ts);
+}
+
+let allRecords=generateShopRecords();
+let allEvents=generateShopEvents();
+let weeklyChart=null,monthlyChart=null,weeklyDataGlobal=null,monthlyDataGlobal=null;
+let weeklySelectedYear=CUR_YEAR,monthlySelectedYear=CUR_YEAR;
+let activeCompare=null; // {weekNum, monthSel, data, metric}
+const wcs={showTrendLines:false,annotations:[]};
+
+const fmtDate=ms=>new Date(ms).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+const fmtTime=ms=>new Date(ms).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+function toast(msg,type='ok'){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:10px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:.85rem;z-index:99999;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.4);transition:opacity .3s';
+  t.style.background=type==='err'?'#ef4444':'linear-gradient(135deg,#A67F38,#D9B573)';
+  t.style.color=type==='err'?'#fff':'#080808';
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),350);},2500);
+}
+function sBadge(s){
+  const m={'Completed':'completed','Walk-in':'walkin','Online':'online','Pending':'pending','Cancelled':'cancelled'};
+  return`<span class="sbadge sb-${m[s]||'pending'}">${s}</span>`;
+}
+
+/* ── HISTORY TABLE ── */
+const PS=20; let hFilt=[],hPage=1;
+function buildHistoryRows(rows){
+  hFilt=[...rows].sort((a,b)=>b.ts-a.ts);hPage=1;
+  document.getElementById('historyCountLabel').textContent=hFilt.length+' records';
+  renderHPage();renderHPag();
+}
+function renderHPage(){
+  const tb=document.getElementById('historyTableBody');
+  if(!hFilt.length){tb.innerHTML=`<tr><td colspan="9" class="px-3 py-12 text-center text-white/20 text-sm font-raj">No data found</td></tr>`;return;}
+  tb.innerHTML=hFilt.slice((hPage-1)*PS,hPage*PS).map(r=>`<tr class="tr-hover border-b border-white/[.025]">
+    <td class="px-3 py-2 text-xs text-white/40 font-raj whitespace-nowrap">${fmtDate(r.ts)}</td>
+    <td class="px-3 py-2 text-xs text-white/40 font-raj">${fmtTime(r.ts)}</td>
+    <td class="px-3 py-2 text-xs font-raj font-bold text-center text-white/70">${r.bookings}</td>
+    <td class="px-3 py-2 text-xs font-raj font-bold text-center text-white/70">${r.jobOrders}</td>
+    <td class="px-3 py-2 text-xs font-raj font-bold text-center text-white/70">${r.walkIns}</td>
+    <td class="px-3 py-2 text-xs font-raj font-bold text-center text-white/70">${r.onlineSales}</td>
+    <td class="px-3 py-2 text-xs font-raj font-bold text-center" style="color:#F2DB94">${PHP(r.revenue)}</td>
+    <td class="px-3 py-2 text-xs font-raj text-center text-white/50">${r.cancellations}</td>
+    <td class="px-3 py-2 text-center">${sBadge(r.status)}</td>
+  </tr>`).join('');
+}
+function renderHPag(){
+  const c=document.getElementById('historyPagination');
+  const total=Math.max(1,Math.ceil(hFilt.length/PS));
+  if(total<=1){c.innerHTML='';return;}
+  const s=(hPage-1)*PS+1,e=Math.min(hFilt.length,hPage*PS);
+  let h=`<span class="text-xs text-white/25 font-raj mr-auto">Showing ${s}–${e} of ${hFilt.length}</span><div class="flex gap-1.5 items-center flex-wrap">`;
+  h+=`<button class="page-btn" ${hPage===1?'disabled':''} onclick="_gP(${hPage-1})">Prev</button>`;
+  let lo=Math.max(1,hPage-3),hi=Math.min(total,hPage+3);
+  if(lo>1){h+=`<button class="page-btn" onclick="_gP(1)">1</button>`;if(lo>2)h+=`<span class="text-white/25 text-xs px-1">…</span>`;}
+  for(let p=lo;p<=hi;p++)h+=`<button class="page-btn${p===hPage?' curr':''}" onclick="_gP(${p})">${p}</button>`;
+  if(hi<total){if(hi<total-1)h+=`<span class="text-white/25 text-xs px-1">…</span>`;h+=`<button class="page-btn" onclick="_gP(${total})">${total}</button>`;}
+  h+=`<button class="page-btn" ${hPage===total?'disabled':''} onclick="_gP(${hPage+1})">Next</button></div>`;
+  c.innerHTML=h;
+}
+function _gP(p){hPage=p;renderHPage();renderHPag();document.getElementById('historyTableWrapper').scrollTop=0;}
+function applyDateFilter(){
+  const dt=new Date(document.getElementById('dateInput').value);
+  if(isNaN(dt.getTime())){toast('Invalid date','err');return;}
+  const t=document.getElementById('dateFilterType').value;let s,e;
+  if(t==='day'){s=new Date(dt).setHours(0,0,0,0);e=new Date(dt).setHours(23,59,59,999);}
+  else if(t==='week'){const dy=dt.getDay();const sw=new Date(dt);sw.setDate(dt.getDate()-dy);sw.setHours(0,0,0,0);const ew=new Date(sw);ew.setDate(sw.getDate()+6);ew.setHours(23,59,59,999);s=sw.getTime();e=ew.getTime();}
+  else{s=new Date(dt.getFullYear(),dt.getMonth(),1).getTime();e=new Date(dt.getFullYear(),dt.getMonth()+1,0,23,59,59,999).getTime();}
+  buildHistoryRows(allRecords.filter(r=>r.ts>=s&&r.ts<=e));toast('Filter applied');
+}
+function clearDateFilter(){document.getElementById('dateInput').value='';buildHistoryRows(allRecords);toast('Filter cleared');}
+
+/* ── EVENTS MODAL ── */
+function buildEventsTable(evs){
+  const tb=document.getElementById('eventsTableBody');
+  if(!evs?.length){tb.innerHTML=`<tr><td colspan="9" class="px-4 py-8 text-center text-white/30 font-raj text-sm">No events</td></tr>`;return;}
+  tb.innerHTML=[...evs].sort((a,b)=>b.ts-a.ts).map(ev=>`<tr class="tr-hover border-b border-white/[.04]">
+    <td class="px-3 py-2.5 text-center text-lg">${ev.emoji}</td>
+    <td class="px-3 py-2.5 text-xs font-medium text-left" style="color:#F2DB94">${ev.label}</td>
+    <td class="px-3 py-2.5 text-xs text-white/40 font-raj text-center whitespace-nowrap">${fmtDate(ev.ts)}</td>
+    <td class="px-3 py-2.5 text-xs text-white/65 font-raj font-bold text-center">${ev.bookings}</td>
+    <td class="px-3 py-2.5 text-xs text-white/65 font-raj font-bold text-center">${ev.jobOrders}</td>
+    <td class="px-3 py-2.5 text-xs text-white/65 font-raj font-bold text-center">${ev.walkIns}</td>
+    <td class="px-3 py-2.5 text-xs text-white/65 font-raj font-bold text-center">${ev.onlineSales}</td>
+    <td class="px-3 py-2.5 text-xs font-raj font-bold text-center" style="color:#F2DB94">${PHP(ev.revenue)}</td>
+    <td class="px-3 py-2.5 text-xs text-white/50 font-raj text-center">${ev.cancellations}</td>
+  </tr>`).join('');
+}
+function toggleEventsModal(){document.getElementById('showEventsCheckbox').checked?openEventsModal():closeEventsModal();}
+function openEventsModal(){buildEventsTable(allEvents);document.getElementById('eventsOverlay').style.display='block';document.getElementById('eventsModal').style.display='block';}
+function closeEventsModal(){document.getElementById('eventsOverlay').style.display='none';document.getElementById('eventsModal').style.display='none';document.getElementById('showEventsCheckbox').checked=false;}
+
+/* ── AGGREGATES ── */
+function buildWeekly(readings){
+  const wk=Array.from({length:7},()=>({b:0,j:0,w:0,o:0,r:0,c:0,n:0}));
+  readings.forEach(r=>{const i=new Date(r.ts).getDay();wk[i].b+=r.bookings||0;wk[i].j+=r.jobOrders||0;wk[i].w+=r.walkIns||0;wk[i].o+=r.onlineSales||0;wk[i].r+=r.revenue||0;wk[i].c+=r.cancellations||0;wk[i].n++;});
+  const labels=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dd=wk.map(x=>x.n?{bookings:Math.round(x.b/x.n),jobOrders:Math.round(x.j/x.n),walkIns:Math.round(x.w/x.n),onlineSales:Math.round(x.o/x.n),revenue:Math.round(x.r/x.n),cancellations:Math.round(x.c/x.n)}:{bookings:'--',jobOrders:'--',walkIns:'--',onlineSales:'--',revenue:'--',cancellations:'--'});
+  return{labels,dayDetail:dd,hasData:readings.length>0};
+}
+function buildMonthly(readings){
+  const mo=Array.from({length:12},()=>({b:0,j:0,w:0,o:0,r:0,c:0,n:0}));
+  readings.forEach(r=>{const m=new Date(r.ts).getMonth();mo[m].b+=r.bookings||0;mo[m].j+=r.jobOrders||0;mo[m].w+=r.walkIns||0;mo[m].o+=r.onlineSales||0;mo[m].r+=r.revenue||0;mo[m].c+=r.cancellations||0;mo[m].n++;});
+  const labels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const md=mo.map(m=>m.n?{bookings:Math.round(m.b/m.n),jobOrders:Math.round(m.j/m.n),walkIns:Math.round(m.w/m.n),onlineSales:Math.round(m.o/m.n),revenue:Math.round(m.r/m.n),cancellations:Math.round(m.c/m.n)}:{bookings:'--',jobOrders:'--',walkIns:'--',onlineSales:'--',revenue:'--',cancellations:'--'});
+  return{labels,monthlyDetail:md,revBars:mo.map(m=>m.n?Math.round(m.r/m.n):0),jobBars:mo.map(m=>m.n?Math.round(m.j/m.n):0),bookBars:mo.map(m=>m.n?Math.round(m.b/m.n):0),onlineBars:mo.map(m=>m.n?Math.round(m.o/m.n):0),hasData:readings.length>0};
+}
+function setWBoxes(d){
+  const M={bookings:'wBox_bookings',jobOrders:'wBox_jobOrders',walkIns:'wBox_walkIns',onlineSales:'wBox_onlineSales',revenue:'wBox_revenue',cancellations:'wBox_cancellations'};
+  Object.entries(M).forEach(([k,id])=>{const el=document.getElementById(id);if(!el)return;const v=d[k];el.textContent=v==='--'?'N/A':(k==='revenue'?PHP(v):v);});
+}
+function setMBoxes(d){
+  const M={bookings:'mBox_bookings',jobOrders:'mBox_jobOrders',walkIns:'mBox_walkIns',onlineSales:'mBox_onlineSales',revenue:'mBox_revenue',cancellations:'mBox_cancellations'};
+  Object.entries(M).forEach(([k,id])=>{const el=document.getElementById(id);if(!el)return;const v=d[k];el.textContent=v==='--'?'N/A':(k==='revenue'?PHP(v):v);});
+}
+function calcTrend(data){
+  const pts=data.map((y,x)=>({x,y})).filter(p=>p.y!==null&&!isNaN(p.y));
+  if(pts.length<2)return data.map(()=>null);
+  const n=pts.length,sx=pts.reduce((s,p)=>s+p.x,0),sy=pts.reduce((s,p)=>s+p.y,0),sxy=pts.reduce((s,p)=>s+p.x*p.y,0),sx2=pts.reduce((s,p)=>s+p.x*p.x,0);
+  const slope=(n*sxy-sx*sy)/(n*sx2-sx*sx),int=(sy-slope*sx)/n;
+  return data.map((_,x)=>+(slope*x+int).toFixed(1));
+}
+
+/* ── YEAR STEPPERS ── */
+function stepWeeklyYear(d){weeklySelectedYear+=d;document.getElementById('weeklyYearLabel').textContent=weeklySelectedYear;buildMonthSelForYear(weeklySelectedYear);populateWeeksForMonth();loadWeeklyData();}
+function stepMonthlyYear(d){monthlySelectedYear+=d;document.getElementById('monthlyYearLabel').textContent=monthlySelectedYear;loadMonthlyData();}
+
+/* ── WEEKLY CHART (with entry animation) ── */
+function renderWeeklyChart(data){
+  weeklyDataGlobal=data;
+  if(weeklyChart){weeklyChart.destroy();weeklyChart=null;}
+  const c=document.getElementById('weeklyChart');
+  const nd=document.getElementById('weeklyNoData');
+  if(!data?.hasData){nd.style.display='flex';return;}
+  nd.style.display='none';
+  const labels=data.labels,dd=data.dayDetail;
+  const sB=document.getElementById('togBookings')?.checked??true;
+  const sJ=document.getElementById('togJobOrders')?.checked??true;
+  const sW=document.getElementById('togWalkIns')?.checked??true;
+  const sO=document.getElementById('togOnlineSales')?.checked??true;
+  const sR=document.getElementById('togRevenue')?.checked??true;
+  const sC=document.getElementById('togCancellations')?.checked??true;
+  const bkD=dd.map(d=>d.bookings==='--'?null:d.bookings);
+  const joD=dd.map(d=>d.jobOrders==='--'?null:d.jobOrders);
+  const wiD=dd.map(d=>d.walkIns==='--'?null:d.walkIns);
+  const osD=dd.map(d=>d.onlineSales==='--'?null:d.onlineSales);
+  const rvD=dd.map(d=>d.revenue==='--'?null:d.revenue);
+  const cnD=dd.map(d=>d.cancellations==='--'?null:d.cancellations);
+
+  const datasets=[];
+  if(sB)datasets.push({label:'Bookings',data:bkD,borderColor:'#F2DB94',backgroundColor:'rgba(242,219,148,.1)',tension:.4,spanGaps:true,pointRadius:7,pointHoverRadius:9,fill:false,yAxisID:'y'});
+  if(sB&&wcs.showTrendLines)datasets.push({label:'Bookings Trend',data:calcTrend(bkD),borderColor:'#F2DB94',borderDash:[5,5],borderWidth:1.5,pointRadius:0,fill:false,tension:0,yAxisID:'y'});
+  if(sJ)datasets.push({label:'Job Orders',data:joD,borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,.08)',tension:.4,spanGaps:true,pointRadius:6,fill:false,yAxisID:'y'});
+  if(sJ&&wcs.showTrendLines)datasets.push({label:'Job Orders Trend',data:calcTrend(joD),borderColor:'#00d4ff',borderDash:[5,5],borderWidth:1.5,pointRadius:0,fill:false,tension:0,yAxisID:'y'});
+  if(sW)datasets.push({label:'Walk-ins',data:wiD,borderColor:'#8bc34a',backgroundColor:'rgba(139,195,74,.08)',tension:.4,spanGaps:true,pointRadius:6,fill:false,yAxisID:'y'});
+  if(sO)datasets.push({label:'Online Sales',data:osD,borderColor:'#ff9800',backgroundColor:'rgba(255,152,0,.08)',tension:.4,spanGaps:true,pointRadius:6,fill:false,yAxisID:'y'});
+  if(sR)datasets.push({label:'Revenue (₱)',data:rvD,borderColor:'#e91e63',backgroundColor:'rgba(233,30,99,.07)',tension:.4,spanGaps:true,pointRadius:6,fill:false,yAxisID:'y1'});
+  if(sC)datasets.push({label:'Cancels',data:cnD,borderColor:'#9c27b0',backgroundColor:'rgba(156,39,176,.08)',tension:.4,spanGaps:true,pointRadius:6,fill:false,yAxisID:'y'});
+  wcs.annotations.forEach(ann=>datasets.push({label:ann.label,data:labels.map((_,i)=>i===ann.dayIndex?9999:null),borderColor:'#ff6b6b',borderDash:[3,3],borderWidth:2,pointRadius:0,fill:false,yAxisID:'y'}));
+
+  // ── Add comparison dataset if active ──
+  if(activeCompare?.data){
+    const metric=activeCompare.metric;
+    const isRevenue=(metric==='revenue');
+    const cD=activeCompare.data.dayDetail.map(d=>d[metric]==='--'?null:d[metric]);
+    const metricColors={bookings:'#F2DB94',jobOrders:'#00d4ff',walkIns:'#8bc34a',onlineSales:'#ff9800',revenue:'#e91e63',cancellations:'#9c27b0'};
+    const col=metricColors[metric]||'#aaa';
+    datasets.push({
+      label:`${METRIC_LABELS[metric]} ◀ ${activeCompare.label}`,
+      data:cD,
+      borderColor:col,
+      backgroundColor:'transparent',
+      borderDash:[7,4],
+      borderWidth:2.5,
+      tension:.4,
+      spanGaps:true,
+      pointRadius:5,
+      pointStyle:'triangle',
+      fill:false,
+      yAxisID:isRevenue?'y1':'y'
+    });
+  }
+
+  /* ANIMATION: lines draw in from left, points pop in */
+  weeklyChart=new Chart(c,{type:'line',data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:false,
+    animation:{duration:900,easing:'easeInOutQuart',
+      onProgress(anim){/* natural chart.js line animation */}},
+    transitions:{active:{animation:{duration:250}}},
+    interaction:{mode:'index',intersect:false},
+    onClick:(evt,els)=>{if(!els?.length)return;const idx=els[0].index;setWBoxes(weeklyDataGlobal.dayDetail[idx]);selectDay(idx);},
+    plugins:{
+      legend:{display:true,position:'top',labels:{color:'#F2DB94',padding:12,usePointStyle:true,font:{size:10,family:'Rajdhani',weight:'700'}}},
+      tooltip:{backgroundColor:'rgba(8,8,8,.92)',titleColor:'#F2DB94',bodyColor:'#bbb',padding:10,borderColor:'rgba(166,127,56,.22)',borderWidth:1,
+        callbacks:{label:ctx=>ctx.dataset.label.includes('Revenue')?` ₱${Number(ctx.parsed.y).toLocaleString('en-PH')}`:` ${ctx.dataset.label}: ${ctx.parsed.y}`}}
+    },
+    scales:{
+      y:{type:'linear',display:sB||sJ||sW||sO||sC,position:'left',beginAtZero:true,title:{display:true,text:'Count',color:'#666'},ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.07)'}},
+      y1:{type:'linear',display:sR,position:'right',beginAtZero:true,title:{display:true,text:'Revenue (₱)',color:'#e91e63'},ticks:{color:'#555',callback:v=>'₱'+Number(v).toLocaleString('en-PH')},grid:{drawOnChartArea:false}},
+      x:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.05)'}}
+    }
+  }});
+
+  const todayDay=new Date().getDay();
+  const first=dd.findIndex(d=>d.bookings!=='--');
+  const idx=dd[todayDay]?.bookings!=='--'?todayDay:(first>=0?first:0);
+  setWBoxes(dd[idx]||{bookings:'--',jobOrders:'--',walkIns:'--',onlineSales:'--',revenue:'--',cancellations:'--'});
+  selectDay(idx);
+}
+function rebuildWeeklyChart(){renderWeeklyChart(weeklyDataGlobal);}
+
+/* ── MONTHLY CHART (staggered bar entry animation) ── */
+function renderMonthlyChart(data){
+  monthlyDataGlobal=data;
+  if(monthlyChart){monthlyChart.destroy();monthlyChart=null;}
+  const c=document.getElementById('monthlyChart');
+  const nd=document.getElementById('monthlyNoData');
+  if(!data?.hasData){nd.style.display='flex';return;}
+  nd.style.display='none';
+
+  const DATASETS=[
+    {label:'Avg Revenue (₱)',data:data.revBars,  backgroundColor:'rgba(233,30,99,.55)', borderColor:'#e91e63',yAxisID:'y1'},
+    {label:'Job Orders',     data:data.jobBars,  backgroundColor:'rgba(0,212,255,.45)',  borderColor:'#00d4ff',yAxisID:'y'},
+    {label:'Bookings',       data:data.bookBars, backgroundColor:'rgba(166,127,56,.5)',  borderColor:'#A67F38',yAxisID:'y'},
+    {label:'Online Sales',   data:data.onlineBars,backgroundColor:'rgba(255,152,0,.4)', borderColor:'#ff9800',yAxisID:'y'},
+  ].map((ds,i)=>({...ds,borderWidth:1.5,borderRadius:6,borderSkipped:false,
+    // stagger: each dataset bar grows in with a delay
+    animation:{delay:ctx=>ctx.dataIndex*30+i*90}
+  }));
+
+  monthlyChart=new Chart(c,{
+    type:'bar',
+    data:{labels:data.labels,datasets:DATASETS},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      animation:{duration:700,easing:'easeOutQuart'},
+      transitions:{active:{animation:{duration:180}}},
+      onClick:(evt,els)=>{if(els?.length)setMBoxes(monthlyDataGlobal.monthlyDetail[els[0].index]);},
+      plugins:{
+        legend:{display:true,position:'top',labels:{color:'#F2DB94',padding:12,usePointStyle:true,font:{size:10,family:'Rajdhani',weight:'700'}}},
+        tooltip:{backgroundColor:'rgba(8,8,8,.92)',titleColor:'#F2DB94',bodyColor:'#bbb',borderColor:'rgba(166,127,56,.22)',borderWidth:1,
+          callbacks:{label:ctx=>ctx.dataset.label.includes('Revenue')?` ₱${Number(ctx.parsed.y).toLocaleString('en-PH')}`:` ${ctx.dataset.label}: ${ctx.parsed.y}`}}
+      },
+      scales:{
+        y:{beginAtZero:true,title:{display:true,text:'Avg Count',color:'#666'},ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.08)'}},
+        y1:{beginAtZero:true,position:'right',title:{display:true,text:'Revenue (₱)',color:'#e91e63'},ticks:{color:'#555',callback:v=>'₱'+Number(v).toLocaleString('en-PH')},grid:{drawOnChartArea:false}},
+        x:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.05)'}}
+      }
+    }
+  });
+
+  const md=data.monthlyDetail;
+  setMBoxes(md[CUR_MONTH]?.bookings!=='--'?md[CUR_MONTH]:md.find(d=>d.bookings!=='--')||{bookings:'--',jobOrders:'--',walkIns:'--',onlineSales:'--',revenue:'--',cancellations:'--'});
+}
+
+/* ── LOAD DATA ── */
+function loadWeeklyData(){
+  const ms=document.getElementById('monthlyMonthSelector')?.value;
+  const wk=parseInt(document.getElementById('weeklyWeekSelector')?.value||'1');
+  if(!ms)return;
+  const[y,m]=ms.split('-').map(Number);
+  if(y!==CUR_YEAR){
+    renderWeeklyChart({hasData:false});
+    updateWeeklyDatesRow(getWeekRange(y,m-1,wk).startDate);
+    ['bookings','jobOrders','walkIns','onlineSales','revenue','cancellations'].forEach(k=>{const el=document.getElementById('wBox_'+k);if(el)el.textContent='N/A';});
+    return;
+  }
+  const{startTs,endTs,startDate}=getWeekRange(y,m-1,wk);
+  renderWeeklyChart(buildWeekly(allRecords.filter(r=>r.ts>=startTs&&r.ts<=endTs)));
+  updateWeeklyDatesRow(startDate);
+}
+function loadMonthlyData(){
+  if(monthlySelectedYear!==CUR_YEAR){renderMonthlyChart({hasData:false});['bookings','jobOrders','walkIns','onlineSales','revenue','cancellations'].forEach(k=>{const el=document.getElementById('mBox_'+k);if(el)el.textContent='N/A';});return;}
+  renderMonthlyChart(buildMonthly(allRecords));
+}
+
+/* ── WEEK/MONTH HELPERS ── */
+function getWeekRange(year,mi,wn){
+  const fom=new Date(year,mi,1);
+  const sow=new Date(fom);sow.setDate(fom.getDate()-fom.getDay());sow.setHours(0,0,0,0);
+  const st=new Date(sow);st.setDate(sow.getDate()+(wn-1)*7);st.setHours(0,0,0,0);
+  const en=new Date(st);en.setDate(st.getDate()+6);en.setHours(23,59,59,999);
+  return{startTs:st.getTime(),endTs:en.getTime(),startDate:st};
+}
+function weeksInMonth(y,mi){const f=new Date(y,mi,1);return Math.ceil((f.getDay()+new Date(y,mi+1,0).getDate())/7);}
+function getWeekLabel(y,mi,wn){
+  const{startDate}=getWeekRange(y,mi,wn);
+  const end=new Date(startDate);end.setDate(startDate.getDate()+6);
+  const fmt=d=>d.toLocaleDateString('en-PH',{month:'short',day:'numeric'});
+  return`${fmt(startDate)} – ${fmt(end)}`;
+}
+
+function updateWeeklyDatesRow(startDate){
+  const row=document.getElementById('weeklyDatesRow');
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today=new Date();today.setHours(0,0,0,0);
+  row.innerHTML=days.map((d,i)=>{
+    const dt=new Date(startDate);dt.setDate(startDate.getDate()+i);
+    const isT=dt.getTime()===today.getTime();
+    return`<div class="day-slot${isT?' active-day':''} flex flex-col items-center py-2 rounded-lg text-center" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.07)" onclick="selectDay(${i})">
+      <div class="text-[9px] font-raj font-black uppercase tracking-widest text-gold-dark">${d}</div>
+      <div class="text-xs font-bold text-white/50 mt-0.5">${String(dt.getDate()).padStart(2,'0')}</div>
+      ${isT?'<div class="w-1 h-1 rounded-full bg-gold mt-0.5"></div>':''}
+    </div>`;
+  }).join('');
+}
+function selectDay(idx){
+  document.querySelectorAll('#weeklyDatesRow .day-slot').forEach((el,i)=>el.classList.toggle('active-day',i===idx));
+  if(weeklyDataGlobal?.dayDetail?.[idx])setWBoxes(weeklyDataGlobal.dayDetail[idx]);
+}
+
+function buildMonthSelForYear(year){
+  const sel=document.getElementById('monthlyMonthSelector');sel.innerHTML='';
+  for(let m=0;m<12;m++){const o=document.createElement('option');o.value=`${year}-${String(m+1).padStart(2,'0')}`;o.textContent=new Date(year,m,1).toLocaleString(undefined,{month:'long'});sel.appendChild(o);}
+  sel.value=year===CUR_YEAR?`${CUR_YEAR}-${String(CUR_MONTH+1).padStart(2,'0')}`:`${year}-01`;
+}
+function initMonthSelector(){buildMonthSelForYear(weeklySelectedYear);}
+function populateWeeksForMonth(){
+  const ms=document.getElementById('monthlyMonthSelector')?.value;if(!ms)return;
+  const[y,m]=ms.split('-').map(Number);
+  const wks=weeksInMonth(y,m-1);
+  const sel=document.getElementById('weeklyWeekSelector');
+  const cur=parseInt(sel.value)||1;sel.innerHTML='';
+  for(let i=1;i<=Math.min(wks,5);i++){const o=document.createElement('option');o.value=String(i);o.textContent=i===5?'Extra days':`Week ${i}`;sel.appendChild(o);}
+  sel.value=String(Math.min(cur,wks));
+}
+function onMonthChange(){populateWeeksForMonth();clearCompare();loadWeeklyData();}
+function onWeekChange(){clearCompare();loadWeeklyData();}
+
+function switchSection(){
+  const v=document.getElementById('recordType').value;
+  ['history','weekly','monthly'].forEach(s=>document.getElementById('sec-'+s).classList.toggle('hidden',s!==v));
+  document.getElementById('dateFilterWrap').classList.toggle('hidden',v!=='history');
+  if(v==='weekly'){weeklySelectedYear=CUR_YEAR;document.getElementById('weeklyYearLabel').textContent=CUR_YEAR;initMonthSelector();populateWeeksForMonth();clearCompare();loadWeeklyData();}
+  if(v==='monthly'){monthlySelectedYear=CUR_YEAR;document.getElementById('monthlyYearLabel').textContent=CUR_YEAR;loadMonthlyData();}
+}
+
+/* ── CHART CONTROLS ── */
+function toggleTrends(){wcs.showTrendLines=!wcs.showTrendLines;document.getElementById('btnTrend').classList.toggle('active',wcs.showTrendLines);rebuildWeeklyChart();toast(wcs.showTrendLines?'Trend lines on':'Trend lines off');}
+function addAnnotation(){
+  const di=prompt('Day to annotate (Sun, Mon, Tue, Wed, Thu, Fri, Sat):');if(!di)return;
+  const ddays=['sun','mon','tue','wed','thu','fri','sat'];
+  const dayIdx=ddays.findIndex(d=>d===di.toLowerCase().substring(0,3));
+  if(dayIdx===-1){toast('Invalid day name','err');return;}
+  const lbl=prompt('Annotation label:');if(!lbl)return;
+  wcs.annotations.push({dayIndex:dayIdx,label:lbl});
+  rebuildWeeklyChart();toast('Annotation added');
+}
+
+/* ── COMPARE MODAL ── */
+const METRIC_LABELS={bookings:'Bookings',jobOrders:'Job Orders',walkIns:'Walk-ins',onlineSales:'Online Sales',revenue:'Revenue (₱)',cancellations:'Cancels'};
+let compareSelectedWeek=null;
+
+function setCmpMetric(el,val){
+  document.querySelectorAll('.cmp-metric-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  el.querySelector('input').checked=true;
+}
+
+function openCompareModal(){
+  if(weeklySelectedYear!==CUR_YEAR){toast('No data for other years to compare','err');return;}
+  const ms=document.getElementById('monthlyMonthSelector')?.value;if(!ms)return;
+  const[y,m]=ms.split('-').map(Number);
+  const curWk=parseInt(document.getElementById('weeklyWeekSelector')?.value||'1');
+  const monthName=new Date(y,m-1,1).toLocaleString(undefined,{month:'long'});
+
+  // Update current label
+  document.getElementById('cmpCurrentLabel').textContent=`${monthName} — Week ${curWk} (${getWeekLabel(y,m-1,curWk)})`;
+
+  // Build week cards
+  const wks=weeksInMonth(y,m-1);
+  const grid=document.getElementById('cmpWeekGrid');
+  grid.innerHTML='';
+  compareSelectedWeek=null;
+  for(let i=1;i<=Math.min(wks,5);i++){
+    if(i===curWk)continue; // skip current week
+    const lbl=getWeekLabel(y,m-1,i);
+    const card=document.createElement('div');
+    card.className='cmp-card';
+    card.innerHTML=`<div class="wk-num">W${i}</div><div class="wk-dates">${lbl}</div>`;
+    card.onclick=()=>{
+      document.querySelectorAll('.cmp-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      compareSelectedWeek=i;
+    };
+    grid.appendChild(card);
+  }
+
+  // Also offer previous month's same week
+  if(m>1){
+    const pm=m-2; // 0-indexed prev month
+    const prevMonthName=new Date(y,pm,1).toLocaleString(undefined,{month:'short'});
+    const wksPrev=weeksInMonth(y,pm);
+    for(let i=1;i<=Math.min(wksPrev,4);i++){
+      const lbl=getWeekLabel(y,pm,i);
+      const card=document.createElement('div');
+      card.className='cmp-card';
+      card.innerHTML=`<div class="wk-num" style="font-size:1.1rem">${prevMonthName} W${i}</div><div class="wk-dates">${lbl}</div>`;
+      card.dataset.month=String(pm+1); // 1-indexed
+      card.onclick=()=>{
+        document.querySelectorAll('.cmp-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        compareSelectedWeek={week:i,month:pm+1,year:y};
+      };
+      grid.appendChild(card);
+    }
+  }
+
+  document.getElementById('compareOverlay').style.display='block';
+  document.getElementById('compareModal').style.display='block';
+  // pre-highlight first metric button
+  const btns=document.querySelectorAll('.cmp-metric-btn');
+  btns.forEach(b=>b.classList.remove('sel'));
+  if(btns[0])btns[0].classList.add('sel');
+}
+
+function closeCompareModal(){
+  document.getElementById('compareOverlay').style.display='none';
+  document.getElementById('compareModal').style.display='none';
+}
+
+function applyCompare(){
+  if(!compareSelectedWeek){toast('Please select a week first','err');return;}
+  const ms=document.getElementById('monthlyMonthSelector')?.value;if(!ms)return;
+  const[y,curM]=ms.split('-').map(Number);
+  const metric=document.querySelector('input[name="cmpMetric"]:checked')?.value||'bookings';
+
+  let cmpY=y,cmpM,cmpWk;
+  if(typeof compareSelectedWeek==='number'){
+    cmpM=curM-1;cmpWk=compareSelectedWeek; // same month, diff week (0-indexed month)
+  } else {
+    cmpM=compareSelectedWeek.month-1;cmpWk=compareSelectedWeek.week;cmpY=compareSelectedWeek.year;
+  }
+
+  const{startTs,endTs}=getWeekRange(cmpY,cmpM,cmpWk);
+  const cmpRecords=allRecords.filter(r=>r.ts>=startTs&&r.ts<=endTs);
+  const cmpData=buildWeekly(cmpRecords);
+
+  if(!cmpData.hasData){toast('No data for that week','err');closeCompareModal();return;}
+
+  const wkLabel=typeof compareSelectedWeek==='number'
+    ?`Wk ${compareSelectedWeek} (${getWeekLabel(y,curM-1,compareSelectedWeek)})`
+    :`${new Date(cmpY,cmpM,1).toLocaleString(undefined,{month:'short'})} Wk ${cmpWk}`;
+
+  activeCompare={weekNum:typeof compareSelectedWeek==='number'?compareSelectedWeek:cmpWk,data:cmpData,metric,label:wkLabel};
+  document.getElementById('btnCompare').classList.add('active');
+
+  // Show info bar
+  const bar=document.getElementById('compareInfoBar');
+  bar.classList.remove('hidden');
+  document.getElementById('compareInfoText').textContent=`Comparing: ${METRIC_LABELS[metric]} — ${wkLabel} (dashed line)`;
+
+  closeCompareModal();
+  rebuildWeeklyChart();
+  toast(`Comparing ${METRIC_LABELS[metric]} with ${wkLabel}`);
+}
+
+function clearCompare(){
+  activeCompare=null;
+  document.getElementById('btnCompare').classList.remove('active');
+  document.getElementById('compareInfoBar').classList.add('hidden');
+  if(weeklyDataGlobal)rebuildWeeklyChart();
+}
+
+/* ── LEGEND ── */
+function openLegend(ctx){
+  document.getElementById('revLegendTitle').textContent=ctx+' Metrics';
+  const entries=[
+    {c:'#F2DB94',t:'Bookings — Confirmed scheduled appointments'},
+    {c:'#00d4ff',t:'Job Orders — Active repair / maintenance orders'},
+    {c:'#8bc34a',t:'Walk-ins — Unscheduled customer arrivals'},
+    {c:'#ff9800',t:'Online Sales — E-commerce / shop orders'},
+    {c:'#e91e63',t:'Revenue (₱) — Total daily revenue (right axis)'},
+    {c:'#9c27b0',t:'Cancellations — Cancelled bookings or orders'},
+  ];
+  document.getElementById('revLegendContent').innerHTML=entries.map(e=>`
+    <div class="flex items-center gap-3 px-2 py-2 rounded-lg" style="background:rgba(255,255,255,.02)">
+      <div style="width:14px;height:14px;border-radius:4px;background:${e.c};flex-shrink:0"></div>
+      <span class="text-sm text-white/75 font-raj">${e.t}</span>
+    </div>`).join('');
+  document.getElementById('revLegendModal').classList.add('open');
+}
+function closeLegend(){document.getElementById('revLegendModal').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLegend();closeEventsModal();closeCompareModal();}});
+
+/* ── EXPORT ── */
+function openExportPanel(){const p=document.getElementById('exportPanel');p.classList.remove('closing');void p.offsetWidth;p.classList.add('open');}
+function closeExportPanel(){const p=document.getElementById('exportPanel');p.classList.remove('open');p.classList.add('closing');setTimeout(()=>p.classList.remove('closing'),400);}
+document.addEventListener('click',e=>{const p=document.getElementById('exportPanel');if(p.classList.contains('open')&&!p.contains(e.target)&&!e.target.closest('[onclick="openExportPanel()"]'))closeExportPanel();});
+function setExpProg(pct,msg){document.getElementById('expProgFill').style.width=pct+'%';document.getElementById('expStatus').textContent=msg;}
+async function startExport(){
+  const type=document.querySelector('input[name="exp_type"]:checked')?.value||'pdf';
+  setExpProg(20,'Preparing…');await new Promise(r=>setTimeout(r,100));
+  setExpProg(60,'Composing…');await new Promise(r=>setTimeout(r,100));
+  if(type==='excel')exportExcel();else exportPDF();
+  setExpProg(100,'Done ✓');toast(type.toUpperCase()+' ready');setTimeout(()=>setExpProg(0,'Ready'),1800);
+}
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(allRecords.map(r=>({Date:fmtDate(r.ts),Time:fmtTime(r.ts),Status:r.status,Bookings:r.bookings,'Job Orders':r.jobOrders,'Walk-ins':r.walkIns,'Online Sales':r.onlineSales,'Revenue (PHP)':r.revenue,Cancellations:r.cancellations})));
+  XLSX.utils.book_append_sheet(wb,ws,'Daily_Records');
+  if(document.getElementById('exp_inc_events').checked){
+    const ws2=XLSX.utils.json_to_sheet(allEvents.map(ev=>({Date:fmtDate(ev.ts),Event:ev.label,Bookings:ev.bookings,'Job Orders':ev.jobOrders,'Walk-ins':ev.walkIns,'Online Sales':ev.onlineSales,'Revenue (PHP)':ev.revenue,Cancellations:ev.cancellations})));
+    XLSX.utils.book_append_sheet(wb,ws2,'Notable_Events');
+  }
+  const mD=buildMonthly(allRecords);
+  const ws3=XLSX.utils.json_to_sheet(mD.labels.map((l,i)=>{const d=mD.monthlyDetail[i];return{Month:l,Bookings:d.bookings,'Job Orders':d.jobOrders,'Walk-ins':d.walkIns,'Online Sales':d.onlineSales,'Avg Revenue':d.revenue,Cancellations:d.cancellations};}));
+  XLSX.utils.book_append_sheet(wb,ws3,'Monthly_Summary');
+  const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const fn=document.getElementById('exp_filename').value||'REV_AutoShop';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:'application/octet-stream'}));a.download=`${fn}_${new Date().toISOString().slice(0,10)}.xlsx`;document.body.appendChild(a);a.click();a.remove();
+}
+function exportPDF(){
+  const{jsPDF}=window.jspdf||{};if(!jsPDF){toast('jsPDF not available','err');return;}
+  const doc=new jsPDF('p','mm','a4');const mg=14;let y=mg;const gold=[166,127,56];
+  doc.setFontSize(18);doc.text('REV Auto Repair — Operations Report',mg,y);y+=8;
+  doc.setFontSize(9);doc.setTextColor(80,80,80);doc.text('Generated: '+new Date().toLocaleString(),mg,y);y+=9;
+  const mD=buildMonthly(allRecords);
+  doc.setFontSize(12);doc.setTextColor(0,0,0);doc.text('Monthly Summary (Current Year)',mg,y);y+=5;
+  doc.autoTable({startY:y,head:[['Month','Bookings','Job Orders','Walk-ins','Online Sales','Avg Revenue (PHP)','Cancels']],body:mD.labels.map((l,i)=>{const d=mD.monthlyDetail[i];return[l,d.bookings,d.jobOrders,d.walkIns,d.onlineSales,d.revenue==='--'?'—':PHP(d.revenue),d.cancellations];}),theme:'grid',headStyles:{fillColor:gold},styles:{fontSize:8},margin:{left:mg,right:mg}});
+  if(document.getElementById('exp_inc_events').checked&&allEvents.length){
+    let y2=doc.lastAutoTable.finalY+10;if(y2>235){doc.addPage();y2=mg;}
+    doc.setFontSize(12);doc.setTextColor(0,0,0);doc.text('Notable Shop Events',mg,y2);y2+=5;
+    doc.autoTable({startY:y2,head:[['Date','Event','Bookings','Job Orders','Online Sales','Revenue (PHP)']],body:allEvents.map(ev=>[fmtDate(ev.ts),ev.label,ev.bookings,ev.jobOrders,ev.onlineSales,PHP(ev.revenue)]),theme:'striped',headStyles:{fillColor:gold},styles:{fontSize:8},margin:{left:mg,right:mg}});
+  }
+  doc.save(`${document.getElementById('exp_filename').value||'REV_AutoShop'}_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+/* ── INIT ── */
+buildHistoryRows(allRecords);
+</script>
+</body>
+</html>

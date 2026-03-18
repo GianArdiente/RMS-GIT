@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>REV Staff — Post & Announcements</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../style.css?v=1.5">
+  <script src="Image.js"></script>
+  <script src="Init.js"></script>
+  <script src="modals.js"></script>
+  <script src="toast.js"></script>
+  <script src="particles.js"></script>
+  <script src="posts.js"></script>
+  <script src="State.js"></script>
+  <script src="Storage.js">    </script>
+  <script src="toast.js"></script>
+  <script src="Ui.js"></script>
+  
+
+  <style>
+    :root {
+      --gold-light:#F2E1AE; --gold:#F2DB94; --gold-dark:#D9B573;
+      --gold-deeper:#A67F38; --gold-deep:#7A5C20; --black:#080808;
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--black); color:#fff; overflow-x:hidden; }
+    .gt { background:linear-gradient(135deg,var(--gold-light),var(--gold),var(--gold-deeper)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .btn-shine { position:relative; overflow:hidden; }
+    .btn-shine::after { content:''; position:absolute; top:-50%; left:-75%; width:50%; height:200%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent); transform:skewX(-20deg); transition:left .6s; }
+    .btn-shine:hover::after { left:130%; }
+    ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:#111; } ::-webkit-scrollbar-thumb { background:var(--gold-deeper); border-radius:2px; }
+    .nav-link { color:#5a5a5a; font-size:14px; font-weight:500; transition:color .2s; }
+    .nav-link:hover { color:#F2DB94; }
+    .nav-link.active { color:var(--gold) !important; }
+    .nav-item { display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:9px; margin:2px 8px; cursor:pointer; color:#6a6a6a; font-size:13.5px; font-weight:500; border:1px solid transparent; transition:all .2s; }
+    .nav-item:hover,.nav-item.active { background:linear-gradient(90deg,rgba(166,127,56,.1),transparent); color:#ddd; border-color:rgba(166,127,56,.12); }
+    .nav-item i { color:var(--gold-deeper); width:17px; text-align:center; font-size:13px; flex-shrink:0; }
+    .hud-tl,.hud-tr,.hud-bl,.hud-br { position:absolute; width:14px; height:14px; }
+    .hud-tl { top:0; left:0; border-top:2px solid var(--gold-deeper); border-left:2px solid var(--gold-deeper); }
+    .hud-tr { top:0; right:0; border-top:2px solid var(--gold-deeper); border-right:2px solid var(--gold-deeper); }
+    .hud-bl { bottom:0; left:0; border-bottom:2px solid var(--gold-deeper); border-left:2px solid var(--gold-deeper); }
+    .hud-br { bottom:0; right:0; border-bottom:2px solid var(--gold-deeper); border-right:2px solid var(--gold-deeper); }
+    .scan-container { position:relative; overflow:hidden; }
+    .scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(166,127,56,.5),transparent); pointer-events:none; animation:scanLine 4s linear infinite; }
+    .hero-grid { background-image:linear-gradient(rgba(166,127,56,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(166,127,56,.04) 1px,transparent 1px); background-size:56px 56px; }
+    .ci { width:100%; background:rgba(255,255,255,.026); border:1px solid rgba(166,127,56,.17); border-radius:10px; padding:12px 15px; color:#fff; font-family:'DM Sans',sans-serif; font-size:13.5px; transition:border-color .2s; outline:none; }
+    .ci:focus { border-color:var(--gold-deeper); background:rgba(166,127,6,.04); }
+    .ci::placeholder { color:#3a3a3a; }
+    .tag-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:50px; font-size:9px; font-weight:800; letter-spacing:2px; text-transform:uppercase; font-family:'Rajdhani',sans-serif; }
+
+    /* Form card */
+    .form-card { background:linear-gradient(135deg,#141414,#0e0e0e); border:1px solid rgba(166,127,56,.15); border-radius:16px; overflow:hidden; position:relative; }
+    .form-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(166,127,56,.3),transparent); }
+
+    /* Post type selector */
+    .type-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:14px 12px; border-radius:10px; cursor:pointer; border:1.5px solid rgba(166,127,56,.2); background:rgba(255,255,255,.025); color:#5a5a5a; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; transition:all .22s; user-select:none; }
+    .type-btn i { font-size:18px; color:#3a3a3a; transition:color .22s; }
+    .type-btn:hover { border-color:var(--gold-deeper); background:rgba(166,127,56,.07); color:#D9B573; }
+    .type-btn:hover i { color:var(--gold-deeper); }
+    .type-btn.selected { border-color:var(--gold-deeper); background:linear-gradient(135deg,rgba(166,127,56,.18),rgba(166,127,56,.06)); color:var(--gold-dark); box-shadow:0 4px 20px rgba(166,127,56,.2); }
+    .type-btn.selected i { color:var(--gold-dark); }
+
+    /* Image upload */
+    .img-upload { border:1.5px dashed rgba(166,127,56,.25); border-radius:12px; background:rgba(255,255,255,.016); cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
+    .img-upload:hover { border-color:var(--gold-deeper); background:rgba(166,127,56,.04); }
+    .img-upload.has-image { border-style:solid; border-color:var(--gold-deeper); }
+    #imgPreviewEl { width:100%; height:100%; object-fit:cover; display:none; position:absolute; inset:0; border-radius:10px; }
+
+    /* Posts list */
+    .post-row { background:linear-gradient(135deg,#141414,#0e0e0e); border:1px solid rgba(166,127,56,.1); border-radius:12px; padding:16px; transition:all .22s; position:relative; overflow:hidden; animation:fadeUp .4s cubic-bezier(.22,1,.36,1) both; }
+    .post-row::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(166,127,56,.15),transparent); }
+    .post-row:hover { border-color:rgba(166,127,56,.28); transform:translateX(3px); }
+
+    /* Status badge */
+    .status-live { background:rgba(16,185,129,.12); color:#10b981; border:1px solid rgba(16,185,129,.25); }
+    .status-scheduled { background:rgba(139,92,246,.12); color:#8b5cf6; border:1px solid rgba(139,92,246,.25); }
+    .status-draft { background:rgba(255,255,255,.05); color:#5a5a5a; border:1px solid rgba(255,255,255,.08); }
+
+    /* Modal */
+    .rev-modal { position:fixed; inset:0; z-index:700; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .3s; }
+    .rev-modal.open { opacity:1; pointer-events:all; }
+    .rev-modal-box { position:relative; z-index:10; width:90%; max-width:480px; background:linear-gradient(150deg,#1c1c1c,#101010); border:1px solid rgba(166,127,56,.32); border-radius:18px; overflow:hidden; transform:translateY(28px) scale(.96); opacity:0; transition:all .38s cubic-bezier(.25,.46,.45,.94); box-shadow:0 50px 120px rgba(0,0,0,.8); }
+    .rev-modal.open .rev-modal-box { transform:translateY(0) scale(1); opacity:1; }
+
+    /* Delete confirm modal */
+    .del-modal { position:fixed; inset:0; z-index:800; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .3s; }
+    .del-modal.open { opacity:1; pointer-events:all; }
+    .del-modal-box { position:relative; z-index:10; width:90%; max-width:380px; background:linear-gradient(150deg,#1c1c1c,#101010); border:1px solid rgba(239,68,68,.3); border-radius:18px; overflow:hidden; transform:scale(.92); opacity:0; transition:all .3s cubic-bezier(.25,.46,.45,.94); box-shadow:0 40px 100px rgba(0,0,0,.85); }
+    .del-modal.open .del-modal-box { transform:scale(1); opacity:1; }
+
+    /* Notif toast */
+    #toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); z-index:900; opacity:0; transition:all .35s cubic-bezier(.25,.46,.45,.94); pointer-events:none; }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* Sidebar */
+    .prof-dd { position:absolute; right:0; top:calc(100% + 12px); width:200px; background:linear-gradient(160deg,#1d1d1d,#111); border:1px solid rgba(166,127,56,.26); border-radius:14px; overflow:hidden; box-shadow:0 28px 70px rgba(0,0,0,.65); opacity:0; pointer-events:none; transform:translateY(-10px); transition:all .22s; z-index:200; }
+    .prof-dd.open { opacity:1; pointer-events:all; transform:translateY(0); }
+    .dd-item { display:flex; align-items:center; gap:11px; padding:10px 16px; color:#888; font-size:13px; cursor:pointer; transition:all .15s; }
+    .dd-item:hover { background:rgba(255,255,255,.032); color:#eee; }
+    .dd-item i { color:var(--gold-deeper); width:15px; font-size:12px; }
+    .prof-ring { position:absolute; inset:-3px; border-radius:11px; background:linear-gradient(90deg,var(--gold-deeper),var(--gold),var(--gold-dark),var(--gold-deeper)); background-size:300% 300%; animation:borderFlow 2.5s ease infinite, newsGlow 2.5s ease infinite; z-index:-1; }
+
+    /* char counter */
+    .char-count { font-family:'Rajdhani',sans-serif; font-size:10px; letter-spacing:1px; }
+    .char-ok  { color:#3a3a3a; }
+    .char-warn{ color:#d97706; }
+    .char-over{ color:#ef4444; }
+
+    @media(max-width:768px){ .type-btn { padding:10px 8px; font-size:10px; } }
+  </style>
+</head>
+
+<body style="background:#080808">
+
+<!-- ════════════════════════════════════════════
+     SUCCESS / DELETE MODALS
+════════════════════════════════════════════ -->
+<!-- Publish success -->
+<div id="successModal" class="rev-modal">
+  <div class="absolute inset-0 bg-black/75 backdrop-blur-md" onclick="closeSuccessModal()"></div>
+  <div class="rev-modal-box">
+    <div class="absolute top-0 left-0 right-0 h-[2px]" style="background:linear-gradient(90deg,transparent,#A67F38,#F2DB94,#A67F38,transparent)"></div>
+    <div class="p-10 text-center">
+      <div class="w-16 h-16 rounded-full mx-auto mb-5 flex items-center justify-center" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);">
+        <i class="fas fa-check text-2xl" style="color:#10b981;"></i>
+      </div>
+      <h2 class="font-barlow text-3xl font-black gt mb-2" id="successTitle">Post Published!</h2>
+      <p class="text-gray-500 text-sm mb-1" id="successSub">Your post is now live on the REV News page.</p>
+      <p class="text-gray-600 text-xs mb-8" id="successDesc">Customers can now read it in the News feed.</p>
+      <div class="flex gap-3">
+        <button onclick="closeSuccessModal()" class="btn-shine flex-1 py-3 rounded-lg font-raj font-bold text-black text-sm" style="background:linear-gradient(135deg,#A67F38,#D9B573);">Done</button>
+        <a href="news.html" target="_blank" class="flex-1 py-3 rounded-lg font-raj font-semibold text-sm flex items-center justify-center gap-1.5 transition-all hover:border-yellow-700" style="background:transparent;color:#F2E1AE;border:1px solid rgba(166,127,56,.42);text-decoration:none;"><i class="fas fa-external-link-alt text-xs"></i>View on News</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm -->
+<div id="deleteModal" class="del-modal">
+  <div class="absolute inset-0 bg-black/75 backdrop-blur-md" onclick="closeDeleteModal()"></div>
+  <div class="del-modal-box">
+    <div class="absolute top-0 left-0 right-0 h-[2px]" style="background:linear-gradient(90deg,transparent,#ef4444,#ef4444,transparent)"></div>
+    <div class="p-8 text-center">
+      <div class="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);">
+        <i class="fas fa-trash text-xl" style="color:#ef4444;"></i>
+      </div>
+      <h3 class="font-barlow text-2xl font-black text-white mb-2">Delete Post?</h3>
+      <p class="text-gray-500 text-sm mb-1">This action cannot be undone.</p>
+      <p class="text-gray-600 text-xs mb-7">The post will be removed from the News page immediately.</p>
+      <div class="flex gap-3">
+        <button onclick="closeDeleteModal()" class="flex-1 py-2.5 rounded-lg font-raj font-bold text-sm transition-all hover:opacity-80" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#888;">Cancel</button>
+        <button onclick="confirmDelete()" class="btn-shine flex-1 py-2.5 rounded-lg font-raj font-bold text-white text-sm" style="background:linear-gradient(135deg,#991b1b,#ef4444);">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast">
+  <div id="toastInner" class="px-5 py-3 rounded-xl flex items-center gap-3 text-sm font-dm" style="background:#1a1a1a;border:1px solid rgba(166,127,56,.3);box-shadow:0 20px 50px rgba(0,0,0,.6);">
+    <i id="toastIcon" class="fas fa-check-circle" style="color:#10b981;"></i>
+    <span id="toastMsg" style="color:#ccc;">Done!</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════ -->
+<aside id="sidebar" class="fixed left-0 top-0 h-full z-40 flex flex-col" style="width:248px;background:linear-gradient(180deg,#0c0c0c,#141414);border-right:1px solid rgba(166,127,56,.18);transition:transform .35s cubic-bezier(.25,.46,.45,.94);">
+  <div class="p-5" style="border-bottom:1px solid rgba(166,127,56,.1);">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-[9px] flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#A67F38,#D9B573);"><span class="font-barlow text-xl font-black text-black">R</span></div>
+      <div><div class="font-barlow text-xl font-black tracking-wide gt">REV</div><div class="text-[9.5px] tracking-[2.5px] uppercase" style="color:#3a3a3a;">Staff Portal</div></div>
+    </div>
+  </div>
+  <div class="flex-1 overflow-y-auto py-2">
+    <div class="px-4 pt-3 pb-1 text-[9.5px] tracking-[3px] uppercase" style="color:#3a3a3a;">Staff Menu</div>
+    <div class="nav-item"><i class="fas fa-tachometer-alt"></i>Dashboard</div>
+    <div class="nav-item"><i class="fas fa-calendar-check"></i>Bookings</div>
+    <div class="nav-item active"><i class="fas fa-bullhorn"></i>Post & Announcements</div>
+    <div class="nav-item"><i class="fas fa-users"></i>Customers</div>
+    <div class="nav-item"><i class="fas fa-receipt"></i>Transactions</div>
+    <div class="nav-item"><i class="fas fa-chart-line"></i>Reports</div>
+    <div class="px-4 pt-5 pb-1 text-[9.5px] tracking-[3px] uppercase" style="color:#3a3a3a;">Settings</div>
+    <div class="nav-item"><i class="fas fa-cog"></i>Shop Settings</div>
+    <div class="nav-item"><i class="fas fa-user-shield"></i>Staff Accounts</div>
+  </div>
+  <div class="mx-3 mb-4 p-3 rounded-xl flex items-center gap-3" style="background:rgba(166,127,56,.06);border:1px solid rgba(166,127,56,.12);">
+    <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#A67F38,#D9B573);"><span class="font-barlow font-black text-black text-sm">AJ</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="text-xs font-semibold text-gray-300 truncate">John Doe</div>
+      <div class="text-[9.5px] truncate" style="color:#3a3a3a;">Cashier</div>
+    </div>
+    <span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" style="animation:pulseDot 1.5s infinite;"></span>
+  </div>
+</aside>
+
+<button id="menuToggle" onclick="toggleSidebar()" class="fixed top-3.5 left-3.5 z-50 lg:hidden w-10 h-10 flex items-center justify-center rounded-lg" style="background:#1a1a1a;border:1px solid rgba(166,127,56,.3);">
+  <i class="fas fa-bars text-sm" style="color:#F2DB94;"></i>
+</button>
+
+<!-- ════════════════════════════════════════════
+     MAIN
+════════════════════════════════════════════ -->
+<div id="mainWrap" style="margin-left:248px;transition:margin .35s;">
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-30 backdrop-blur-2xl" style="background:linear-gradient(90deg,rgba(8,8,8,.96),rgba(14,14,14,.96));border-bottom:1px solid rgba(166,127,56,.1);">
+    <div class="px-6 h-16 flex items-center justify-between max-w-[1400px] mx-auto">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="lg:flex hidden w-9 h-9 items-center justify-center rounded-lg hover:bg-white/5 transition-colors" style="color:#3a3a3a;">
+          <i class="fas fa-bars text-sm"></i>
+        </button>
+        <div>
+          <div class="font-barlow font-black text-white text-lg leading-none">Post & Announcements</div>
+          <div class="text-[9.5px] tracking-[2px] uppercase mt-0.5" style="color:#3a3a3a;">Staff Content Manager</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="news.html" target="_blank" class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-raj font-bold transition-all hover:opacity-80" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#10b981;">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" style="animation:pulseDot 1.5s infinite;"></span>
+          News Page Live
+        </a>
+        <div class="relative">
+          <div class="prof-ring" style="position:absolute;inset:-2px;border-radius:9px;"></div>
+          <button id="profBtn" onclick="toggleDD()" class="btn-shine relative px-4 py-2 rounded-lg font-raj font-bold text-black text-sm flex items-center gap-2" style="background:linear-gradient(135deg,#A67F38,#D9B573);">
+            <i class="fas fa-user text-xs"></i><span class="hidden sm:inline">AJ</span>
+          </button>
+          <div id="profDD" class="prof-dd">
+            <div class="p-3" style="border-bottom:1px solid rgba(166,127,56,.1);">
+              <div class="font-semibold text-sm text-gray-200">John Doe</div>
+              <div class="text-[11px]" style="color:#444;">Cashier · Staff</div>
+            </div>
+            <div class="py-1">
+              <div class="dd-item"><i class="fas fa-user-circle"></i>Profile</div>
+              <div class="dd-item"><i class="fas fa-cog"></i>Settings</div>
+              <div class="dd-item" style="color:#e05252;"><i class="fas fa-sign-out-alt" style="color:#e05252;"></i>Log Out</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="relative py-12 hero-grid scan-container" style="background:linear-gradient(135deg,rgba(8,8,8,.98),rgba(12,10,5,.98));">
+    <div class="absolute rounded-full pointer-events-none" style="width:400px;height:400px;background:radial-gradient(circle,rgba(166,127,56,.1),transparent 70%);top:-150px;right:10%;filter:blur(70px);animation:floatA 8s ease-in-out infinite;"></div>
+    <div class="scan-line"></div>
+    <div class="max-w-[1400px] mx-auto px-6 relative z-10">
+      <div class="flex items-end justify-between flex-wrap gap-4">
+        <div>
+          <div class="flex items-center gap-2.5 mb-3">
+            <i class="fas fa-bullhorn text-[11px]" style="color:#F2DB94;"></i>
+            <span class="text-[10.5px] tracking-[4px] uppercase font-raj font-semibold" style="color:#F2DB94;">Content Control</span>
+          </div>
+          <h1 class="font-barlow font-black" style="font-size:clamp(38px,5vw,64px);line-height:.95;letter-spacing:-1.5px;">
+            <span class="gt">POST</span> <span class="text-white">&</span><br/>
+            <span class="text-white">ANNOUNCEMENTS</span>
+          </h1>
+          <p class="mt-3 text-sm max-w-sm font-light" style="color:#4a4a4a;">Create and manage promotional content, news, and announcements that appear on the customer-facing News page.</p>
+        </div>
+        <div class="flex gap-3">
+          <div class="scan-container relative p-4 rounded-xl text-center" style="background:rgba(255,255,255,.025);border:1px solid rgba(166,127,56,.14);min-width:80px;">
+            <div class="hud-tl"></div><div class="hud-br"></div>
+            <div class="font-barlow text-3xl font-black gt" id="statTotal">0</div>
+            <div class="text-[9px] tracking-widest uppercase mt-1" style="color:#3a3a3a;">Total Posts</div>
+          </div>
+          <div class="scan-container relative p-4 rounded-xl text-center" style="background:rgba(255,255,255,.025);border:1px solid rgba(166,127,56,.14);min-width:80px;">
+            <div class="hud-tl"></div><div class="hud-br"></div>
+            <div class="font-barlow text-3xl font-black" style="color:#10b981;" id="statLive">0</div>
+            <div class="text-[9px] tracking-widest uppercase mt-1" style="color:#3a3a3a;">Live</div>
+          </div>
+          <div class="scan-container relative p-4 rounded-xl text-center" style="background:rgba(255,255,255,.025);border:1px solid rgba(166,127,56,.14);min-width:80px;">
+            <div class="hud-tl"></div><div class="hud-br"></div>
+            <div class="font-barlow text-3xl font-black" style="color:#8b5cf6;" id="statScheduled">0</div>
+            <div class="text-[9px] tracking-widest uppercase mt-1" style="color:#3a3a3a;">Scheduled</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       MAIN LAYOUT
+  ════════════════════════════════════════ -->
+  <div class="max-w-[1400px] mx-auto px-6 py-8">
+    <div class="grid gap-8" style="grid-template-columns:1fr 420px;">
+
+      <!-- LEFT: Posts List -->
+      <div>
+        <!-- Filter bar -->
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="filterPosts('all')" class="filter-tab active px-4 py-2 rounded-lg font-raj font-bold text-xs border transition-all" data-filter="all">All</button>
+            <button onclick="filterPosts('Promotions')" class="filter-tab px-4 py-2 rounded-lg font-raj font-bold text-xs border transition-all" data-filter="Promotions" style="color:#d97706;border-color:rgba(217,119,6,.2);background:transparent;">Promo</button>
+            <button onclick="filterPosts('News')" class="filter-tab px-4 py-2 rounded-lg font-raj font-bold text-xs border transition-all" data-filter="News" style="color:#A67F38;border-color:rgba(166,127,56,.2);background:transparent;">News</button>
+            <button onclick="filterPosts('Announcements')" class="filter-tab px-4 py-2 rounded-lg font-raj font-bold text-xs border transition-all" data-filter="Announcements" style="color:#10b981;border-color:rgba(16,185,129,.2);background:transparent;">Announcements</button>
+          </div>
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[11px]" style="color:#3a3a3a;"></i>
+            <input id="postSearch" type="text" placeholder="Search posts..." class="ci" style="padding-left:34px;padding-top:9px;padding-bottom:9px;font-size:12px;max-width:220px;" oninput="renderPosts()"/>
+          </div>
+        </div>
+
+        <div id="postsList" class="flex flex-col gap-3"></div>
+        <div id="emptyPosts" class="hidden text-center py-16">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style="background:rgba(166,127,56,.06);border:1px solid rgba(166,127,56,.14);"><i class="fas fa-inbox text-xl" style="color:#3a3a3a;"></i></div>
+          <div class="font-barlow text-xl font-black" style="color:#2a2a2a;">No Posts Found</div>
+          <p class="text-xs mt-1" style="color:#2a2a2a;">Create your first post using the form →</p>
+        </div>
+      </div>
+
+      <!-- RIGHT: Create Form -->
+      <div class="lg:sticky top-24 self-start">
+        <div class="form-card p-6">
+          <div class="flex items-center gap-2.5 mb-6">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,rgba(166,127,56,.2),rgba(166,127,56,.06));border:1px solid rgba(166,127,56,.3);"><i class="fas fa-plus text-xs" style="color:#D9B573;"></i></div>
+            <div>
+              <div class="font-barlow font-black text-white text-lg leading-none">Create New Post</div>
+              <div class="text-[9px] tracking-widest uppercase mt-0.5" style="color:#3a3a3a;">Staff Only</div>
+            </div>
+          </div>
+
+          <!-- POST TYPE -->
+          <div class="mb-5">
+            <label class="text-[9.5px] tracking-[2.5px] uppercase font-raj font-bold block mb-2.5" style="color:#3a3a3a;">POST TYPE <span style="color:#ef4444;">*</span></label>
+            <div class="grid grid-cols-3 gap-2" id="typeGrid">
+              <div class="type-btn selected" data-type="Promotions" onclick="selectType(this,'Promotions')">
+                <i class="fas fa-tag"></i>
+                <span>Promo</span>
+              </div>
+              <div class="type-btn" data-type="Announcements" onclick="selectType(this,'Announcements')">
+                <i class="fas fa-bullhorn"></i>
+                <span>Announcement</span>
+              </div>
+              <div class="type-btn" data-type="News" onclick="selectType(this,'News')">
+                <i class="fas fa-newspaper"></i>
+                <span>News</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TITLE -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-[9.5px] tracking-[2.5px] uppercase font-raj font-bold" style="color:#3a3a3a;">POST TITLE <span style="color:#ef4444;">*</span></label>
+              <span id="titleCount" class="char-count char-ok">0/80</span>
+            </div>
+            <input id="postTitle" type="text" placeholder="Enter a catchy title..." class="ci" maxlength="80" oninput="updateCharCount('postTitle','titleCount',80)"/>
+          </div>
+
+          <!-- CONTENT -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-[9.5px] tracking-[2.5px] uppercase font-raj font-bold" style="color:#3a3a3a;">CONTENT <span style="color:#ef4444;">*</span></label>
+              <span id="contentCount" class="char-count char-ok">0/600</span>
+            </div>
+            <textarea id="postContent" class="ci" rows="4" placeholder="Write your post content here..." maxlength="600" style="resize:vertical;min-height:96px;" oninput="updateCharCount('postContent','contentCount',600)"></textarea>
+          </div>
+
+          <!-- EXCERPT -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-[9.5px] tracking-[2.5px] uppercase font-raj font-bold" style="color:#3a3a3a;">EXCERPT <span class="text-[8px] tracking-normal normal-case font-normal" style="color:#3a3a3a;">(shown in card preview)</span></label>
+              <span id="excerptCount" class="char-count char-ok">0/160</span>
+            </div>
+            <textarea id="postExcerpt" class="ci" rows="2" placeholder="Short description for the article card..." maxlength="160" style="resize:none;" oninput="updateCharCount('postExcerpt','excerptCount',160)"></textarea>
+          </div>
+
+          <!-- FEATURED IMAGE -->
+          <div class="mb-4">
+            <label class="text-[9.5px] tracking-[2.5px] uppercase font-raj font-bold block mb-2" style="color:#3a3a3a;">FEATURED IMAGE</label>
+            <div class="img-upload relative" style="height:130px;" id="imgDrop" onclick="document.getElementById('imgInput').click();" ondragover="event.preventDefault();this.classList.add('border-[#A67F38]');" ondragleave="this.classList.remove('border-[#A67F38]');" ondrop="handleDrop(event)">
+              <img id="imgPreviewEl" alt="Preview"/>
+              <div id="imgPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:rgba(166,127,56,.08);border:1px solid rgba(166,127,56,.18);"><i class="fas fa-cloud-upload-alt" style="color:#3a3a3a;font-size:16px;"></i></div>
+                <span class="text-[11px]" style="color:#3a3a3a;">Click to upload or drag and drop</span>
+                <span class="text-[10px]" style="color:#2a2a2a;">PNG, JPG, GIF up to 5MB</span>
+              </div>
+              <input id="imgInput" type="file" accept="image/*" class="hidden" onchange="handleImgInput(event)"/>
+            </div>
+            <div id="imgName" class="text-[10px] mt-1.5 hidden" style="color:#A67F38;font-family:'Rajdhani',sans-serif;letter-spacing:1px;"></div>
+            <!-- URL fallback -->
+            <div class="mt-2">
+              <input id="imgUrl" type="text" placeholder="Or paste image URL..." class="ci" style="font-size:11.5px;padding:9px 12px;" oninput="handleImgUrl(this.value)"/>
+            </div>
+          </div>
+
+          <!-- FEATURED toggle -->
+          <div class="mb-4 flex items-center justify-between p-3 rounded-xl" style="background:rgba(255,255,255,.02);border:1px solid rgba(166,127,56,.1);">
+            <div>
+              <div class="text-xs font-semibold text-gray-400">Mark as Featured</div>
+              <div class="text-[10px]" style="color:#3a3a3a;">Appears as the hero article in News</div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input id="isFeatured" type="checkbox" class="sr-only peer">
+              <div class="w-10 h-5 rounded-full peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:rounded-full after:bg-white after:transition-transform" style="background:rgba(255,255,255,.08);border:1px solid rgba(166,127,56,.2);" id="toggleTrack"></div>
+            </label>
+          </div>
+
+          <!-- SCHEDULE -->
+          <div class="mb-6">
+            <label class="text-[9.5px] tracking-[2.5px] uppercase font-raj font-bold block mb-1.5" style="color:#3a3a3a;">SCHEDULE FOR LATER <span class="text-[8px] tracking-normal normal-case font-normal">(optional)</span></label>
+            <input id="scheduleDate" type="datetime-local" class="ci" style="color-scheme:dark;"/>
+          </div>
+
+          <!-- ACTIONS -->
+          <div class="flex gap-2.5">
+            <button onclick="saveDraft()" class="flex-1 py-3 rounded-xl font-raj font-bold text-sm transition-all hover:opacity-80" style="background:rgba(255,255,255,.03);border:1px solid rgba(166,127,56,.2);color:#888;">
+              <i class="fas fa-save mr-1.5 text-xs"></i>Save Draft
+            </button>
+            <button onclick="publishPost()" class="btn-shine flex-1 py-3 rounded-xl font-raj font-bold text-black text-sm" style="background:linear-gradient(135deg,#A67F38,#D9B573);box-shadow:0 4px 20px rgba(166,127,56,.3);">
+              <i class="fas fa-paper-plane mr-1.5 text-xs"></i><span id="pubBtnLabel">Publish Now</span>
+            </button>
+          </div>
+          <p class="text-center text-[10px] mt-3" style="color:#2a2a2a;">Posts appear live on the <a href="news.html" target="_blank" style="color:#A67F38;text-decoration:none;">customer News page</a> immediately.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /mainWrap -->
+
+<!-- ════════════════════════════════════════════
+     CANVAS PARTICLES
+════════════════════════════════════════════ -->
+<script src="canvas.js"></script>
+
+
+
+</body>
+</html>

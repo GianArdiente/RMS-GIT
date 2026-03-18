@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REV — Services</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #C9A84C; --gold-light: #F2DB94; --gold-dark: #A67F38;
+      --bg: #0a0a0b; --surface: #111113; --surface2: #18181b; --surface3: #1f1f23;
+      --border: rgba(201,168,76,0.12); --border-mid: rgba(201,168,76,0.22);
+      --text: #f0ece3; --muted: rgba(240,236,227,0.45);
+      --green: #34d399; --blue: #60a5fa; --red: #f87171; --amber: #fbbf24;
+      --font-display: 'Barlow Condensed', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-ui: 'Rajdhani', sans-serif;
+      --grad-gold: linear-gradient(135deg,#F2E1AE 0%,#F2DB94 50%,#A67F38 100%);
+      --grad-green: linear-gradient(135deg,#10b981,#059669);
+      --grad-blue: linear-gradient(135deg,#3b82f6,#60a5fa);
+      --grad-purple: linear-gradient(135deg,#a855f7,#c084fc);
+      --grad-red: linear-gradient(135deg,#ef4444,#f87171);
+      --radius: 10px; --transition: 0.2s ease;
+    }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--surface2); } ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px; }
+
+    /* Stats */
+    .svc-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+    .svc-stat-card { background: linear-gradient(160deg, var(--surface2), var(--surface)); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition); }
+    .svc-stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(201,168,76,0.25), transparent); }
+    .svc-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); border-color: var(--border-mid); }
+    .svc-stat-label { font-family: var(--font-ui); font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .svc-stat-val { font-family: var(--font-display); font-size: 36px; font-weight: 800; line-height: 1; background: var(--grad-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .svc-stat-icon { width: 42px; height: 42px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
+    .svc-stat-icon.gold   { background: var(--grad-gold); }
+    .svc-stat-icon.green  { background: var(--grad-green); }
+    .svc-stat-icon.blue   { background: var(--grad-blue); }
+    .svc-stat-icon.star   { background: var(--grad-purple); }
+
+    /* Table section */
+    .svc-table-section { background: linear-gradient(160deg, var(--surface2), var(--surface)); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; position: relative; }
+    .svc-table-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(201,168,76,0.22), transparent); z-index: 1; }
+
+    /* Toolbar */
+    .svc-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid var(--border); gap: 10px; flex-wrap: wrap; }
+    .svc-toolbar-left { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); font-family: var(--font-ui); font-weight: 600; }
+    .svc-show-select { background: var(--surface3); border: 1px solid rgba(255,255,255,0.1); color: var(--text); border-radius: 6px; padding: 4px 22px 4px 8px; font-size: 12px; font-family: var(--font-ui); font-weight: 700; cursor: pointer; outline: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23A67F38'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 4px center; transition: border-color var(--transition); }
+    .svc-show-select:focus { border-color: var(--gold-dark); }
+    .svc-search-box { display: flex; align-items: center; gap: 7px; background: var(--surface3); border: 1px solid rgba(255,255,255,0.07); border-radius: 7px; padding: 6px 12px; flex: 1; max-width: 320px; transition: border-color var(--transition), box-shadow var(--transition); }
+    .svc-search-box:focus-within { border-color: rgba(201,168,76,0.45); box-shadow: 0 0 0 3px rgba(201,168,76,0.1); }
+    .svc-search-box svg { width: 14px; height: 14px; fill: var(--muted); flex-shrink: 0; }
+    .svc-search-box input { background: none; border: none; outline: none; color: var(--text); font-size: 12px; width: 100%; font-family: var(--font-body); }
+    .svc-search-box input::placeholder { color: var(--muted); }
+    .svc-toolbar-right { display: flex; gap: 7px; }
+
+    /* Buttons */
+    .svc-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 7px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; cursor: pointer; border: none; transition: var(--transition); white-space: nowrap; user-select: none; letter-spacing: 0.3px; }
+    .svc-btn svg { width: 13px; height: 13px; }
+    .svc-btn-outline { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); color: var(--text); }
+    .svc-btn-outline:hover { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.35); }
+    .svc-btn-action { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); color: var(--gold-light); }
+    .svc-btn-action:hover { background: rgba(201,168,76,0.22); }
+    .svc-btn-action.selecting { background: rgba(201,168,76,0.28); border-color: rgba(201,168,76,0.6); box-shadow: 0 0 0 2px rgba(201,168,76,0.2); }
+    .svc-btn-primary { background: var(--grad-gold); color: #0a0a0b; border: none; box-shadow: 0 2px 8px rgba(166,127,56,0.3); }
+    .svc-btn-primary:hover { filter: brightness(1.08); box-shadow: 0 4px 16px rgba(166,127,56,0.45); transform: translateY(-1px); }
+
+    /* Export */
+    .svc-export-wrap { position: relative; display: inline-flex; }
+    .svc-export-menu { position: absolute; top: calc(100% + 6px); left: 0; background: linear-gradient(160deg, var(--surface2), var(--surface)); border: 1px solid var(--border-mid); border-radius: var(--radius); padding: 6px; min-width: 170px; z-index: 150; box-shadow: 0 12px 32px rgba(0,0,0,0.7); opacity: 0; pointer-events: none; transform: translateY(-6px); transition: opacity 0.18s, transform 0.18s; }
+    .svc-export-menu.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+    .svc-export-menu-title { font-family: var(--font-ui); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.25); padding: 3px 7px 5px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 4px; }
+    .svc-export-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; cursor: pointer; transition: background var(--transition); font-family: var(--font-ui); font-size: 12px; font-weight: 700; color: var(--text); user-select: none; }
+    .svc-export-item:hover { background: rgba(201,168,76,0.12); }
+    .svc-export-item-icon { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .svc-export-item-icon.pdf   { background: rgba(239,68,68,0.18); border: 1px solid rgba(239,68,68,0.3); }
+    .svc-export-item-icon.excel { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.22); }
+    .svc-export-item-sub { font-size: 10px; font-weight: 400; color: var(--muted); font-family: var(--font-body); display: block; line-height: 1.2; margin-top: 1px; }
+
+    /* Table */
+    .svc-table { width: 100%; border-collapse: collapse; }
+    .svc-table thead tr { border-bottom: 1px solid var(--border); }
+    .svc-table thead th { font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 11px 18px; text-align: left; cursor: pointer; transition: color var(--transition); user-select: none; }
+    .svc-table thead th:hover { color: var(--gold-light); }
+    .sort-arrow { display: inline-block; margin-left: 3px; opacity: 0.5; }
+    .sort-arrow.asc::after { content: ' ↑'; } .sort-arrow.desc::after { content: ' ↓'; }
+    .svc-table tbody tr { border-bottom: 1px solid rgba(201,168,76,0.07); transition: background var(--transition); cursor: pointer; }
+    .svc-table tbody tr:last-child { border-bottom: none; }
+    .svc-table tbody tr:hover { background: rgba(201,168,76,0.04); }
+    .svc-table tbody td { padding: 11px 18px; font-size: 13px; vertical-align: middle; }
+    .svc-table tbody tr.selected { background: rgba(201,168,76,0.08) !important; border-left: 3px solid var(--gold-dark); }
+    .svc-sku-badge { font-family: var(--font-ui); font-size: 12px; font-weight: 700; color: var(--gold-light); background: rgba(201,168,76,0.1); padding: 2px 8px; border-radius: 5px; border: 1px solid rgba(201,168,76,0.22); letter-spacing: 0.5px; }
+    .svc-img-cell { width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface3); display: flex; align-items: center; justify-content: center; font-size: 20px; transition: transform var(--transition), box-shadow var(--transition); overflow: hidden; }
+    .svc-table tbody tr:hover .svc-img-cell { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .svc-price-tag { font-family: var(--font-ui); font-weight: 700; font-size: 14px; background: var(--grad-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .svc-status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; font-family: var(--font-ui); font-weight: 700; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .svc-status-pill.active   { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+    .svc-status-pill.inactive { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.16); }
+    .svc-status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .svc-actions { display: flex; gap: 5px; }
+    .svc-action-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.07); background: var(--surface3); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+    .svc-action-btn svg { width: 13px; height: 13px; fill: rgba(255,255,255,0.3); transition: fill var(--transition); }
+    .svc-action-btn:hover.view   { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.45); }
+    .svc-action-btn:hover.view svg   { fill: var(--gold-light); }
+    .svc-action-btn:hover.edit   { background: rgba(96,165,250,0.12); border-color: var(--blue); }
+    .svc-action-btn:hover.edit svg   { fill: var(--blue); }
+    .svc-action-btn:hover.delete { background: rgba(239,68,68,0.12); border-color: var(--red); }
+    .svc-action-btn:hover.delete svg { fill: var(--red); }
+
+    /* Footer */
+    .svc-table-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); flex-wrap: wrap; gap: 8px; font-family: var(--font-ui); font-weight: 600; }
+    .svc-pagination { display: flex; gap: 4px; }
+    .svc-page-btn { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.07); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-family: var(--font-ui); font-weight: 700; min-width: 28px; display: flex; align-items: center; justify-content: center; transition: transform 0.15s, background 0.15s; }
+    .svc-page-btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .svc-page-btn:disabled { opacity: 0.35; cursor: default; }
+    .svc-page-btn.active { background: var(--grad-gold); border-color: transparent; color: #0a0a0b; box-shadow: 0 3px 10px rgba(166,127,56,0.3); }
+
+    /* Checkbox */
+    .row-check { width: 16px; height: 16px; accent-color: var(--gold-dark); cursor: pointer; }
+    .th-check { width: 38px; }
+
+    /* Select bar */
+    .svc-select-bar { display: none; align-items: center; gap: 10px; padding: 9px 18px; background: linear-gradient(90deg, rgba(201,168,76,0.1), rgba(201,168,76,0.03)); border-bottom: 1px solid rgba(201,168,76,0.22); flex-wrap: wrap; }
+    .svc-select-bar.visible { display: flex; }
+    .svc-select-count { font-family: var(--font-ui); font-weight: 700; font-size: 12px; color: var(--gold-light); letter-spacing: 0.5px; flex: 1; }
+    .svc-btn-sel-all { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: var(--text); display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 6px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; cursor: pointer; transition: var(--transition); }
+    .svc-btn-sel-all:hover { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.35); }
+    .svc-btn-bulk-edit { background: rgba(96,165,250,0.12); border: 1px solid rgba(96,165,250,0.35); color: var(--blue); display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 6px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; cursor: pointer; transition: var(--transition); }
+    .svc-btn-bulk-edit:hover { background: rgba(96,165,250,0.22); }
+    .svc-btn-bulk-edit:disabled { opacity: 0.35; cursor: default; }
+    .svc-btn-bulk-del { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: var(--red); display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 6px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; cursor: pointer; transition: var(--transition); }
+    .svc-btn-bulk-del:hover { background: rgba(239,68,68,0.22); }
+    .svc-btn-bulk-del:disabled { opacity: 0.35; cursor: default; }
+    .svc-btn-cancel-sel { background: none; border: none; color: var(--muted); font-family: var(--font-ui); font-size: 12px; font-weight: 700; cursor: pointer; padding: 5px 8px; border-radius: 6px; transition: var(--transition); }
+    .svc-btn-cancel-sel:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+
+    /* Modals */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(6px); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .svc-modal { background: linear-gradient(160deg, var(--surface2), var(--surface)); border: 1px solid var(--border-mid); border-radius: 14px; width: 100%; max-width: 420px; padding: 24px; transform: scale(0.9) translateY(20px); transition: transform 0.25s; box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-height: 92vh; overflow-y: auto; }
+    .modal-overlay.open .svc-modal { transform: scale(1) translateY(0); }
+    .svc-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .svc-modal-title { font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; background: var(--grad-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .svc-modal-close { width: 28px; height: 28px; border-radius: 6px; background: var(--surface3); border: 1px solid rgba(255,255,255,0.07); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+    .svc-modal-close:hover { background: rgba(239,68,68,0.15); border-color: var(--red); }
+    .svc-modal-close svg { width: 13px; height: 13px; fill: var(--muted); }
+    .svc-modal-close:hover svg { fill: var(--red); }
+    .svc-form-group { margin-bottom: 13px; }
+    .svc-form-label { display: block; font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 5px; }
+    .svc-form-input { width: 100%; padding: 8px 11px; background: var(--surface3); border: 1px solid rgba(255,255,255,0.09); border-radius: 7px; color: var(--text); font-family: var(--font-body); font-size: 13px; outline: none; transition: border-color var(--transition), box-shadow var(--transition); }
+    .svc-form-input:focus { border-color: rgba(201,168,76,0.5); box-shadow: 0 0 0 3px rgba(201,168,76,0.1); }
+    .svc-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .svc-modal-actions { display: flex; gap: 9px; margin-top: 16px; }
+    .svc-modal-actions .svc-btn { flex: 1; justify-content: center; }
+
+    /* Image upload */
+    .svc-img-upload-zone { width: 100%; height: 90px; border: 2px dashed rgba(201,168,76,0.3); border-radius: 9px; background: var(--surface3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; transition: var(--transition); position: relative; overflow: hidden; }
+    .svc-img-upload-zone:hover { border-color: rgba(201,168,76,0.6); background: rgba(201,168,76,0.05); }
+    .svc-img-upload-zone.has-preview { border-style: solid; border-color: rgba(201,168,76,0.35); padding: 0; }
+    .svc-img-upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .svc-img-upload-icon { font-size: 20px; line-height: 1; }
+    .svc-img-upload-label { font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 1px; color: rgba(255,255,255,0.3); text-transform: uppercase; }
+    .svc-img-upload-sub { font-size: 9px; color: rgba(255,255,255,0.18); font-family: var(--font-ui); }
+    .svc-img-preview { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 8px; }
+    .svc-img-clear-btn { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; background: rgba(239,68,68,0.85); border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: background var(--transition); }
+    .svc-img-clear-btn:hover { background: var(--red); }
+    .svc-img-clear-btn svg { width: 12px; height: 12px; fill: #fff; }
+
+    /* View modal */
+    .svc-modal-view { max-width: 380px; padding: 0; overflow: hidden; }
+    .svc-view-hero { height: 100px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .svc-view-hero.has-img { height: 200px; cursor: zoom-in; }
+    .svc-view-hero-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .svc-view-hero-zoom { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(4px); border-radius: 6px; padding: 4px 8px; display: flex; align-items: center; gap: 4px; font-family: var(--font-ui); font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.8); pointer-events: none; letter-spacing: 0.5px; }
+    .svc-view-hero-zoom svg { width: 12px; height: 12px; fill: rgba(255,255,255,0.7); }
+    .svc-view-emoji { font-size: 46px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
+    .svc-modal-view .svc-modal-header { padding: 18px 22px 0; }
+    .svc-view-body { padding: 18px 22px 4px; display: flex; flex-direction: column; gap: 12px; }
+    .svc-view-row { display: flex; gap: 18px; }
+    .svc-view-field { display: flex; flex-direction: column; gap: 3px; }
+    .svc-view-field.full { width: 100%; }
+    .svc-view-label { font-family: var(--font-ui); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+    .svc-view-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+    .svc-view-price { font-family: var(--font-display); font-size: 26px; font-weight: 800; background: var(--grad-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .svc-modal-view .svc-modal-actions { padding: 14px 22px 22px; margin-top: 2px; }
+
+    /* Delete modal */
+    .svc-modal-delete { max-width: 380px; text-align: center; }
+    .svc-del-icon-wrap { display: flex; justify-content: center; margin-bottom: 14px; }
+    .svc-del-icon-ring { width: 58px; height: 58px; background: var(--grad-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(239,68,68,0.35); }
+    .svc-del-icon-ring svg { width: 26px; height: 26px; fill: #fff; }
+    .svc-del-title { font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: 1px; margin-bottom: 7px; }
+    .svc-del-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+    .svc-del-preview { display: flex; align-items: center; gap: 11px; background: var(--surface3); border: 1px solid var(--border); border-radius: 9px; padding: 11px 14px; text-align: left; }
+    .svc-btn-delete { background: var(--grad-red); color: #fff; border: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 14px; border-radius: 7px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; cursor: pointer; transition: filter var(--transition), transform var(--transition), box-shadow var(--transition); flex: 1; }
+    .svc-btn-delete:hover { filter: brightness(1.1); box-shadow: 0 0 14px rgba(239,68,68,0.4); transform: translateY(-1px); }
+
+    /* Bulk modals */
+    .svc-modal-bulk { max-width: 460px; }
+    .svc-bulk-list { max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 9px; padding: 7px; background: var(--surface3); margin-bottom: 12px; display: flex; flex-direction: column; gap: 3px; }
+    .svc-bulk-list-item { display: flex; align-items: center; gap: 9px; padding: 6px 9px; border-radius: 6px; background: rgba(255,255,255,0.02); font-size: 12px; }
+    .svc-bulk-hint { font-size: 10px; color: var(--muted); font-family: var(--font-ui); letter-spacing: 0.5px; margin-top: -8px; margin-bottom: 9px; }
+    .svc-bulk-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .svc-modal-bulk-del { max-width: 400px; text-align: center; }
+    .svc-bulk-del-count { font-family: var(--font-display); font-size: 40px; font-weight: 800; background: var(--grad-red); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
+    .svc-bulk-del-list { max-height: 150px; overflow-y: auto; border: 1px solid var(--border); border-radius: 9px; padding: 7px; background: var(--surface3); margin: 10px 0; display: flex; flex-direction: column; gap: 3px; text-align: left; }
+    .svc-bulk-del-item { display: flex; align-items: center; gap: 9px; padding: 5px 9px; border-radius: 6px; font-size: 12px; }
+
+    /* Lightbox */
+    .svc-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(10px); z-index: 500; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    .svc-lightbox.open { opacity: 1; pointer-events: all; }
+    .svc-lightbox-img { max-width: 90vw; max-height: 88vh; border-radius: 10px; box-shadow: 0 24px 80px rgba(0,0,0,0.8); border: 1px solid var(--border-mid); transform: scale(0.92); transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1); object-fit: contain; }
+    .svc-lightbox.open .svc-lightbox-img { transform: scale(1); }
+    .svc-lightbox-close { position: absolute; top: 18px; right: 18px; width: 38px; height: 38px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); border-radius: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+    .svc-lightbox-close:hover { background: rgba(239,68,68,0.2); border-color: var(--red); }
+    .svc-lightbox-close svg { width: 16px; height: 16px; fill: rgba(255,255,255,0.7); }
+    .svc-lightbox-close:hover svg { fill: var(--red); }
+    .svc-lightbox-caption { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.55); border: 1px solid var(--border-mid); backdrop-filter: blur(6px); border-radius: 18px; padding: 5px 16px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.7); letter-spacing: 0.5px; white-space: nowrap; }
+
+    /* Toast */
+    .svc-toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: flex; flex-direction: column; gap: 7px; }
+    .svc-toast { display: flex; align-items: center; gap: 9px; background: linear-gradient(160deg, var(--surface2), var(--surface)); border: 1px solid var(--border-mid); border-left: 3px solid var(--gold-dark); border-radius: 9px; padding: 10px 14px; font-size: 12px; font-family: var(--font-body); min-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); animation: svcSlideIn 0.3s ease, svcFadeOut 0.3s ease 2.7s forwards; }
+    .svc-toast.success { border-left-color: var(--green); }
+    .svc-toast.error   { border-left-color: var(--red); }
+    @keyframes svcSlideIn { from { transform: translateX(70px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes svcFadeOut { to { opacity: 0; transform: translateX(70px); } }
+
+    @media (max-width: 900px) { .svc-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .svc-stats-grid { grid-template-columns: 1fr 1fr; gap: 9px; } .svc-form-row, .svc-bulk-field-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <!-- Stats -->
+  <div class="svc-stats-grid">
+    <div class="svc-stat-card"><div><div class="svc-stat-label">Total Services</div><div class="svc-stat-val" id="svcStatTotal">0</div></div><div class="svc-stat-icon gold">🔧</div></div>
+    <div class="svc-stat-card"><div><div class="svc-stat-label">Active Services</div><div class="svc-stat-val" id="svcStatActive">0</div></div><div class="svc-stat-icon green">✅</div></div>
+    <div class="svc-stat-card"><div><div class="svc-stat-label">Avg. Price</div><div class="svc-stat-val" id="svcStatAvg">0</div></div><div class="svc-stat-icon blue">💲</div></div>
+    <div class="svc-stat-card"><div><div class="svc-stat-label">Popular</div><div class="svc-stat-val" id="svcStatPop">0</div></div><div class="svc-stat-icon star">⭐</div></div>
+  </div>
+
+  <!-- Table section -->
+  <div class="svc-table-section">
+    <div class="svc-toolbar">
+      <div class="svc-toolbar-left">
+        Show
+        <select class="svc-show-select" onchange="svcChangePerPage(this.value)">
+          <option>5</option><option>10</option><option>25</option><option>50</option>
+        </select>
+        entries
+      </div>
+      <div class="svc-search-box">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" id="svcSearchInput" placeholder="Search services…" oninput="svcFilter()"/>
+      </div>
+      <div class="svc-toolbar-right">
+        <div class="svc-export-wrap">
+          <button class="svc-btn svc-btn-outline" onclick="svcToggleExport(event)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Export
+          </button>
+          <div class="svc-export-menu" id="svcExportMenu">
+            <div class="svc-export-menu-title">Export As</div>
+            <div class="svc-export-item" onclick="svcExportPDF()"><div class="svc-export-item-icon pdf">📄</div><div>PDF<span class="svc-export-item-sub">Formatted report</span></div></div>
+            <div class="svc-export-item" onclick="svcExportExcel()"><div class="svc-export-item-icon excel">📊</div><div>Excel<span class="svc-export-item-sub">.xlsx spreadsheet</span></div></div>
+          </div>
+        </div>
+        <button class="svc-btn svc-btn-action" id="svcQaBtn" onclick="svcQuickAction()">⚡ Quick Action</button>
+        <button class="svc-btn svc-btn-primary" onclick="svcShowAddModal()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Add Service
+        </button>
+      </div>
+    </div>
+
+    <div class="svc-select-bar" id="svcSelectBar">
+      <span class="svc-select-count" id="svcSelectCount">None selected</span>
+      <button class="svc-btn-sel-all" onclick="svcToggleSelectAll()"><span id="svcSelAllLabel">Select All</span></button>
+      <button class="svc-btn-bulk-edit" id="svcBulkEditBtn" onclick="svcOpenBulkEdit()" disabled>✏️ Edit Selected</button>
+      <button class="svc-btn-bulk-del"  id="svcBulkDelBtn"  onclick="svcOpenBulkDelete()" disabled>🗑 Delete Selected</button>
+      <button class="svc-btn-cancel-sel" onclick="svcExitSelectMode()">✕ Cancel</button>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="svc-table">
+        <thead>
+          <tr>
+            <th class="th-check" id="svcThCheck" style="display:none"><input type="checkbox" class="row-check" id="svcHeaderCheck" onchange="svcHeaderCheckToggle()" title="Select all on page"/></th>
+            <th onclick="svcSortBy('id')">ID <span class="sort-arrow" id="svc-s-id"></span></th>
+            <th>Image</th>
+            <th onclick="svcSortBy('name')">Name <span class="sort-arrow" id="svc-s-name"></span></th>
+            <th onclick="svcSortBy('price')">Price <span class="sort-arrow" id="svc-s-price"></span></th>
+            <th onclick="svcSortBy('status')">Status <span class="sort-arrow" id="svc-s-status"></span></th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="svcTbody"></tbody>
+      </table>
+    </div>
+    <div class="svc-table-footer">
+      <span id="svcShowingText"></span>
+      <div class="svc-pagination" id="svcPag"></div>
+    </div>
+  </div>
+
+  <!-- ══ MODALS ══ -->
+
+  <!-- Add -->
+  <div class="modal-overlay" id="svcAddOverlay" onclick="svcBgClose(event,'svcAddOverlay')">
+    <div class="svc-modal">
+      <div class="svc-modal-header">
+        <div class="svc-modal-title">Add New Service</div>
+        <div class="svc-modal-close" onclick="svcHideModal('svcAddOverlay')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+      </div>
+      <div class="svc-form-group"><label class="svc-form-label">Service Name</label><input class="svc-form-input" id="svcAName" placeholder="e.g. Oil Change Premium"/></div>
+      <div class="svc-form-group">
+        <label class="svc-form-label">Service Image <span style="color:rgba(255,255,255,.2);font-weight:400">(optional)</span></label>
+        <div class="svc-img-upload-zone" id="svcAImgZone">
+          <input type="file" id="svcAImgInput" accept="image/*" onchange="svcHandleImg('a',event)"/>
+          <span class="svc-img-upload-icon">📷</span>
+          <span class="svc-img-upload-label">Click to upload</span>
+          <span class="svc-img-upload-sub">PNG, JPG, WEBP – max 5 MB</span>
+        </div>
+      </div>
+      <div class="svc-form-row">
+        <div class="svc-form-group"><label class="svc-form-label">SKU ID</label><div class="svc-form-input" id="svcASkuPreview" style="opacity:.55;cursor:not-allowed;font-family:var(--font-ui);font-weight:700;color:var(--gold-light);display:flex;align-items:center;">Auto-generated</div></div>
+        <div class="svc-form-group"><label class="svc-form-label">Price ($)</label><input class="svc-form-input" id="svcAPrice" type="number" placeholder="49.99"/></div>
+      </div>
+      <div class="svc-form-group"><label class="svc-form-label">Status</label><select class="svc-form-input" id="svcAStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div class="svc-modal-actions">
+        <button class="svc-btn svc-btn-outline" onclick="svcHideModal('svcAddOverlay')">Cancel</button>
+        <button class="svc-btn svc-btn-primary" onclick="svcConfirmAdd()">Add Service</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View -->
+  <div class="modal-overlay" id="svcViewOverlay" onclick="svcBgClose(event,'svcViewOverlay')">
+    <div class="svc-modal svc-modal-view">
+      <div class="svc-modal-header">
+        <div class="svc-modal-title">Service Details</div>
+        <div class="svc-modal-close" onclick="svcHideModal('svcViewOverlay')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+      </div>
+      <div class="svc-view-hero" id="svcVHero"><div class="svc-view-emoji" id="svcVEmoji"></div></div>
+      <div class="svc-view-body">
+        <div class="svc-view-row">
+          <div class="svc-view-field"><span class="svc-view-label">SKU ID</span><span class="svc-sku-badge" id="svcVId" style="margin-top:2px;display:inline-block"></span></div>
+          <div class="svc-view-field"><span class="svc-view-label">Status</span><span id="svcVStatus" style="margin-top:2px;display:inline-block"></span></div>
+        </div>
+        <div class="svc-view-field full"><span class="svc-view-label">Service Name</span><span class="svc-view-name" id="svcVName"></span></div>
+        <div class="svc-view-field full"><span class="svc-view-label">Price</span><span class="svc-view-price" id="svcVPrice"></span></div>
+      </div>
+      <div class="svc-modal-actions"><button class="svc-btn svc-btn-outline" onclick="svcHideModal('svcViewOverlay')">Close</button><button class="svc-btn svc-btn-action" onclick="svcViewToEdit()">Edit Service</button></div>
+    </div>
+  </div>
+
+  <!-- Edit -->
+  <div class="modal-overlay" id="svcEditOverlay" onclick="svcBgClose(event,'svcEditOverlay')">
+    <div class="svc-modal">
+      <div class="svc-modal-header">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div id="svcEEmoji" style="width:30px;height:30px;background:var(--grad-gold);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0"></div>
+          <div class="svc-modal-title">Edit Service</div>
+        </div>
+        <div class="svc-modal-close" onclick="svcHideModal('svcEditOverlay')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+      </div>
+      <input type="hidden" id="svcEId"/>
+      <div class="svc-form-group"><label class="svc-form-label">Service Name</label><input class="svc-form-input" id="svcEName"/></div>
+      <div class="svc-form-group">
+        <label class="svc-form-label">Service Image <span style="color:rgba(255,255,255,.2);font-weight:400">(optional)</span></label>
+        <div class="svc-img-upload-zone" id="svcEImgZone">
+          <input type="file" id="svcEImgInput" accept="image/*" onchange="svcHandleImg('e',event)"/>
+          <span class="svc-img-upload-icon">📷</span>
+          <span class="svc-img-upload-label">Click to upload</span>
+          <span class="svc-img-upload-sub">PNG, JPG, WEBP – max 5 MB</span>
+        </div>
+      </div>
+      <div class="svc-form-row">
+        <div class="svc-form-group"><label class="svc-form-label">SKU ID</label><input class="svc-form-input" id="svcESku" readonly style="opacity:.5;cursor:not-allowed"/></div>
+        <div class="svc-form-group"><label class="svc-form-label">Price ($)</label><input class="svc-form-input" id="svcEPrice" type="number" step="0.01"/></div>
+      </div>
+      <div class="svc-form-group"><label class="svc-form-label">Status</label><select class="svc-form-input" id="svcEStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div class="svc-modal-actions">
+        <button class="svc-btn svc-btn-outline" onclick="svcHideModal('svcEditOverlay')">Cancel</button>
+        <button class="svc-btn svc-btn-primary" onclick="svcSaveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete -->
+  <div class="modal-overlay" id="svcDelOverlay" onclick="svcBgClose(event,'svcDelOverlay')">
+    <div class="svc-modal svc-modal-delete">
+      <div class="svc-del-icon-wrap"><div class="svc-del-icon-ring"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></div></div>
+      <div class="svc-del-title">Delete Service?</div>
+      <div class="svc-del-desc">Permanently delete <strong id="svcDName"></strong>. This cannot be undone.</div>
+      <div class="svc-del-preview">
+        <span id="svcDEmoji" style="font-size:20px;flex-shrink:0"></span>
+        <div style="flex:1"><div style="font-weight:600;font-size:13px" id="svcDNameCard"></div><div style="font-size:11px;color:var(--muted)" id="svcDIdCard"></div></div>
+        <span class="svc-price-tag" id="svcDPriceCard"></span>
+      </div>
+      <div class="svc-modal-actions" style="margin-top:18px">
+        <button class="svc-btn svc-btn-outline" style="flex:1;justify-content:center" onclick="svcHideModal('svcDelOverlay')">Cancel</button>
+        <button class="svc-btn-delete" onclick="svcConfirmDelete()">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Edit -->
+  <div class="modal-overlay" id="svcBulkEditOverlay" onclick="svcBgClose(event,'svcBulkEditOverlay')">
+    <div class="svc-modal svc-modal-bulk">
+      <div class="svc-modal-header">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div style="width:30px;height:30px;background:rgba(96,165,250,.18);border:1px solid rgba(96,165,250,.35);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px">✏️</div>
+          <div class="svc-modal-title">Bulk Edit</div>
+        </div>
+        <div class="svc-modal-close" onclick="svcHideModal('svcBulkEditOverlay')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+      </div>
+      <div class="svc-form-label" style="margin-bottom:7px">Selected Services</div>
+      <div class="svc-bulk-list" id="svcBulkEditList"></div>
+      <div class="svc-bulk-hint">Leave a field blank to keep each service's current value.</div>
+      <div class="svc-bulk-field-row">
+        <div class="svc-form-group"><label class="svc-form-label">Set Price ($)</label><input class="svc-form-input" id="svcBulkPrice" type="number" step="0.01" placeholder="— keep current —"/></div>
+        <div class="svc-form-group"><label class="svc-form-label">Set Status</label><select class="svc-form-input" id="svcBulkStatus"><option value="">— keep current —</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      </div>
+      <div class="svc-modal-actions">
+        <button class="svc-btn svc-btn-outline" onclick="svcHideModal('svcBulkEditOverlay')">Cancel</button>
+        <button class="svc-btn svc-btn-primary" onclick="svcConfirmBulkEdit()">Apply to All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Delete -->
+  <div class="modal-overlay" id="svcBulkDelOverlay" onclick="svcBgClose(event,'svcBulkDelOverlay')">
+    <div class="svc-modal svc-modal-bulk-del">
+      <div class="svc-del-icon-wrap"><div class="svc-del-icon-ring"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></div></div>
+      <div class="svc-bulk-del-count" id="svcBulkDelCount">0</div>
+      <div class="svc-del-title" style="margin-top:4px">Services Selected</div>
+      <div class="svc-del-desc">Permanently delete all selected services. This cannot be undone.</div>
+      <div class="svc-bulk-del-list" id="svcBulkDelList"></div>
+      <div class="svc-modal-actions" style="margin-top:4px">
+        <button class="svc-btn svc-btn-outline" style="flex:1;justify-content:center" onclick="svcHideModal('svcBulkDelOverlay')">Cancel</button>
+        <button class="svc-btn-delete" onclick="svcConfirmBulkDelete()">Delete All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="svc-lightbox" id="svcLightbox" onclick="svcCloseLightbox()">
+    <img class="svc-lightbox-img" id="svcLightboxImg" src="" alt=""/>
+    <button class="svc-lightbox-close" onclick="svcCloseLightbox()"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    <div class="svc-lightbox-caption" id="svcLightboxCaption"></div>
+  </div>
+
+  <div class="svc-toast-container" id="svcToasts"></div>
+
+  <script>
+    const SVC_EMOJIS = ['🔧','🛞','🛻','🔩','🪛','🚗','🏎️','🔌','🧰','🪝'];
+    let svcData = [
+      {id:'#SKU005',name:'Oil Change Standard', price:34.99, status:'active',   emoji:'🔧'},
+      {id:'#SKU002',name:'Engine Tune-Up',       price:89.99, status:'active',   emoji:'🛞'},
+      {id:'#SKU003',name:'Tire Rotation',         price:24.99, status:'active',   emoji:'🛻'},
+      {id:'#SKU007',name:'Brake Inspection',      price:49.99, status:'inactive', emoji:'🔩'},
+      {id:'#SKU011',name:'A/C Recharge',          price:79.00, status:'active',   emoji:'🪛'},
+      {id:'#SKU014',name:'Transmission Flush',    price:119.99,status:'active',   emoji:'🚗'},
+      {id:'#SKU019',name:'Wheel Alignment',       price:59.95, status:'inactive', emoji:'🏎️'},
+      {id:'#SKU022',name:'Battery Replacement',   price:44.00, status:'active',   emoji:'🔌'},
+      {id:'#SKU025',name:'Coolant Flush',          price:39.50, status:'active',   emoji:'🧰'},
+      {id:'#SKU030',name:'Fuel System Clean',      price:67.00, status:'inactive', emoji:'🪝'},
+    ];
+    let svcFil=[...svcData],svcPg=1,svcPp=5,svcSortKey=null,svcSortDir='asc';
+    let svcPendId=null,svcPendImgA=null,svcPendImgE=null;
+    let svcSelectMode=false,svcSelectedIds=new Set();
+
+    function svcGenerateSKU(){ const nums=svcData.map(s=>{const m=s.id.match(/(\d+)$/);return m?parseInt(m[1]):0;}); const next=(nums.length?Math.max(...nums):0)+1; return '#SKU'+String(next).padStart(3,'0'); }
+    function svcHandleImg(p,e){ const file=e.target.files[0]; if(!file) return; if(file.size>5*1024*1024){svcToast('Image must be under 5 MB','error');return;} const r=new FileReader(); r.onload=ev=>{const b64=ev.target.result;if(p==='a')svcPendImgA=b64;else svcPendImgE=b64;svcSetImgPreview(p,b64);}; r.readAsDataURL(file); }
+    function svcSetImgPreview(p,src){ const zone=document.getElementById('svc'+p.toUpperCase()+'ImgZone'); if(!zone) return; zone.classList.add('has-preview'); zone.innerHTML=`<img class="svc-img-preview" src="${src}" alt="preview"/><button class="svc-img-clear-btn" onclick="svcClearImg('${p}')" title="Remove"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`; }
+    function svcClearImg(p){ if(p==='a')svcPendImgA=null;else svcPendImgE=null; svcResetImgZone(p); }
+    function svcResetImgZone(p){ const zone=document.getElementById('svc'+p.toUpperCase()+'ImgZone'); if(!zone) return; zone.classList.remove('has-preview'); zone.innerHTML=`<input type="file" id="svc${p.toUpperCase()}ImgInput" accept="image/*" onchange="svcHandleImg('${p}',event)"/><span class="svc-img-upload-icon">📷</span><span class="svc-img-upload-label">Click to upload</span><span class="svc-img-upload-sub">PNG, JPG, WEBP – max 5 MB</span>`; }
+    function svcShowModal(id){ document.getElementById(id)?.classList.add('open'); }
+    function svcHideModal(id){ document.getElementById(id)?.classList.remove('open'); }
+    function svcBgClose(e,id){ if(e.target===document.getElementById(id)) svcHideModal(id); }
+    function svcShowAddModal(){ const p=document.getElementById('svcASkuPreview'); if(p) p.textContent=svcGenerateSKU(); svcPendImgA=null; svcResetImgZone('a'); ['svcAName','svcAPrice'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); document.getElementById('svcAStatus').value='active'; svcShowModal('svcAddOverlay'); }
+
+    function svcRender(){
+      const tbody=document.getElementById('svcTbody'); if(!tbody) return;
+      const start=(svcPg-1)*svcPp, slice=svcFil.slice(start,start+svcPp);
+      tbody.innerHTML=slice.map(s=>{ const isSel=svcSelectMode&&svcSelectedIds.has(s.id); const imgHtml=s.image?`<img src="${s.image}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" alt="${s.name}"/>`:s.emoji; const chkCell=svcSelectMode?`<td style="width:38px;padding:11px 6px 11px 16px;vertical-align:middle"><input type="checkbox" class="row-check"${isSel?' checked':''} onchange="svcToggleRowSelect('${s.id}',this)" onclick="event.stopPropagation()"/></td>`:'';
+        return `<tr class="${isSel?'selected':''}">${chkCell}<td><span class="svc-sku-badge">${s.id}</span></td><td><div class="svc-img-cell">${imgHtml}</div></td><td style="font-weight:500">${s.name}</td><td><span class="svc-price-tag">$${s.price.toFixed(2)}</span></td><td><span class="svc-status-pill ${s.status}"><span class="svc-status-dot"></span>${s.status}</span></td><td><div class="svc-actions"><button class="svc-action-btn view" title="View" onclick="svcView('${s.id}')"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button><button class="svc-action-btn edit" title="Edit" onclick="svcEdit('${s.id}')"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button><button class="svc-action-btn delete" title="Delete" onclick="svcDelete('${s.id}')"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div></td></tr>`; }).join('');
+      const end=Math.min(start+svcPp,svcFil.length); const showEl=document.getElementById('svcShowingText'); if(showEl) showEl.textContent=`Showing ${start+1}–${end} of ${svcFil.length} items`;
+      const thCheck=document.getElementById('svcThCheck'); if(thCheck) thCheck.style.display=svcSelectMode?'table-cell':'none';
+      if(svcSelectMode) svcSyncHeaderCheck();
+      svcRenderPag(); svcUpdateStats();
+    }
+    function svcRenderPag(){ const pagEl=document.getElementById('svcPag'); if(!pagEl) return; const pages=Math.max(1,Math.ceil(svcFil.length/svcPp)); let h=`<button class="svc-page-btn" onclick="svcGoPage(${svcPg-1})" ${svcPg===1?'disabled':''}>‹</button>`; for(let i=1;i<=Math.min(pages,5);i++) h+=`<button class="svc-page-btn ${i===svcPg?'active':''}" onclick="svcGoPage(${i})">${i}</button>`; h+=`<button class="svc-page-btn" onclick="svcGoPage(${svcPg+1})" ${svcPg>=pages?'disabled':''}>›</button>`; pagEl.innerHTML=h; }
+    function svcUpdateStats(){ const act=svcData.filter(s=>s.status==='active').length; const avg=svcData.length?Math.round(svcData.reduce((a,s)=>a+s.price,0)/svcData.length):0; const t=document.getElementById('svcStatTotal'); if(t) t.textContent=svcData.length; const a=document.getElementById('svcStatActive'); if(a) a.textContent=act; const av=document.getElementById('svcStatAvg'); if(av) av.textContent=avg; const p=document.getElementById('svcStatPop'); if(p) p.textContent=Math.max(1,Math.floor(svcData.length/5)); }
+    function svcGoPage(p){ const mx=Math.ceil(svcFil.length/svcPp); if(p<1||p>mx) return; svcPg=p; svcRender(); }
+    function svcFilter(){ const q=(document.getElementById('svcSearchInput')?.value||'').toLowerCase(); svcFil=svcData.filter(s=>s.name.toLowerCase().includes(q)||s.id.toLowerCase().includes(q)||s.status.includes(q)); svcPg=1; svcRender(); }
+    function svcChangePerPage(v){ svcPp=parseInt(v); svcPg=1; svcRender(); }
+    function svcSortBy(key){ if(svcSortKey===key) svcSortDir=svcSortDir==='asc'?'desc':'asc'; else{svcSortKey=key;svcSortDir='asc';} document.querySelectorAll('.sort-arrow').forEach(e=>e.className='sort-arrow'); const el=document.getElementById('svc-s-'+key); if(el) el.className='sort-arrow '+svcSortDir; svcFil.sort((a,b)=>{let va=a[key],vb=b[key];if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}return svcSortDir==='asc'?(va>vb?1:-1):(va<vb?1:-1);}); svcRender(); }
+
+    function svcConfirmAdd(){ const name=document.getElementById('svcAName')?.value.trim(); const price=parseFloat(document.getElementById('svcAPrice')?.value); const status=document.getElementById('svcAStatus')?.value||'active'; if(!name||isNaN(price)||price<0){svcToast('Please fill all fields correctly','error');return;} const id=svcGenerateSKU(); svcData.unshift({id,name,price,status,emoji:SVC_EMOJIS[Math.floor(Math.random()*SVC_EMOJIS.length)],image:svcPendImgA||null}); svcFil=[...svcData]; svcHideModal('svcAddOverlay'); svcPendImgA=null; svcRender(); svcToast(`"${name}" added as ${id}`,'success'); }
+
+    function svcView(id){ const s=svcData.find(x=>x.id===id); if(!s) return; const hero=document.getElementById('svcVHero'),emojiEl=document.getElementById('svcVEmoji'); if(s.image){hero.className='svc-view-hero has-img';hero.style.background='none';emojiEl.innerHTML=`<img src="${s.image}" alt="${s.name}" class="svc-view-hero-img"/><div class="svc-view-hero-zoom"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>VIEW FULL</div>`;hero.onclick=()=>svcOpenLightbox(s.image,s.name);}else{hero.className='svc-view-hero';hero.onclick=null;emojiEl.innerHTML=s.emoji;hero.style.background=s.status==='active'?'linear-gradient(135deg,#10b981,#059669)':'linear-gradient(135deg,#ef4444,#b91c1c)';} document.getElementById('svcVId').textContent=s.id; document.getElementById('svcVName').textContent=s.name; document.getElementById('svcVPrice').textContent='$'+s.price.toFixed(2); document.getElementById('svcVStatus').innerHTML=`<span class="svc-status-pill ${s.status}"><span class="svc-status-dot"></span>${s.status}</span>`; svcShowModal('svcViewOverlay'); }
+    function svcViewToEdit(){ const id=document.getElementById('svcVId').textContent; svcHideModal('svcViewOverlay'); setTimeout(()=>svcEdit(id),200); }
+
+    function svcOpenLightbox(src,caption){ document.getElementById('svcLightboxImg').src=src; document.getElementById('svcLightboxCaption').textContent=caption||''; document.getElementById('svcLightbox').classList.add('open'); }
+    function svcCloseLightbox(){ document.getElementById('svcLightbox').classList.remove('open'); }
+
+    function svcEdit(id){ const s=svcData.find(x=>x.id===id); if(!s) return; document.getElementById('svcEId').value=s.id; document.getElementById('svcESku').value=s.id; document.getElementById('svcEName').value=s.name; document.getElementById('svcEPrice').value=s.price; document.getElementById('svcEStatus').value=s.status; document.getElementById('svcEEmoji').textContent=s.emoji; svcPendImgE=s.image||null; if(s.image) svcSetImgPreview('e',s.image); else svcResetImgZone('e'); svcShowModal('svcEditOverlay'); }
+    function svcSaveEdit(){ const id=document.getElementById('svcEId').value; const name=document.getElementById('svcEName').value.trim(); const price=parseFloat(document.getElementById('svcEPrice').value); const status=document.getElementById('svcEStatus').value; if(!name||isNaN(price)||price<0){svcToast('Please fill all fields correctly','error');return;} const i=svcData.findIndex(x=>x.id===id); if(i===-1) return; svcData[i]={...svcData[i],name,price,status,image:svcPendImgE!==undefined?svcPendImgE:svcData[i].image}; svcFil=svcFil.map(x=>x.id===id?svcData[i]:x); svcHideModal('svcEditOverlay'); svcPendImgE=null; svcRender(); svcToast(`"${name}" updated`,'success'); }
+
+    function svcDelete(id){ const s=svcData.find(x=>x.id===id); if(!s) return; svcPendId=id; document.getElementById('svcDName').textContent=`"${s.name}"`; document.getElementById('svcDEmoji').textContent=s.emoji; document.getElementById('svcDNameCard').textContent=s.name; document.getElementById('svcDIdCard').textContent=s.id; document.getElementById('svcDPriceCard').textContent='$'+s.price.toFixed(2); svcShowModal('svcDelOverlay'); }
+    function svcConfirmDelete(){ if(!svcPendId) return; const s=svcData.find(x=>x.id===svcPendId); svcData=svcData.filter(x=>x.id!==svcPendId); svcFil=svcFil.filter(x=>x.id!==svcPendId); const mx=Math.ceil(svcFil.length/svcPp); if(svcPg>mx&&svcPg>1) svcPg=mx; svcPendId=null; svcHideModal('svcDelOverlay'); svcRender(); svcToast(`"${s?s.name:''}" deleted`,'error'); }
+
+    function svcQuickAction(){ svcSelectMode?svcExitSelectMode():svcEnterSelectMode(); }
+    function svcEnterSelectMode(){ svcSelectMode=true; svcSelectedIds.clear(); document.getElementById('svcSelectBar')?.classList.add('visible'); document.getElementById('svcQaBtn')?.classList.add('selecting'); svcRender(); svcUpdateSelectBar(); svcToast('Select rows to bulk edit or delete','info'); }
+    function svcExitSelectMode(){ svcSelectMode=false; svcSelectedIds.clear(); document.getElementById('svcSelectBar')?.classList.remove('visible'); document.getElementById('svcQaBtn')?.classList.remove('selecting'); svcRender(); }
+    function svcToggleRowSelect(id,cb){ if(cb.checked) svcSelectedIds.add(id); else svcSelectedIds.delete(id); const row=cb.closest('tr'); if(row) row.classList.toggle('selected',cb.checked); svcUpdateSelectBar(); svcSyncHeaderCheck(); }
+    function svcHeaderCheckToggle(){ const hc=document.getElementById('svcHeaderCheck'); if(!hc) return; svcGetCurrentPageIds().forEach(id=>{if(hc.checked)svcSelectedIds.add(id);else svcSelectedIds.delete(id);}); svcUpdateSelectBar(); svcRender(); }
+    function svcToggleSelectAll(){ const allIds=svcFil.map(s=>s.id); const allSel=allIds.length>0&&allIds.every(id=>svcSelectedIds.has(id)); if(allSel)svcSelectedIds.clear();else allIds.forEach(id=>svcSelectedIds.add(id)); svcUpdateSelectBar(); svcRender(); }
+    function svcSyncHeaderCheck(){ const hc=document.getElementById('svcHeaderCheck'); if(!hc) return; const pIds=svcGetCurrentPageIds(); const allC=pIds.length>0&&pIds.every(id=>svcSelectedIds.has(id)); const someC=pIds.some(id=>svcSelectedIds.has(id)); hc.checked=allC; hc.indeterminate=!allC&&someC; }
+    function svcGetCurrentPageIds(){ const s=(svcPg-1)*svcPp; return svcFil.slice(s,s+svcPp).map(s=>s.id); }
+    function svcUpdateSelectBar(){ const count=svcSelectedIds.size,hasAny=count>0; const countEl=document.getElementById('svcSelectCount'); if(countEl) countEl.textContent=count===0?'None selected':`${count} service${count===1?'':'s'} selected`; const eBtn=document.getElementById('svcBulkEditBtn'),dBtn=document.getElementById('svcBulkDelBtn'); if(eBtn)eBtn.disabled=!hasAny; if(dBtn)dBtn.disabled=!hasAny; const labelEl=document.getElementById('svcSelAllLabel'); if(labelEl){const allSel=svcFil.length>0&&svcFil.every(s=>svcSelectedIds.has(s.id));labelEl.textContent=allSel?'Deselect All':'Select All';} }
+
+    function svcOpenBulkEdit(){ if(!svcSelectedIds.size) return; const items=svcData.filter(s=>svcSelectedIds.has(s.id)); document.getElementById('svcBulkEditList').innerHTML=items.map(s=>`<div class="svc-bulk-list-item"><span style="font-size:16px">${s.emoji}</span><span class="svc-sku-badge">${s.id}</span><span style="flex:1;font-weight:500">${s.name}</span><span class="svc-price-tag" style="font-size:12px">$${s.price.toFixed(2)}</span><span class="svc-status-pill ${s.status}" style="font-size:9px"><span class="svc-status-dot"></span>${s.status}</span></div>`).join(''); document.getElementById('svcBulkPrice').value=''; document.getElementById('svcBulkStatus').value=''; svcShowModal('svcBulkEditOverlay'); }
+    function svcConfirmBulkEdit(){ const rawP=document.getElementById('svcBulkPrice').value,newSt=document.getElementById('svcBulkStatus').value; const newP=rawP!==''?parseFloat(rawP):null; if(newP!==null&&(isNaN(newP)||newP<0)){svcToast('Enter a valid price or leave blank','error');return;} if(newP===null&&newSt===''){svcToast('Set at least one field to apply','error');return;} let changed=0; svcSelectedIds.forEach(id=>{const i=svcData.findIndex(x=>x.id===id);if(i===-1)return;if(newP!==null)svcData[i].price=newP;if(newSt!=='')svcData[i].status=newSt;svcFil=svcFil.map(x=>x.id===id?svcData[i]:x);changed++;}); svcHideModal('svcBulkEditOverlay'); svcRender(); svcToast(`Updated ${changed} service${changed===1?'':'s'}`,'success'); }
+    function svcOpenBulkDelete(){ if(!svcSelectedIds.size) return; const items=svcData.filter(s=>svcSelectedIds.has(s.id)); document.getElementById('svcBulkDelCount').textContent=items.length; document.getElementById('svcBulkDelList').innerHTML=items.map(s=>`<div class="svc-bulk-del-item"><span style="font-size:16px">${s.emoji}</span><span class="svc-sku-badge">${s.id}</span><span style="flex:1;font-weight:500">${s.name}</span><span class="svc-price-tag" style="font-size:12px">$${s.price.toFixed(2)}</span></div>`).join(''); svcShowModal('svcBulkDelOverlay'); }
+    function svcConfirmBulkDelete(){ const count=svcSelectedIds.size; svcData=svcData.filter(s=>!svcSelectedIds.has(s.id)); svcFil=svcFil.filter(s=>!svcSelectedIds.has(s.id)); const mx=Math.ceil(svcFil.length/svcPp);if(svcPg>mx&&svcPg>1)svcPg=mx; svcHideModal('svcBulkDelOverlay'); svcExitSelectMode(); svcToast(`Deleted ${count} service${count===1?'':'s'}`,'error'); }
+
+    function svcToggleExport(e){ e.stopPropagation(); const menu=document.getElementById('svcExportMenu'); const isOpen=menu.classList.contains('open'); document.querySelectorAll('.svc-export-menu').forEach(m=>m.classList.remove('open')); if(!isOpen)menu.classList.add('open'); }
+    document.addEventListener('click',()=>{document.querySelectorAll('.svc-export-menu').forEach(m=>m.classList.remove('open'));});
+    function svcFormatDate(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+    function svcExportExcel(){ if(typeof XLSX==='undefined'){svcToast('Excel library loading…','error');return;} const data=svcFil;if(!data.length){svcToast('No data to export','error');return;} const rows=[['SKU ID','Service Name','Price ($)','Status']]; data.forEach(s=>rows.push([s.id,s.name,s.price.toFixed(2),s.status])); const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:12},{wch:32},{wch:12},{wch:12}]; const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Services'); XLSX.writeFile(wb,'RevMotors_Services_'+svcFormatDate()+'.xlsx'); svcToast('Excel exported – '+data.length+' services','success'); }
+
+    function svcExportPDF(){ if(typeof window.jspdf==='undefined'&&typeof jsPDF==='undefined'){svcToast('PDF library loading…','error');return;} const data=svcFil;if(!data.length){svcToast('No data to export','error');return;} const JsPDF=(window.jspdf&&window.jspdf.jsPDF)?window.jspdf.jsPDF:jsPDF; const doc=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'}); const pageW=doc.internal.pageSize.getWidth(),margin=14;let y=0; doc.setFillColor(8,8,8);doc.rect(0,0,pageW,24,'F'); doc.setFillColor(242,219,148);doc.rect(0,22,pageW,2,'F'); doc.setTextColor(242,219,148);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('REV / MOTORS',margin,15); doc.setTextColor(180,180,180);doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('Services Report',margin,20);doc.text('Exported: '+svcFormatDate(),pageW-margin,15,{align:'right'});doc.text('Total records: '+data.length,pageW-margin,20,{align:'right'}); y=34; const act=data.filter(s=>s.status==='active').length,total=data.reduce((a,s)=>a+s.price,0); const boxes=[{label:'Total Services',value:String(data.length)},{label:'Active',value:String(act)},{label:'Inactive',value:String(data.length-act)},{label:'Avg. Price',value:'$'+(data.length?total/data.length:0).toFixed(2)},{label:'Total Value',value:'$'+total.toFixed(2)}]; const bw=(pageW-margin*2-8*4)/5; boxes.forEach((box,idx)=>{const bx=margin+idx*(bw+8);doc.setFillColor(20,20,20);doc.roundedRect(bx,y,bw,16,2,2,'F');doc.setFillColor(166,127,56);doc.rect(bx,y,bw,1,'F');doc.setTextColor(242,219,148);doc.setFontSize(13);doc.setFont('helvetica','bold');doc.text(box.value,bx+bw/2,y+8,{align:'center'});doc.setTextColor(150,150,150);doc.setFontSize(7);doc.setFont('helvetica','normal');doc.text(box.label.toUpperCase(),bx+bw/2,y+13,{align:'center'});}); y+=24; const cols=[{header:'SKU ID',key:'id',w:28},{header:'SERVICE NAME',key:'name',w:90},{header:'PRICE',key:'price',w:28},{header:'STATUS',key:'status',w:28}]; doc.setFillColor(26,26,26);doc.rect(margin,y,pageW-margin*2,9,'F');doc.setFillColor(166,127,56);doc.rect(margin,y+8.5,pageW-margin*2,0.5,'F');let cx=margin+3; cols.forEach(col=>{doc.setTextColor(166,127,56);doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.text(col.header,cx,y+6);cx+=col.w;});y+=9; data.forEach((s,idx)=>{if(y>doc.internal.pageSize.getHeight()-20){doc.addPage();y=14;} doc.setFillColor(idx%2===0?17:14,idx%2===0?17:14,idx%2===0?17:14);doc.rect(margin,y,pageW-margin*2,8,'F');let rx=margin+3; doc.setTextColor(242,219,148);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text(s.id,rx,y+5.5);rx+=cols[0].w; doc.setTextColor(240,240,240);doc.setFont('helvetica','normal');doc.text(s.name,rx,y+5.5);rx+=cols[1].w; doc.setTextColor(242,219,148);doc.setFont('helvetica','bold');doc.text('$'+s.price.toFixed(2),rx,y+5.5);rx+=cols[2].w; if(s.status==='active'){doc.setFillColor(16,70,50);doc.setTextColor(52,211,153);}else{doc.setFillColor(70,20,20);doc.setTextColor(248,113,113);} doc.roundedRect(rx,y+1.5,22,5,1,1,'F');doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text(s.status.toUpperCase(),rx+11,y+5.5,{align:'center'}); doc.setDrawColor(30,30,30);doc.setLineWidth(0.2);doc.line(margin,y+8,pageW-margin,y+8);y+=8;}); const pageCount=doc.internal.getNumberOfPages(); for(let p=1;p<=pageCount;p++){doc.setPage(p);const fh=doc.internal.pageSize.getHeight();doc.setFillColor(8,8,8);doc.rect(0,fh-10,pageW,10,'F');doc.setFillColor(166,127,56);doc.rect(0,fh-10,pageW,0.5,'F');doc.setTextColor(100,100,100);doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.text('Rev Motors – Confidential',margin,fh-4);doc.text('Page '+p+' of '+pageCount,pageW-margin,fh-4,{align:'right'});} doc.save('RevMotors_Services_'+svcFormatDate()+'.pdf'); svcToast('PDF exported – '+data.length+' services','success'); }
+
+    function svcToast(msg,type){ type=type||'info'; const c=document.getElementById('svcToasts'); if(!c) return; const t=document.createElement('div'); t.className='svc-toast '+(type==='success'?'success':type==='error'?'error':''); t.innerHTML=`<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span> ${msg}`; c.appendChild(t); setTimeout(()=>t.remove(),3100); }
+
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(svcSelectMode)svcExitSelectMode();else svcCloseLightbox();}});
+    svcRender();
+  </script>
+</body>
+</html>
