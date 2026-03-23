@@ -1700,3 +1700,173 @@ body {
   color: #2a2a2a;
 }
 .news-empty-sub { font-size: 13px; color: #2a2a2a; margin-top: 6px; }
+
+/* ── ARTICLE MODAL ── */
+.art-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.8);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s;
+}
+.art-modal.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.art-modal-box {
+  position: relative;
+  z-index: 10;
+  width: 90%;
+  max-width: 680px;
+  max-height: 88vh;
+  background: linear-gradient(150deg, #1c1c1c, #101010);
+  border: 1px solid rgba(166,127,56,.32);
+  border-radius: 18px;
+  overflow: hidden;
+  transform: translateY(28px) scale(.96);
+  opacity: 0;
+  transition: all .38s cubic-bezier(.25,.46,.45,.94);
+  box-shadow: 0 50px 120px rgba(0,0,0,.8);
+  display: flex;
+  flex-direction: column;
+}
+.art-modal.open .art-modal-box {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.art-modal-gold-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #A67F38, #F2DB94, #A67F38, transparent);
+  z-index: 10;
+}
+.art-modal-close-btn {
+  position: absolute;
+  top: 14px; right: 14px;
+  z-index: 20;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  color: #666;
+  cursor: pointer;
+  transition: color .2s, background .2s;
+  font-size: 13px;
+}
+.art-modal-close-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
+
+.art-modal-body {
+  overflow-y: auto;
+  flex: 1;
+}
+.art-modal-body::-webkit-scrollbar       { width: 4px; }
+.art-modal-body::-webkit-scrollbar-thumb { background: #A67F38; border-radius: 2px; }
+
+.art-modal-img-wrap {
+  height: 220px;
+  overflow: hidden;
+  position: relative;
+}
+.art-modal-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.art-modal-img-grad {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,.7) 100%);
+}
+.art-modal-content { padding: 28px; }
+
+.art-modal-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.art-modal-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 50px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: 'Rajdhani', sans-serif;
+}
+.art-modal-date,
+.art-modal-readtime {
+  font-size: 11px;
+  color: #3a3a3a;
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 1px;
+}
+.art-modal-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 26px;
+  line-height: 1.15;
+  letter-spacing: -.5px;
+  color: #fff;
+  margin-bottom: 12px;
+}
+.art-modal-excerpt {
+  font-size: 13.5px;
+  color: #888;
+  font-style: italic;
+  border-left: 3px solid rgba(166,127,56,.4);
+  padding-left: 14px;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.art-modal-body-text {
+  font-size: 13.5px;
+  color: #666;
+  line-height: 1.75;
+}
+.art-modal-body-text p { margin-bottom: 14px; }
+
+.art-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(166,127,56,.1);
+}
+.art-modal-share-label {
+  font-size: 9.5px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #3a3a3a;
+  margin-bottom: 6px;
+}
+.art-modal-share-btns { display: flex; gap: 8px; }
+.art-modal-share-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(166,127,56,.08);
+  border: 1px solid rgba(166,127,56,.18);
+  color: #A67F38;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background .2s;
+}
+.art-modal-share-btn:hover { background: rgba(166,127,56,.18); }
+
+@media (max-width: 640px) {
+  .art-modal-box { width: 95%; max-height: 92vh; }
+  .art-modal-title { font-size: 20px; }
+}

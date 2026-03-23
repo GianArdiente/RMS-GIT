@@ -556,21 +556,50 @@ const NEWS_ARTICLES = [
     img:      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop',
     category: 'Tips & Guides',
     title:    '5 Signs Your Brakes Need Immediate Attention',
-    excerpt:  'Ignoring brake issues can be dangerous. Here are the top warning signs every driver should know.',
+    excerpt:  'Squealing, grinding, or a soft pedal are your car begging for help. Here are the top warning signs every driver should know before it\'s too late.',
     date:     'March 10, 2024',
+    readTime: '3 min read',
     tagColor: '#A67F38',
     tagBg:    'rgba(166,127,56,.18)',
+    tagBorder:'rgba(166,127,56,.35)',
     isNew:    true,
+    body: `
+      <p>Your brakes are the single most important safety system on your vehicle. Ignoring early warning signs can turn a minor repair into a costly — or dangerous — situation.</p>
+      <p style="color:#A67F38;font-weight:600;margin-top:18px;">Watch out for these signs:</p>
+      <ul style="margin:10px 0 16px 18px;line-height:2;">
+        <li>Squealing or grinding noises when braking</li>
+        <li>Soft or spongy brake pedal feel</li>
+        <li>Vehicle pulling to one side</li>
+        <li>Vibration through the steering wheel</li>
+        <li>Brake warning light on dashboard</li>
+      </ul>
+      <p>If you notice any of these symptoms, visit REV Auto Repair immediately. Our certified technicians will perform a full brake inspection — <strong style="color:#D9B573;">free of charge</strong> this month.</p>
+      <p>Don't wait until it's too late. Book your appointment online or walk in any day of the week.</p>
+    `,
   },
   {
     img:      'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&h=400&fit=crop',
     category: 'Promotions',
     title:    'Oil Change Special — Save 20% This Month',
-    excerpt:  'Our most popular service is now 20% off. Book your appointment today.',
-    date:     'March 8, 2024',
+    excerpt:  'Limited-time deal on full synthetic oil changes — complete with a free 21-point inspection at no extra cost.',
+    date:     'Dec 18, 2024',
+    readTime: '2 min read',
     tagColor: '#d97706',
     tagBg:    'rgba(217,119,6,.18)',
+    tagBorder:'rgba(217,119,6,.35)',
     isNew:    true,
+    body: `
+      <p>We're thrilled to announce that our most popular promotion has been extended by popular demand. This week only, get 20% off a full synthetic oil change for any vehicle.</p>
+      <p>The deal includes our comprehensive 21-point vehicle inspection absolutely free — normally valued at ₱999.</p>
+      <p style="color:#A67F38;font-weight:600;margin-top:18px;">What's included:</p>
+      <ul style="margin:10px 0 16px 18px;line-height:2;">
+        <li>Full synthetic oil change (up to 5 quarts)</li>
+        <li>New oil filter</li>
+        <li>21-point vehicle inspection</li>
+        <li>Tire pressure check and adjustment</li>
+      </ul>
+      <p>Book your appointment online or walk in — no appointment necessary. Offer expires Sunday at midnight.</p>
+    `,
   },
   {
     img:      'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&h=400&fit=crop',
@@ -578,9 +607,23 @@ const NEWS_ARTICLES = [
     title:    'Electric Vehicle Servicing: What You Need to Know',
     excerpt:  'As EVs become mainstream, REV is now fully equipped for electric and hybrid vehicles.',
     date:     'March 5, 2024',
+    readTime: '4 min read',
     tagColor: '#8b5cf6',
     tagBg:    'rgba(139,92,246,.15)',
+    tagBorder:'rgba(139,92,246,.35)',
     isNew:    false,
+    body: `
+      <p>The automotive landscape is shifting fast. REV Auto Repair has invested in the tools, training, and certifications needed to service electric and hybrid vehicles properly.</p>
+      <p style="color:#A67F38;font-weight:600;margin-top:18px;">Our EV services now include:</p>
+      <ul style="margin:10px 0 16px 18px;line-height:2;">
+        <li>High-voltage battery diagnostics</li>
+        <li>Regenerative braking system checks</li>
+        <li>Charging port inspection and repair</li>
+        <li>Software updates and ECU calibration</li>
+        <li>Hybrid drivetrain servicing</li>
+      </ul>
+      <p>All EV work is performed by technicians certified to handle high-voltage systems safely. Whether you drive a Tesla, a Nissan Leaf, or a hybrid Civic — we've got you covered.</p>
+    `,
   },
   {
     img:      'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&h=400&fit=crop',
@@ -588,9 +631,23 @@ const NEWS_ARTICLES = [
     title:    'How to Extend Your Car Battery Life in Hot Weather',
     excerpt:  'Heat is the number-one killer of car batteries. Follow these simple steps to protect yours.',
     date:     'March 2, 2024',
+    readTime: '3 min read',
     tagColor: '#A67F38',
     tagBg:    'rgba(166,127,56,.18)',
+    tagBorder:'rgba(166,127,56,.35)',
     isNew:    false,
+    body: `
+      <p>Most drivers blame cold weather for dead batteries — but heat is actually the bigger threat. High temperatures accelerate the chemical reactions inside a battery, causing it to degrade faster over time.</p>
+      <p style="color:#A67F38;font-weight:600;margin-top:18px;">Tips to protect your battery:</p>
+      <ul style="margin:10px 0 16px 18px;line-height:2;">
+        <li>Park in the shade or a covered garage whenever possible</li>
+        <li>Have your battery tested every 6 months</li>
+        <li>Keep terminals clean and corrosion-free</li>
+        <li>Avoid short trips that don't allow a full recharge</li>
+        <li>Turn off accessories before switching off the engine</li>
+      </ul>
+      <p>REV offers a free battery load test with every oil change. Stop by anytime — no appointment needed.</p>
+    `,
   },
   {
     img:      'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&h=400&fit=crop',
@@ -598,9 +655,24 @@ const NEWS_ARTICLES = [
     title:    'Free Multi-Point Inspection — Limited Time',
     excerpt:  'Get a comprehensive 27-point vehicle inspection completely free this month.',
     date:     'Feb 28, 2024',
+    readTime: '2 min read',
     tagColor: '#d97706',
     tagBg:    'rgba(217,119,6,.18)',
+    tagBorder:'rgba(217,119,6,.35)',
     isNew:    false,
+    body: `
+      <p>For a limited time, REV Auto Repair is offering a complimentary 27-point multi-point inspection on every vehicle — no purchase necessary.</p>
+      <p style="color:#A67F38;font-weight:600;margin-top:18px;">Inspection covers:</p>
+      <ul style="margin:10px 0 16px 18px;line-height:2;">
+        <li>Brakes, rotors, and brake fluid</li>
+        <li>Tire tread depth and pressure</li>
+        <li>Engine oil and all fluid levels</li>
+        <li>Battery health and charging system</li>
+        <li>Lights, wipers, and horn</li>
+        <li>Suspension and steering components</li>
+      </ul>
+      <p>Walk in between 8 AM and 5 PM, Monday through Saturday. No appointment required. Our technicians will have your report ready in under 30 minutes.</p>
+    `,
   },
   {
     img:      'https://images.unsplash.com/photo-1632823469850-1b0fabc8e00b?w=600&h=400&fit=crop',
@@ -608,9 +680,23 @@ const NEWS_ARTICLES = [
     title:    'REV Shop Now Live — Browse Hundreds of OEM Parts',
     excerpt:  'Our online parts store is live! OEM and aftermarket parts, delivered fast.',
     date:     'Feb 25, 2024',
+    readTime: '2 min read',
     tagColor: '#10b981',
     tagBg:    'rgba(16,185,129,.15)',
+    tagBorder:'rgba(16,185,129,.3)',
     isNew:    false,
+    body: `
+      <p>After months of development, the REV online parts store is officially live. Browse hundreds of OEM-spec and quality aftermarket parts from the comfort of your home.</p>
+      <p style="color:#A67F38;font-weight:600;margin-top:18px;">What's available in the store:</p>
+      <ul style="margin:10px 0 16px 18px;line-height:2;">
+        <li>Engine components and filters</li>
+        <li>Brake pads, rotors, and calipers</li>
+        <li>Suspension and steering parts</li>
+        <li>Electrical components and sensors</li>
+        <li>Accessories and detailing supplies</li>
+      </ul>
+      <p>All orders over ₱2,000 ship free within Metro Manila. Parts ordered before noon are dispatched same day. Head to the <strong style="color:#D9B573;">Shop tab</strong> to start browsing.</p>
+    `,
   },
 ];
 
@@ -734,37 +820,38 @@ const NewsFilter = (() => {
   }
 
   function _renderGrid(list) {
-    const grid  = document.getElementById('newsGrid');
-    const empty = document.getElementById('newsEmpty');
-    if (!grid) return;
+  const grid  = document.getElementById('newsGrid');
+  const empty = document.getElementById('newsEmpty');
+  if (!grid) return;
 
-    if (list.length === 0) {
-      grid.innerHTML = '';
-      if (empty) empty.classList.remove('hidden');
-      return;
-    }
-    if (empty) empty.classList.add('hidden');
-
+  if (list.length === 0) {
     grid.innerHTML = '';
-    list.forEach(n => {
-      const card = document.createElement('div');
-      card.className = 'news-card rev';
-      card.innerHTML = `
-        <img src="${n.img || n.image}" alt="${n.title}" loading="lazy"/>
-        <div class="news-card-body">
-          <div class="news-cat" style="color:${n.tagColor};">${n.category}</div>
-          <div class="news-title">${n.title}</div>
-          <div class="news-excerpt">${n.excerpt}</div>
-          <div class="news-meta">
-            <span class="news-date">${n.date}</span>
-            <button class="news-read-btn" onclick="showToast('Full article coming soon!')">Read More →</button>
-          </div>
-        </div>`;
-      grid.appendChild(card);
-    });
-    triggerReveal();
+    if (empty) empty.classList.remove('hidden');
+    return;
   }
+  if (empty) empty.classList.add('hidden');
 
+  grid.innerHTML = '';
+  list.forEach(n => {
+    const card = document.createElement('div');
+    card.className = 'news-card rev';
+    card.style.cursor = 'pointer';
+    card.onclick = () => openNewsArticle(n);
+    card.innerHTML = `
+      <img src="${n.img || n.image}" alt="${n.title}" loading="lazy"/>
+      <div class="news-card-body">
+        <div class="news-cat" style="color:${n.tagColor};">${n.category}</div>
+        <div class="news-title">${n.title}</div>
+        <div class="news-excerpt">${n.excerpt}</div>
+        <div class="news-meta">
+          <span class="news-date">${n.date}</span>
+          <button class="news-read-btn">Read More →</button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+  triggerReveal();
+}
   function clearSearch() {
     const input = document.getElementById('newsSearchInput');
     if (input) input.value = '';
@@ -1621,3 +1708,32 @@ document.addEventListener('DOMContentLoaded', () => {
   if (bkDateEl) { bkDateEl.value = today; bkDateEl.min = today; }
   bkUpdateStepper(1);
 });
+
+// ── ARTICLE MODAL ──────────────────────────────────────
+function openNewsArticle(article) {
+  const modal = document.getElementById('artModal');
+  if (!modal) return;
+
+  document.getElementById('modalImg').src           = article.img || article.image || '';
+  document.getElementById('modalImg').alt           = article.title;
+  document.getElementById('modalTitle').textContent    = article.title;
+  document.getElementById('modalExcerpt').textContent  = article.excerpt;
+  document.getElementById('modalBody').innerHTML       = article.body || '';
+  document.getElementById('modalDate').textContent     = article.date;
+  document.getElementById('modalReadTime').textContent = article.readTime ? '· ' + article.readTime : '';
+
+  const tag = document.getElementById('modalTag');
+  tag.textContent      = article.category;
+  tag.style.background = article.tagBg;
+  tag.style.color      = article.tagColor;
+
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  modal.querySelector('.art-modal-body').scrollTop = 0;
+}
+
+function closeArticle() {
+  const modal = document.getElementById('artModal');
+  if (modal) modal.classList.remove('open');
+  document.body.style.overflow = '';
+}

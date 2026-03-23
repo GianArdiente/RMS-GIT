@@ -826,7 +826,45 @@
     </div>
   </footer>
 </div>
-
+<!-- ARTICLE MODAL -->
+<div id="artModal" class="art-modal" onclick="if(event.target===this)closeArticle()">
+  <div class="art-modal-box">
+    <div class="art-modal-gold-bar"></div>
+    <button onclick="closeArticle()" class="art-modal-close-btn">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="art-modal-body">
+      <div class="art-modal-img-wrap" id="modalImgWrap">
+        <img id="modalImg" src="" alt="" class="art-modal-img"/>
+        <div class="art-modal-img-grad"></div>
+      </div>
+      <div class="art-modal-content">
+        <div class="art-modal-meta">
+          <span id="modalTag"      class="art-modal-tag"></span>
+          <span id="modalDate"     class="art-modal-date"></span>
+          <span id="modalReadTime" class="art-modal-readtime"></span>
+        </div>
+        <h2  id="modalTitle"   class="art-modal-title"></h2>
+        <p   id="modalExcerpt" class="art-modal-excerpt"></p>
+        <div id="modalBody"    class="art-modal-body-text"></div>
+        <div class="art-modal-footer">
+          <div class="art-modal-share">
+            <div class="art-modal-share-label">Share this article</div>
+            <div class="art-modal-share-btns">
+              <button onclick="navigator.clipboard.writeText(window.location.href); showToast('Link copied!')" class="art-modal-share-btn" title="Copy link">
+                <i class="fas fa-link"></i>
+              </button>
+              <button onclick="showToast('Shared to Twitter!')" class="art-modal-share-btn" title="Share on Twitter">
+                <i class="fab fa-twitter"></i>
+              </button>
+            </div>
+          </div>
+          <button onclick="closeArticle()" class="btn-gold-sm">Close Article</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="Home.js"></script>
 </body>
 </html>
