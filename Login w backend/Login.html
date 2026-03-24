@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Autoshop — Staff Portal</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Black Ops One"', 'cursive'],
+            mono:    ['"Share Tech Mono"', 'monospace'],
+            body:    ['"Oswald"', 'sans-serif'],
+          },
+          colors: {
+            gold: { DEFAULT:'#C8951A', light:'#F2BC45', dim:'#8B6914' },
+          },
+          keyframes: {
+            rise:   { from:{ opacity:'0', transform:'translateY(20px)' } },
+            driftA: { to:{ transform:'translate(50px,60px)' } },
+            driftB: { to:{ transform:'translate(-40px,-50px)' } },
+            cogSpin:{ to:{ transform:'rotate(360deg)' } },
+            blink:  { '0%,100%':{ opacity:'1' },'50%':{ opacity:'0.2' } },
+            shake:  {
+              '0%,100%':{ transform:'translateX(0)' },
+              '20%':{ transform:'translateX(-7px)' },
+              '40%':{ transform:'translateX(7px)' },
+              '60%':{ transform:'translateX(-4px)' },
+              '80%':{ transform:'translateX(4px)' },
+            },
+          },
+          animation: {
+            rise:    'rise 0.65s cubic-bezier(0.22,1,0.36,1) both',
+            driftA:  'driftA 20s ease-in-out infinite alternate',
+            driftB:  'driftB 16s ease-in-out infinite alternate',
+            cogSlow: 'cogSpin 24s linear infinite',
+            cogRev:  'cogSpin 15s linear infinite reverse',
+            blink:   'blink 2.5s ease-in-out infinite',
+            shake:   'shake 0.4s ease',
+          },
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Oswald:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <style>
+    body { font-family:'Oswald',sans-serif; }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(200,149,26,.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200,149,26,.028) 1px, transparent 1px);
+      background-size: 52px 52px;
+    }
+    .noise {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
+      opacity:.28;
+    }
+    .hex-bg {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='18' fill='none' stroke='rgba(0,0,0,.07)' stroke-width='1'/%3E%3C/svg%3E");
+      background-size:60px 60px;
+    }
+    .scanlines::after {
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.04) 3px, rgba(0,0,0,.04) 4px);
+      z-index:2;
+    }
+
+    /* Input style */
+    .inp {
+      width:100%; height:44px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(200,149,26,.15);
+      color:#ddd;
+      font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:.5px;
+      padding:0 40px 0 38px;
+      outline:none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .inp::placeholder { color:#484848; font-size:12px; }
+    .inp:focus {
+      border-color:#C8951A;
+      background:rgba(200,149,26,.04);
+      box-shadow:0 0 0 3px rgba(200,149,26,.09);
+    }
+    .inp.err {
+      border-color:#c0392b !important;
+      box-shadow:0 0 0 3px rgba(192,57,43,.09) !important;
+    }
+
+    /* Button shimmer */
+    .btn-shimmer { position:relative; overflow:hidden; }
+    .btn-shimmer::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
+      transform:translateX(-100%); transition:transform .55s;
+    }
+    .btn-shimmer:hover::before { transform:translateX(100%); }
+
+    /* Corner SVGs */
+    .corner { position:absolute; width:26px; height:26px; z-index:10; }
+    .c-tl{top:8px;left:8px;} .c-tr{top:8px;right:8px;}
+    .c-bl{bottom:8px;left:8px;} .c-br{bottom:8px;right:8px;}
+
+    /* Custom checkbox */
+    .custom-check { display:none; }
+    .check-box {
+      width:14px; height:14px; flex-shrink:0;
+      border:1px solid rgba(200,149,26,.25);
+      display:flex; align-items:center; justify-content:center;
+      transition: border-color .2s, background .2s; cursor:pointer;
+    }
+    .custom-check:checked + .check-box {
+      border-color:#C8951A; background:rgba(200,149,26,.15);
+    }
+    .custom-check:checked + .check-box::after {
+      content:'✓'; font-size:9px; color:#C8951A; line-height:1;
+    }
+
+    /* Toast */
+    @keyframes toastIn  { from{opacity:0;transform:translateX(30px)} }
+    @keyframes toastOut { to  {opacity:0;transform:translateX(20px)} }
+    .toast-item { animation: toastIn .3s ease; }
+    .toast-out  { animation: toastOut .4s ease forwards; }
+  </style>
+</head>
+<body class="bg-[#080808] min-h-screen flex items-center justify-center overflow-hidden">
+
+<!-- Background layers -->
+<div class="fixed inset-0 pointer-events-none z-0">
+  <div class="absolute rounded-full blur-[90px] opacity-[.09] w-[480px] h-[480px] -top-28 -left-20 bg-gold animate-driftA"></div>
+  <div class="absolute rounded-full blur-[80px] opacity-[.07] w-[320px] h-[320px] -bottom-16 -right-16 bg-[#7a4e08] animate-driftB"></div>
+</div>
+<div class="fixed inset-0 pointer-events-none z-0 grid-bg"></div>
+<div class="fixed inset-0 pointer-events-none z-0 noise"></div>
+
+<!-- Toast container -->
+<div id="toasts" class="fixed top-5 right-5 z-50 flex flex-col gap-2 w-[260px]"></div>
+
+<!-- Card -->
+<div id="card"
+     class="relative z-10 w-full max-w-[390px] mx-4 animate-rise scanlines"
+     style="background:#0e0e0e; border:1px solid rgba(200,149,26,.18); box-shadow:0 40px 120px rgba(0,0,0,.85)">
+
+  <!-- Corner ornaments -->
+  <svg class="corner c-tl" viewBox="0 0 28 28" fill="none"><path d="M2 2L10 2M2 2L2 10" stroke="#8B6914" stroke-width="1.5" opacity=".6"/><circle cx="2" cy="2" r="1.2" fill="#8B6914" opacity=".5"/></svg>
+  <svg class="corner c-tr" viewBox="0 0 28 28" fill="none"><path d="M26 2L18 2M26 2L26 10" stroke="#8B6914" stroke-width="1.5" opacity=".6"/><circle cx="26" cy="2" r="1.2" fill="#8B6914" opacity=".5"/></svg>
+  <svg class="corner c-bl" viewBox="0 0 28 28" fill="none"><path d="M2 26L10 26M2 26L2 18" stroke="#8B6914" stroke-width="1.5" opacity=".6"/><circle cx="2" cy="26" r="1.2" fill="#8B6914" opacity=".5"/></svg>
+  <svg class="corner c-br" viewBox="0 0 28 28" fill="none"><path d="M26 26L18 26M26 26L26 18" stroke="#8B6914" stroke-width="1.5" opacity=".6"/><circle cx="26" cy="26" r="1.2" fill="#8B6914" opacity=".5"/></svg>
+
+  <!-- ── Gold Header ── -->
+  <div class="relative overflow-hidden hex-bg px-7 pt-7 pb-6"
+       style="background:linear-gradient(135deg,#C8951A 0%,#a37010 55%,#8B6914 100%)">
+    <i class="fas fa-cog absolute text-[80px] -top-6 -right-6 text-black/10 animate-cogSlow pointer-events-none"></i>
+    <i class="fas fa-cog absolute text-[38px] -bottom-4 -left-3 text-black/10 animate-cogRev pointer-events-none"></i>
+
+    <div class="relative z-10 flex items-center gap-4">
+      <!-- Logo -->
+      <div class="w-[54px] h-[54px] rounded-full flex-shrink-0 flex items-center justify-center"
+           style="background:rgba(0,0,0,.22);border:2px solid rgba(0,0,0,.2)">
+        <img src="Ecologo.png" alt="logo" class="w-8 h-8 object-contain" style="filter:invert(1)"
+             onerror="this.style.display='none';document.getElementById('logoFallback').style.display='block'">
+        <span id="logoFallback" class="font-display text-[22px] text-black/40 hidden">A</span>
+      </div>
+      <div>
+        <p class="font-mono text-[9px] tracking-[2.5px] text-black/40 mb-0.5">// Autoshop Management</p>
+        <h1 class="font-display text-[23px] tracking-[2px] leading-none text-black/55">PORTAL LOGIN</h1>
+        <div class="inline-flex items-center gap-1.5 mt-2 px-2 py-[3px] font-mono text-[8px] tracking-[2px] text-black/38"
+             style="background:rgba(0,0,0,.18)">
+          <i class="fas fa-shield-halved text-[7px]"></i> SECURE ACCESS
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Divider with icons ── -->
+  <div class="flex items-center gap-2.5 px-7 py-3" style="background:#0a0a0a; border-bottom:1px solid rgba(200,149,26,.1)">
+    <i class="fas fa-wrench text-gold-dim text-[11px]" style="color:#8B6914"></i>
+    <div class="flex-1 h-px" style="background:rgba(200,149,26,.1)"></div>
+    <i class="fas fa-car text-[11px]" style="color:#8B6914"></i>
+    <div class="flex-1 h-px" style="background:rgba(200,149,26,.1)"></div>
+    <i class="fas fa-cog text-[11px]" style="color:#8B6914"></i>
+    <div class="flex-1 h-px" style="background:rgba(200,149,26,.1)"></div>
+    <i class="fas fa-tools text-[11px]" style="color:#8B6914"></i>
+  </div>
+
+  <!-- ── Form Body ── -->
+  <div class="px-7 py-6">
+
+    <!-- Error banner (hidden by default) -->
+    <div id="errorBanner" class="hidden mb-4 px-3 py-2.5 font-mono text-[10px] tracking-[1px]"
+         style="border:1px solid #c0392b; color:#e74c3c; background:rgba(192,57,43,.06)">
+      <i class="fas fa-exclamation-circle mr-1.5"></i><span id="errorMsg"></span>
+    </div>
+
+    <form id="loginForm" novalidate>
+
+      <!-- Email -->
+      <div class="mb-4">
+        <label class="block font-mono text-[9px] tracking-[2px] mb-2" style="color:#8B6914">
+          <i class="fas fa-envelope mr-1 text-[8px]"></i>EMAIL ADDRESS
+        </label>
+        <div class="relative flex items-center">
+          <i class="fas fa-envelope absolute left-3 text-[11px] pointer-events-none" style="color:#8B6914"></i>
+          <input type="email" id="email" class="inp" placeholder="you@example.com" autocomplete="email" required/>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="mb-4">
+        <label class="block font-mono text-[9px] tracking-[2px] mb-2" style="color:#8B6914">
+          <i class="fas fa-lock mr-1 text-[8px]"></i>PASSWORD
+        </label>
+        <div class="relative flex items-center">
+          <i class="fas fa-lock absolute left-3 text-[11px] pointer-events-none" style="color:#8B6914"></i>
+          <input type="password" id="password" class="inp" placeholder="Enter your password" autocomplete="current-password" required/>
+          <button type="button" id="eyeBtn" class="absolute right-3 text-[13px] transition-colors" style="color:#484848">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Options -->
+      <div class="flex items-center justify-between mb-5">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="remember" class="custom-check">
+          <div class="check-box"></div>
+          <span class="font-mono text-[9px] tracking-[1px]" style="color:#484848">Remember me</span>
+        </label>
+        <button type="button" onclick="handleForgot()"
+                class="font-mono text-[9px] tracking-[1px] transition-colors"
+                style="color:#8B6914; background:none; border:none; cursor:pointer;"
+                onmouseover="this.style.color='#F2BC45'" onmouseout="this.style.color='#8B6914'">
+          Forgot password?
+        </button>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" id="submitBtn"
+              class="btn-shimmer w-full h-[44px] font-body font-semibold text-[13px] tracking-[3px] transition-colors duration-200"
+              style="background:#C8951A; border:none; color:#080808; cursor:pointer;"
+              onmouseover="this.style.background='#F2BC45'" onmouseout="this.style.background='#C8951A'">
+        <i class="fas fa-sign-in-alt mr-2 text-[11px]"></i>
+        <span id="btnLabel">ACCESS DASHBOARD</span>
+      </button>
+
+    </form>
+
+    <!-- Status bar -->
+    <div class="flex items-center justify-between mt-5 pt-4" style="border-top:1px solid rgba(200,149,26,.08)">
+      <div class="flex items-center gap-1.5 font-mono text-[8px] tracking-[1.5px]" style="color:#3a3a3a">
+        <div class="w-1.5 h-1.5 rounded-full animate-blink" style="background:#2ecc71"></div>
+        System Online
+      </div>
+      <span class="font-mono text-[8px] tracking-[1px]" style="color:#3a3a3a">v1.0.0</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────
+     JavaScript
+───────────────────────────────────── -->
+<script>
+  // ─────────────────────────────────────────────────────────────────
+  // MOCK USER DATABASE
+  // Replace this with a real API call (fetch/axios → Laravel endpoint)
+  // when connecting to the back end.
+  //
+  // Structure:  email (lowercase) → { password, role, redirect }
+  // ─────────────────────────────────────────────────────────────────
+  const USERS = {
+    'admin@autoshop.com':       { password: 'admin123',  role: 'admin',      redirect: 'admin/dashboard.html' },
+    'jasper123@gmail.com':      { password: 'pass123',   role: 'admin',      redirect: 'admin/dashboard.html' },
+    'juan.tech@gmail.com':      { password: 'tech456',   role: 'technician', redirect: 'technician/dashboard.html' },
+    'maria.staff@gmail.com':    { password: 'staff789',  role: 'staff',      redirect: 'staff/dashboard.html' },
+  };
+
+  // ─────────────────────────────────────────────────────────────────
+  // DOM refs
+  // ─────────────────────────────────────────────────────────────────
+  const form        = document.getElementById('loginForm');
+  const emailInput  = document.getElementById('email');
+  const passInput   = document.getElementById('password');
+  const eyeBtn      = document.getElementById('eyeBtn');
+  const submitBtn   = document.getElementById('submitBtn');
+  const btnLabel    = document.getElementById('btnLabel');
+  const errorBanner = document.getElementById('errorBanner');
+  const errorMsg    = document.getElementById('errorMsg');
+  const rememberChk = document.getElementById('remember');
+
+  // ─────────────────────────────────────────────────────────────────
+  // Restore remembered email
+  // ─────────────────────────────────────────────────────────────────
+  const saved = localStorage.getItem('autoshop_email');
+  if (saved) {
+    emailInput.value = saved;
+    rememberChk.checked = true;
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Password toggle
+  // ─────────────────────────────────────────────────────────────────
+  eyeBtn.addEventListener('click', () => {
+    const isPass = passInput.type === 'password';
+    passInput.type = isPass ? 'text' : 'password';
+    eyeBtn.querySelector('i').className = isPass ? 'fas fa-eye-slash' : 'fas fa-eye';
+  });
+
+  eyeBtn.addEventListener('mouseover', () => eyeBtn.style.color = '#C8951A');
+  eyeBtn.addEventListener('mouseout',  () => eyeBtn.style.color = '#484848');
+
+  // ─────────────────────────────────────────────────────────────────
+  // Clear field error on type
+  // ─────────────────────────────────────────────────────────────────
+  [emailInput, passInput].forEach(inp => {
+    inp.addEventListener('input', () => {
+      inp.classList.remove('err');
+      hideError();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Form submit
+  // ─────────────────────────────────────────────────────────────────
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const email    = emailInput.value.trim().toLowerCase();
+    const password = passInput.value;
+
+    // ── Basic validation ──────────────────────────────────────────
+    if (!email) {
+      markError(emailInput, 'Email address is required.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      markError(emailInput, 'Please enter a valid email address.');
+      return;
+    }
+    if (!password) {
+      markError(passInput, 'Password is required.');
+      return;
+    }
+
+    // ── Loading state ─────────────────────────────────────────────
+    setLoading(true);
+
+    // ── Simulate async lookup (replace with fetch() to Laravel) ───
+    setTimeout(() => {
+      const user = USERS[email];
+
+      // Unknown email
+      if (!user) {
+        setLoading(false);
+        markError(emailInput, 'No account found with that email address.');
+        return;
+      }
+
+      // Wrong password
+      if (user.password !== password) {
+        setLoading(false);
+        markError(passInput, 'Incorrect password. Please try again.');
+        return;
+      }
+
+      // ── Success ───────────────────────────────────────────────
+      if (rememberChk.checked) {
+        localStorage.setItem('autoshop_email', email);
+      } else {
+        localStorage.removeItem('autoshop_email');
+      }
+
+      toast(`Welcome back! Redirecting to ${capitalize(user.role)} dashboard…`, 'success');
+      btnLabel.textContent = 'Redirecting…';
+
+      // Redirect after short delay so the user sees the success toast
+      setTimeout(() => {
+        // ── BACK-END HOOK ─────────────────────────────────────────
+        // When connected to Laravel, replace this block with a real
+        // form POST to /login and let the server handle the redirect.
+        // window.location.href = user.redirect;
+        //
+        // For now, show a demo alert since the dashboard files don't exist.
+        alert(`[DEMO] Role detected: ${user.role.toUpperCase()}\nWould redirect to: ${user.redirect}`);
+        setLoading(false);
+        btnLabel.textContent = 'ACCESS DASHBOARD';
+      }, 1400);
+
+    }, 900); // simulated network delay
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Forgot password
+  // ─────────────────────────────────────────────────────────────────
+  function handleForgot() {
+    const email = emailInput.value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast('Enter your email address first, then click Forgot Password.', 'error');
+      markError(emailInput, 'Enter your email first.');
+      return;
+    }
+    toast('Password reset instructions sent to ' + email, 'success');
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────────────────────────
+  function markError(input, msg) {
+    input.classList.add('err');
+    input.classList.remove('animate-shake');
+    void input.offsetWidth;
+    input.classList.add('animate-shake');
+    showError(msg);
+    input.focus();
+  }
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorBanner.classList.remove('hidden');
+  }
+
+  function hideError() {
+    errorBanner.classList.add('hidden');
+  }
+
+  function setLoading(on) {
+    submitBtn.disabled = on;
+    submitBtn.style.opacity = on ? '0.7' : '1';
+    btnLabel.textContent = on ? 'Authenticating…' : 'ACCESS DASHBOARD';
+  }
+
+  function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  function toast(msg, type = 'error') {
+    const styles = {
+      error:   { border:'#c0392b', color:'#e74c3c', bg:'rgba(192,57,43,.07)', icon:'fa-exclamation-circle' },
+      success: { border:'rgba(200,149,26,.5)', color:'#F2BC45', bg:'rgba(200,149,26,.07)', icon:'fa-check-circle' },
+    };
+    const s = styles[type] || styles.error;
+    const t = document.createElement('div');
+    t.className = 'toast-item';
+    t.style.cssText = `padding:10px 13px; border:1px solid ${s.border}; color:${s.color}; background:${s.bg}; font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:1px; line-height:1.5;`;
+    t.innerHTML = `<i class="fas ${s.icon} mr-1.5"></i>${msg}`;
+    const container = document.getElementById('toasts');
+    container.appendChild(t);
+    setTimeout(() => {
+      t.classList.add('toast-out');
+      setTimeout(() => t.remove(), 420);
+    }, 3200);
+  }
+</script>
+
+</body>
+</html>

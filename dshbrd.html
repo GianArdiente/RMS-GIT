@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>REV — Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{gold:{DEFAULT:'#F2DB94',dark:'#A67F38',light:'#F2E1AE'}},fontFamily:{condensed:['Barlow Condensed','sans-serif'],raj:['Rajdhani','sans-serif'],dm:['DM Sans','sans-serif']}}}};</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--g:#F2DB94;--gd:#A67F38;--gdl:#F2E1AE;--gdk:#D9B573;--black:#080808;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'DM Sans',sans-serif;background:var(--black);color:#fff;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#A67F38;border-radius:2px;}
+.gt{background:linear-gradient(135deg,#F2E1AE,#F2DB94,#A67F38);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glowGold{0%,100%{box-shadow:-4px 0 20px rgba(166,127,56,.35),0 0 0 0 rgba(166,127,56,.45)}50%{box-shadow:-4px 0 20px rgba(166,127,56,.35),0 0 0 8px rgba(166,127,56,0)}}
+@keyframes glowRed{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}
+@keyframes glowGreen{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0)}}
+@keyframes borderFlow{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+@keyframes scanLine{0%{top:-2px;opacity:0}8%{opacity:.4}92%{opacity:.15}100%{top:100%;opacity:0}}
+@keyframes iSwap{0%{opacity:0;transform:scale(.6)}100%{opacity:1;transform:scale(1)}}
+@keyframes dp{0%,100%{opacity:1}50%{opacity:.3}}
+
+.afu{animation:fadeUp .4s ease both;}
+
+/* LAYOUT */
+.layout{display:flex;height:100vh;overflow:hidden;}
+
+/* SIDEBAR */
+#sidebar{width:248px;flex-shrink:0;background:linear-gradient(180deg,#0b0b0b,#111);border-right:1px solid rgba(166,127,56,.12);display:flex;flex-direction:column;transition:transform .32s cubic-bezier(.25,.46,.45,.94);}
+.sb-logo{padding:15px 14px 12px;border-bottom:1px solid rgba(166,127,56,.07);display:flex;align-items:center;gap:10px;}
+.sb-li{width:35px;height:35px;border-radius:9px;background:linear-gradient(135deg,#A67F38,#D9B573);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-sec{padding:11px 14px 3px;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#1c1c1c;font-family:'Rajdhani',sans-serif;font-weight:700;}
+.sb-nav{flex:1;overflow-y:auto;padding:3px 0;}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;margin:1px 7px;cursor:pointer;color:#484848;font-size:13px;font-weight:500;border:1px solid transparent;transition:color .18s,background .18s,border-color .18s;position:relative;}
+.ni-off{width:17px;text-align:center;font-size:13px;flex-shrink:0;}
+.ni-on{width:17px;text-align:center;font-size:13px;flex-shrink:0;color:var(--g);display:none;animation:iSwap .18s ease both;}
+.ni:hover{background:rgba(166,127,56,.07);color:#bbb;border-color:rgba(166,127,56,.1);}
+.ni:hover .ni-off{display:none;}.ni:hover .ni-on{display:block;}
+.ni.active{background:linear-gradient(90deg,rgba(166,127,56,.15),rgba(166,127,56,.02));color:var(--g);border-color:rgba(166,127,56,.22);}
+.ni.active .ni-off{display:none;}.ni.active .ni-on{display:block;}
+.ni.active::before{content:'';position:absolute;left:-7px;top:22%;height:56%;width:3px;background:linear-gradient(180deg,#A67F38,#F2DB94);border-radius:0 2px 2px 0;}
+.nb{margin-left:auto;font-size:9px;font-weight:900;color:#080808;padding:1px 7px;border-radius:20px;background:linear-gradient(135deg,#A67F38,#D9B573);font-family:'Rajdhani',sans-serif;}
+
+/* HEADER */
+.main-col{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+#hdr{height:57px;flex-shrink:0;background:rgba(8,8,8,.97);border-bottom:1px solid rgba(166,127,56,.1);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-between;padding:0 18px;gap:10px;position:sticky;top:0;z-index:100;}
+.hsr{display:flex;align-items:center;gap:7px;background:#141414;border:1px solid rgba(166,127,56,.11);border-radius:8px;padding:6px 10px;}
+.hsr input{background:transparent;border:none;outline:none;color:#ccc;font-size:13px;font-family:'DM Sans',sans-serif;width:130px;}
+.hsr input::placeholder{color:#252525;}
+.hbtn{width:34px;height:34px;border-radius:8px;background:#141414;border:1px solid rgba(166,127,56,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s;flex-shrink:0;}
+.hbtn:hover{border-color:rgba(166,127,56,.36);}
+.pr-ring{position:absolute;inset:-2px;border-radius:10px;background:linear-gradient(90deg,#A67F38,#F2DB94,#D9B573,#A67F38);background-size:300% 300%;animation:borderFlow 3s ease infinite;z-index:-1;}
+.pr-btn{display:flex;align-items:center;gap:8px;padding:5px 11px;border-radius:9px;background:linear-gradient(135deg,#A67F38,#D9B573);cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;color:#080808;font-size:13px;white-space:nowrap;position:relative;overflow:hidden;}
+.pr-btn::after{content:'';position:absolute;top:-50%;left:-80%;width:45%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transform:skewX(-18deg);transition:left .5s;}
+.pr-btn:hover::after{left:135%;}
+
+/* DROPDOWN */
+.dd{position:absolute;right:0;top:calc(100% + 8px);width:240px;background:linear-gradient(160deg,#1d1d1d,#111);border:1px solid rgba(166,127,56,.24);border-radius:14px;overflow:hidden;box-shadow:0 28px 70px rgba(0,0,0,.75);opacity:0;pointer-events:none;transform:translateY(-7px);transition:opacity .2s,transform .2s;z-index:300;}
+.dd.open{opacity:1;pointer-events:all;transform:translateY(0);}
+.ddi{display:flex;align-items:center;gap:10px;padding:9px 14px;color:#777;font-size:13px;cursor:pointer;transition:background .15s,color .15s;}
+.ddi:hover{background:rgba(255,255,255,.03);color:#ddd;}
+.ddi i{color:#A67F38;width:15px;font-size:12px;}
+.sep{border:none;border-top:1px solid rgba(166,127,56,.07);margin:3px 0;}
+.nwprev{margin:7px 9px 4px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s;background:rgba(166,127,56,.06);border:1px solid rgba(166,127,56,.14);}
+.nwprev:hover{background:rgba(166,127,56,.1);}
+
+/* NOTIFICATION PANEL */
+#nfOv{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;}
+#nfOv.show{opacity:1;pointer-events:all;}
+#nfPan{position:fixed;right:0;top:0;bottom:0;width:385px;background:linear-gradient(180deg,#0f0f0f,#161616);border-left:1px solid rgba(166,127,56,.2);z-index:201;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .36s cubic-bezier(.25,.46,.45,.94);}
+#nfPan.open{transform:translateX(0);}
+.nf-hdr{padding:18px;border-bottom:1px solid rgba(166,127,56,.1);background:linear-gradient(135deg,#141414,#0d0d0d);flex-shrink:0;}
+.nf-list{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px;}
+.nfi{border-radius:11px;padding:12px 13px;display:flex;gap:11px;align-items:flex-start;cursor:pointer;transition:opacity .2s,background .2s;}
+.nfi.unr{background:linear-gradient(135deg,rgba(166,127,56,.13),rgba(166,127,56,.03));border-left:3px solid #A67F38;}
+.nfi.rd{background:rgba(255,255,255,.015);border-left:3px solid transparent;opacity:.5;}
+.nfi:hover{opacity:1!important;background:rgba(166,127,56,.09)!important;}
+
+/* FLOATING BELL */
+#bellBtn{position:fixed;right:0;top:50%;transform:translateY(-50%) translateX(0);z-index:199;width:48px;height:48px;border-radius:14px 0 0 14px;background:linear-gradient(135deg,#A67F38,#D9B573);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:-6px 0 24px rgba(166,127,56,.5),-2px 0 8px rgba(0,0,0,.4);animation:glowGold 3s infinite;transition:transform .36s cubic-bezier(.25,.46,.45,.94),box-shadow .2s;}
+#bellBtn.hidden{transform:translateY(-50%) translateX(100%);animation:none;}
+#bellBtn:hover:not(.hidden){box-shadow:-8px 0 30px rgba(166,127,56,.65),-2px 0 10px rgba(0,0,0,.5);}
+
+/* CONTENT */
+#ca{flex:1;overflow-y:auto;padding:18px;background:#080808;}
+
+/* CARDS */
+.card{background:linear-gradient(135deg,#141414,#0e0e0e);border:1px solid rgba(166,127,56,.1);border-radius:14px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(166,127,56,.24),transparent);}
+.sc{border-radius:14px;padding:17px 20px;position:relative;overflow:hidden;background:linear-gradient(135deg,#1a1608,#131313);border:1px solid rgba(166,127,56,.26);cursor:pointer;transition:border-color .3s,box-shadow .3s;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#A67F38,#F2DB94,#A67F38,transparent);}
+.sc:hover{border-color:rgba(166,127,56,.5);box-shadow:0 10px 35px rgba(166,127,56,.1);}
+.sc-v{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900;line-height:1;}
+.sc-i{width:41px;height:41px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(166,127,56,.1);border:1px solid rgba(166,127,56,.16);}
+
+/* BADGES */
+.b{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-family:'Rajdhani',sans-serif;font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+.bg{background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);}
+.bd{background:rgba(166,127,56,.11);color:#F2DB94;border:1px solid rgba(166,127,56,.26);}
+.bb{background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.2);}
+.br{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2);}
+.bp{background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.2);}
+
+/* POST CARD */
+.post-card{background:linear-gradient(135deg,#181818,#111);border:1px solid rgba(166,127,56,.12);border-radius:13px;overflow:hidden;position:relative;transition:border-color .25s,box-shadow .25s;display:flex;flex-direction:column;}
+.post-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(166,127,56,.35),transparent);}
+.post-card:hover{border-color:rgba(166,127,56,.32);box-shadow:0 10px 30px rgba(0,0,0,.5);}
+
+/* BUTTONS */
+.btn-g{padding:8px 15px;border-radius:8px;background:linear-gradient(135deg,#A67F38,#D9B573);font-family:'Rajdhani',sans-serif;font-weight:700;color:#080808;font-size:12px;border:none;cursor:pointer;position:relative;overflow:hidden;transition:filter .2s;}
+.btn-g::after{content:'';position:absolute;top:-50%;left:-80%;width:45%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transform:skewX(-18deg);transition:left .5s;}
+.btn-g:hover::after{left:135%;}
+.btn-gh{padding:8px 15px;border-radius:8px;border:1px solid rgba(166,127,56,.28);background:transparent;color:#F2E1AE;font-size:12px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:600;}
+.btn-gh:hover{border-color:rgba(166,127,56,.5);}
+
+/* YEAR BUTTONS */
+.yr-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(166,127,56,.18);background:transparent;color:#444;font-size:10px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;transition:all .2s;}
+.yr-btn.active{background:linear-gradient(135deg,#A67F38,#D9B573);color:#080808;border-color:transparent;}
+.yr-btn:hover:not(.active){border-color:rgba(166,127,56,.5);color:#ccc;}
+
+/* CHART BARS */
+.chcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;}
+.chbar{width:100%;border-radius:3px 3px 0 0;background:linear-gradient(180deg,#D9B573,#7A5C20);position:relative;overflow:hidden;cursor:pointer;transition:filter .2s;}
+.chbar:hover{filter:brightness(1.3);}
+.chbar::after{content:'';position:absolute;top:0;left:0;right:0;height:35%;background:linear-gradient(180deg,rgba(242,219,148,.28),transparent);}
+
+/* SCAN LINE */
+.scan-wrap{position:relative;overflow:hidden;}
+.scan-line{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(166,127,56,.5),transparent);pointer-events:none;animation:scanLine 4s linear infinite;top:-2px;}
+@keyframes scanLine{0%{top:-2px;opacity:0}8%{opacity:.4}92%{opacity:.15}100%{top:100%;opacity:0}}
+
+/* PROGRESS */
+.prog-t{height:4px;border-radius:3px;background:rgba(255,255,255,.05);}
+.prog-f{height:100%;border-radius:3px;background:linear-gradient(90deg,#A67F38,#F2DB94);transition:width .8s ease;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;animation:glowGreen 1.8s infinite;}
+
+/* SIDEBAR OVERLAY */
+#sbOv{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:49;opacity:0;pointer-events:none;transition:opacity .3s;}
+#sbOv.show{opacity:1;pointer-events:all;}
+@media(max-width:1023px){
+  #sidebar{position:fixed;left:0;top:0;height:100%;transform:translateX(-100%);}
+  #sidebar.open{transform:translateX(0);}
+}
+
+/* BOOKING MODAL */
+.mw{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .25s;padding:16px;}
+.mw.open{opacity:1;pointer-events:all;}
+.mb{background:linear-gradient(150deg,#1c1c1c,#101010);border:1px solid rgba(166,127,56,.28);border-radius:18px;box-shadow:0 50px 120px rgba(0,0,0,.8);transform:translateY(14px) scale(.97);transition:transform .28s cubic-bezier(.25,.46,.45,.94);max-height:92vh;overflow-y:auto;position:relative;width:100%;}
+.mw.open .mb{transform:none;}
+.mtbar{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#A67F38,#F2DB94,#A67F38,transparent);}
+</style>
+</head>
+<body>
+
+<!-- OVERLAYS -->
+<div id="sbOv" onclick="closeSb()"></div>
+<div id="nfOv" onclick="closeNotif()"></div>
+
+<!-- FLOATING BELL -->
+<button onclick="openNotif()" id="bellBtn" aria-label="Open Notifications">
+  <i class="fas fa-bell" style="color:#080808;font-size:15px;"></i>
+  <span id="nBadge" style="position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;border-radius:50%;background:#dc2626;color:#fff;font-size:8px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #080808;animation:glowRed 2.2s infinite;padding:0 2px;">4</span>
+</button>
+
+<!-- NOTIFICATION PANEL -->
+<div id="nfPan">
+  <div class="nf-hdr">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <h3 class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;">Notifications</h3>
+      <button onclick="closeNotif()" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="display:flex;gap:7px;">
+      <button onclick="markAllRead()" class="btn-g" style="font-size:11px;padding:6px 12px;"><i class="fas fa-check-double" style="margin-right:4px;"></i>Mark All Read</button>
+      <button onclick="clearNotifs()" class="btn-gh" style="font-size:11px;padding:6px 12px;"><i class="fas fa-trash" style="margin-right:4px;"></i>Clear</button>
+    </div>
+  </div>
+  <div class="nf-list" id="nfList"></div>
+</div>
+
+<!-- BOOKING DETAIL MODAL -->
+<div id="bkModal" class="mw" onclick="if(event.target===this)closeModal('bkModal')">
+  <div class="mb" style="max-width:420px;padding:24px;">
+    <div class="mtbar"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h2 id="bkTitle" class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;"></h2>
+      <button onclick="closeModal('bkModal')" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="bkBody"></div>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="btn-g" style="flex:1;padding:10px;font-size:13px;">Confirm</button>
+      <button style="flex:1;padding:10px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LAYOUT ══════════ -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-li"><span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#080808;">R</span></div>
+      <div>
+        <div class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:1px;">REV</div>
+        <div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:#1a1a1a;">Auto Repair</div>
+      </div>
+      <button onclick="closeSb()" id="sbClose" style="margin-left:auto;background:none;border:none;color:#444;cursor:pointer;font-size:14px;display:none;"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-sec">Main</div>
+      <div class="ni active" data-page="dashboard"><i class="ni-off fas fa-th-large"></i><i class="ni-on fas fa-th-large"></i><span>Dashboard</span></div>
+      <div class="ni" data-page="booking"><i class="ni-off fas fa-calendar"></i><i class="ni-on fas fa-calendar-check"></i><span>Booking</span><span class="nb">15</span></div>
+      <div class="ni" data-page="records"><i class="ni-off fas fa-chart-bar"></i><i class="ni-on fas fa-chart-bar"></i><span>Reports</span></div>
+      <div class="ni" data-page="services"><i class="ni-off fas fa-concierge-bell"></i><i class="ni-on fas fa-concierge-bell"></i><span>Services</span></div>
+      <div class="ni" data-page="inventory"><i class="ni-off fas fa-warehouse"></i><i class="ni-on fas fa-warehouse"></i><span>Inventory</span></div>
+      <div class="ni" data-page="joborders"><i class="ni-off fas fa-clipboard"></i><i class="ni-on fas fa-clipboard-list"></i><span>Job Orders</span><span class="nb">30</span></div>
+      <div class="sb-sec">Publish</div>
+      <div class="ni" data-page="shop"><i class="ni-off fas fa-store"></i><i class="ni-on fas fa-store-alt"></i><span>Shop</span></div>
+      <div class="ni" data-page="posts"><i class="ni-off fas fa-newspaper"></i><i class="ni-on fas fa-rss"></i><span>Posts &amp; News</span></div>
+      <div class="sb-sec">People</div>
+      <div class="ni" data-page="customers"><i class="ni-off fas fa-user"></i><i class="ni-on fas fa-user-check"></i><span>Customers</span></div>
+      <div class="ni" data-page="technicians"><i class="ni-off fas fa-wrench"></i><i class="ni-on fas fa-tools"></i><span>Technicians</span></div>
+      <div class="ni" data-page="staffs"><i class="ni-off fas fa-id-card"></i><i class="ni-on fas fa-id-badge"></i><span>Staffs</span></div>
+      <div class="ni" data-page="accounts"><i class="ni-off fas fa-user-lock"></i><i class="ni-on fas fa-users-cog"></i><span>Accounts</span></div>
+      <div class="sb-sec">Finance</div>
+      <div class="ni" data-page="receipts"><i class="ni-off fas fa-file-alt"></i><i class="ni-on fas fa-file-invoice"></i><span>Receipts</span></div>
+    </div>
+    <div style="padding:9px;">
+      <div style="padding:8px 11px;border-radius:9px;background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.11);">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:1px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:#10b981;animation:glowGreen 1.8s infinite;"></div>
+          <span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#10b981;">System Online</span>
+        </div>
+        <div style="font-size:10px;color:#1a1a1a;">All services running</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN COLUMN -->
+  <div class="main-col">
+
+    <!-- HEADER -->
+    <header id="hdr">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button onclick="toggleSb()" id="menuBtn" style="display:none;width:34px;height:34px;border-radius:8px;background:#141414;border:1px solid rgba(166,127,56,.18);align-items:center;justify-content:center;cursor:pointer;">
+          <i class="fas fa-bars" style="color:#F2DB94;font-size:12px;"></i>
+        </button>
+        <div>
+          <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#1a1a1a;font-family:'Rajdhani',sans-serif;">Admin Portal</div>
+          <div class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;line-height:1.2;">Dashboard</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="hsr">
+          <i class="fas fa-search" style="color:#252525;font-size:11px;"></i>
+          <input type="text" placeholder="Search...">
+        </div>
+        <div id="clkWrap" style="text-align:right;">
+          <div id="clkTime" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;color:#A67F38;"></div>
+          <div id="clkDate" style="font-size:9px;color:#252525;"></div>
+        </div>
+        <button class="hbtn"><i class="fas fa-cog" style="color:#3a3a3a;font-size:12px;"></i></button>
+        <div style="position:relative;" id="profWrap">
+          <div class="pr-ring"></div>
+          <div class="pr-btn" onclick="toggleDD()">
+            <div style="width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;">
+              <i class="fas fa-user" style="font-size:9px;"></i>
+            </div>
+            <div style="text-align:left;">
+              <div style="font-size:11px;font-weight:900;line-height:1;">Admin</div>
+              <div style="font-size:8px;opacity:.5;font-family:'DM Sans',sans-serif;line-height:1;">Administrator</div>
+            </div>
+            <i id="pChev" class="fas fa-chevron-down" style="font-size:8px;opacity:.55;transition:transform .2s;"></i>
+          </div>
+          <div class="dd" id="profDD">
+            <div style="padding:13px 14px;border-bottom:1px solid rgba(166,127,56,.07);">
+              <div style="display:flex;align-items:center;gap:9px;">
+                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#A67F38,#D9B573);display:flex;align-items:center;justify-content:center;">
+                  <i class="fas fa-user" style="color:#080808;font-size:12px;"></i>
+                </div>
+                <div>
+                  <div style="font-weight:600;font-size:13px;color:#ccc;">Admin User</div>
+                  <div style="font-size:11px;color:#2e2e2e;">admin@revrepair.com</div>
+                </div>
+              </div>
+            </div>
+            <div style="padding:5px 0;">
+              <div class="ddi"><i class="fas fa-user-circle"></i>My Profile</div>
+              <div class="ddi"><i class="fas fa-users-cog"></i>Manage Accounts</div>
+              <div class="ddi" onclick="openNotif();closeDD()">
+                <i class="fas fa-newspaper"></i>
+                <span style="flex:1;">News</span>
+                <span style="font-size:9px;color:#080808;padding:1px 6px;border-radius:20px;background:linear-gradient(135deg,#A67F38,#D9B573);font-family:'Rajdhani',sans-serif;font-weight:900;">2</span>
+              </div>
+              <div class="ddi"><i class="fas fa-cog"></i>Settings</div>
+              <div class="nwprev" onclick="openNotif();closeDD()">
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
+                  <span class="live-dot"></span>
+                  <span style="font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;font-weight:800;color:#A67F38;">Latest News</span>
+                </div>
+                <p style="font-size:12px;color:#888;line-height:1.4;">Oil Change Promo — <span style="color:#F2DB94;">save 20% this week</span></p>
+              </div>
+              <hr class="sep">
+              <div class="ddi" style="color:#c04040;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#c04040'">
+                <i class="fas fa-sign-out-alt" style="color:inherit;"></i>Log Out
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD CONTENT -->
+    <div id="ca">
+
+      <!-- STAT CARDS ROW -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;">
+
+        <div class="sc afu" style="animation-delay:0s;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+            <div class="sc-i"><i class="fas fa-calendar-check" style="color:#F2DB94;font-size:13px;"></i></div>
+            <span class="b bd"><span style="width:5px;height:5px;border-radius:50%;background:#F2DB94;display:inline-block;animation:dp 2s infinite;"></span>Live</span>
+          </div>
+          <div class="sc-v gt">15</div>
+          <div style="font-size:11px;color:#333;margin-top:3px;">Total Bookings</div>
+          <div style="font-size:10px;color:#10b981;margin-top:4px;"><i class="fas fa-arrow-up" style="font-size:8px;"></i> +3 today</div>
+        </div>
+
+        <div class="sc afu" style="animation-delay:.07s;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+            <div class="sc-i"><i class="fas fa-clipboard-list" style="color:#F2DB94;font-size:13px;"></i></div>
+            <span class="b bb">Active</span>
+          </div>
+          <div class="sc-v gt">30</div>
+          <div style="font-size:11px;color:#333;margin-top:3px;">Active Job Orders</div>
+          <div style="font-size:10px;color:#60a5fa;margin-top:4px;">12 in progress</div>
+        </div>
+
+        <div class="sc afu" style="animation-delay:.14s;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+            <div class="sc-i"><i class="fas fa-users" style="color:#F2DB94;font-size:13px;"></i></div>
+            <span class="b bg">Total</span>
+          </div>
+          <div class="sc-v gt">50</div>
+          <div style="font-size:11px;color:#333;margin-top:3px;">Customers</div>
+          <div style="font-size:10px;color:#10b981;margin-top:4px;"><i class="fas fa-user-plus" style="font-size:8px;"></i> +5 this week</div>
+        </div>
+
+        <div class="sc afu" style="animation-delay:.21s;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+            <div class="sc-i"><i class="fas fa-coins" style="color:#F2DB94;font-size:13px;"></i></div>
+            <span class="b bd">Revenue</span>
+          </div>
+          <div class="sc-v gt">₱150k</div>
+          <div style="font-size:11px;color:#333;margin-top:3px;">Total Revenue</div>
+          <div style="font-size:10px;color:#10b981;margin-top:4px;"><i class="fas fa-arrow-up" style="font-size:8px;"></i> +18% month</div>
+        </div>
+
+      </div>
+
+      <!-- MIDDLE ROW: Revenue Chart + Live Feed -->
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:12px;margin-bottom:12px;">
+
+        <!-- Revenue Chart -->
+        <div class="card afu" style="animation-delay:.28s;padding:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;">
+            <div>
+              <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#1a1a1a;font-family:'Rajdhani',sans-serif;font-weight:700;">Analytics</div>
+              <h3 class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;">Monthly Revenue</h3>
+            </div>
+            <div style="display:flex;gap:4px;" id="yrBtns">
+              <button class="yr-btn active" onclick="switchYr(2024,this)">2024</button>
+              <button class="yr-btn" onclick="switchYr(2025,this)">2025</button>
+              <button class="yr-btn" onclick="switchYr(2026,this)">2026</button>
+            </div>
+          </div>
+          <div id="chartEl" style="display:flex;align-items:flex-end;gap:4px;height:90px;"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span style="font-size:8px;color:#1a1a1a;">Jan</span><span style="font-size:8px;color:#1a1a1a;">Feb</span>
+            <span style="font-size:8px;color:#1a1a1a;">Mar</span><span style="font-size:8px;color:#1a1a1a;">Apr</span>
+            <span style="font-size:8px;color:#1a1a1a;">May</span><span style="font-size:8px;color:#1a1a1a;">Jun</span>
+            <span style="font-size:8px;color:#1a1a1a;">Jul</span><span style="font-size:8px;color:#1a1a1a;">Aug</span>
+            <span style="font-size:8px;color:#1a1a1a;">Sep</span><span style="font-size:8px;color:#1a1a1a;">Oct</span>
+            <span style="font-size:8px;color:#1a1a1a;">Nov</span><span style="font-size:8px;color:#1a1a1a;">Dec</span>
+          </div>
+        </div>
+
+        <!-- Live Feed -->
+        <div class="card scan-wrap afu" style="animation-delay:.35s;padding:15px;">
+          <div class="scan-line"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div>
+              <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#1a1a1a;font-family:'Rajdhani',sans-serif;font-weight:700;">Real-time</div>
+              <h3 class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;">Live Feed</h3>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <div style="width:7px;height:7px;border-radius:50%;background:#10b981;animation:glowGreen 1.8s infinite;"></div>
+              <span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:9px;letter-spacing:2px;color:#10b981;">LIVE</span>
+            </div>
+          </div>
+          <div id="liveEl" style="display:flex;flex-direction:column;gap:5px;"></div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM ROW: Featured + Shop + Recent Bookings -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 250px;gap:12px;">
+
+        <!-- Featured Services -->
+        <div class="card afu" style="animation-delay:.42s;padding:15px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div>
+              <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#1a1a1a;font-family:'Rajdhani',sans-serif;font-weight:700;">Catalogue</div>
+              <h3 class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;">Featured</h3>
+            </div>
+            <div style="display:flex;gap:5px;">
+              <button class="btn-g" style="font-size:10px;padding:5px 10px;"><i class="fas fa-plus" style="margin-right:2px;"></i>Add</button>
+              <button style="padding:5px 10px;border-radius:7px;background:rgba(166,127,56,.08);border:1px solid rgba(166,127,56,.18);color:#D9B573;font-size:10px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;"><i class="fas fa-arrow-right" style="font-size:9px;"></i> All</button>
+            </div>
+          </div>
+          <div id="featGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+        </div>
+
+        <!-- Shop -->
+        <div class="card afu" style="animation-delay:.49s;padding:15px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div>
+              <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#1a1a1a;font-family:'Rajdhani',sans-serif;font-weight:700;">Store</div>
+              <h3 class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;">Shop</h3>
+            </div>
+            <div style="display:flex;gap:5px;">
+              <button class="btn-g" style="font-size:10px;padding:5px 10px;"><i class="fas fa-plus" style="margin-right:2px;"></i>Add</button>
+              <button style="padding:5px 10px;border-radius:7px;background:rgba(166,127,56,.08);border:1px solid rgba(166,127,56,.18);color:#D9B573;font-size:10px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;"><i class="fas fa-arrow-right" style="font-size:9px;"></i> All</button>
+            </div>
+          </div>
+          <div id="shopGridDash" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+        </div>
+
+        <!-- Recent Bookings -->
+        <div class="card afu" style="animation-delay:.56s;padding:15px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div>
+              <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#1a1a1a;font-family:'Rajdhani',sans-serif;font-weight:700;">Latest</div>
+              <h3 class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;">Bookings</h3>
+            </div>
+            <button style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;color:#A67F38;background:none;border:none;cursor:pointer;">All →</button>
+          </div>
+          <div id="recentEl" style="display:flex;flex-direction:column;gap:5px;"></div>
+        </div>
+
+      </div>
+    </div><!-- /ca -->
+  </div><!-- /main-col -->
+</div><!-- /layout -->
+
+<script>
+/* ── DATA ── */
+const D = {
+  featured: [
+    {name:'Premium Oil Change', price:'9999.99', status:'active', imgSrc:'', stock:50},
+    {name:'Brake Pad Replacement', price:'4500.00', status:'active', imgSrc:'', stock:30},
+    {name:'Engine Tune-Up', price:'7800.00', status:'active', imgSrc:'', stock:20},
+    {name:'Battery Replacement', price:'3200.00', status:'inactive', imgSrc:'', stock:15},
+  ],
+  shop: [
+    {name:'Engine Oil 5W-30', price:'350', cat:'Fluid', status:'active', stock:45, imgSrc:''},
+    {name:'Brake Pads Front', price:'1200', cat:'Part', status:'active', stock:8, imgSrc:''},
+    {name:'Air Filter Premium', price:'450', cat:'Part', status:'sold-out', stock:0, imgSrc:''},
+    {name:'Spark Plugs x4', price:'800', cat:'Part', status:'active', stock:22, imgSrc:''},
+  ],
+  bookings: [
+    {id:'BK-001', customer:'Maria Santos', service:'Oil Change', date:'2024-12-01', time:'10:00 AM', status:'confirmed'},
+    {id:'BK-002', customer:'Jose Reyes', service:'Brake Repair', date:'2024-12-01', time:'11:30 AM', status:'pending'},
+    {id:'BK-003', customer:'Ana Cruz', service:'Engine Tune-Up', date:'2024-12-02', time:'9:00 AM', status:'confirmed'},
+    {id:'BK-004', customer:'Carlos Lim', service:'Tire Rotation', date:'2024-12-02', time:'2:00 PM', status:'completed'},
+    {id:'BK-005', customer:'Eva Mendoza', service:'Battery Check', date:'2024-12-03', time:'10:30 AM', status:'cancelled'},
+  ],
+  live: [
+    {label:'Toyota Camry', status:'In Service', color:'#10b981'},
+    {label:'Honda Civic', status:'Diagnosing', color:'#A67F38'},
+    {label:'Ford Ranger', status:'Completed', color:'#F2DB94'},
+    {label:'Mitsubishi Montero', status:'Waiting', color:'#8b5cf6'},
+    {label:'Kia Sportage', status:'Invoiced', color:'#60a5fa'},
+  ],
+  notifs: [
+    {id:1, icon:'fa-calendar-check', color:'#A67F38', bg:'rgba(166,127,56,.15)', text:'New booking from Maria Santos — Oil Change', time:'Just now', tag:'Booking', read:false},
+    {id:2, icon:'fa-exclamation-triangle', color:'#ef4444', bg:'rgba(239,68,68,.12)', text:'Low stock: Brake Pads — only 8 units left', time:'15 min ago', tag:'Inventory', read:false},
+    {id:3, icon:'fa-check-circle', color:'#10b981', bg:'rgba(16,185,129,.12)', text:'Job Order JO-001 completed by Ricky Dela Rosa', time:'1 hour ago', tag:'Job Order', read:false},
+    {id:4, icon:'fa-newspaper', color:'#F2DB94', bg:'rgba(242,219,148,.1)', text:'Oil Change Promo — save 20% this week!', time:'2 hours ago', tag:'News', read:false},
+    {id:5, icon:'fa-users', color:'#60a5fa', bg:'rgba(59,130,246,.12)', text:'5 new customers registered this week', time:'3 hours ago', tag:'Customers', read:true},
+  ],
+  revenue: {
+    2024: [45,60,38,72,55,88,65,79,92,68,84,95],
+    2025: [52,48,70,85,63,74,90,55,80,100,76,88],
+    2026: [60,72,55,90,48,95,70,85,65,78,88,102]
+  }
+};
+
+/* ── HELPERS ── */
+function badge(s) {
+  const m = {active:'bg', inactive:'br', pending:'bd', confirmed:'bb', completed:'bg', cancelled:'br'};
+  return `<span class="b ${m[s]||'bd'}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+}
+function fmt(p) {
+  return parseFloat(p).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+/* ── REVENUE CHART ── */
+let activeYr = 2024;
+function switchYr(yr, btn) {
+  activeYr = yr;
+  document.querySelectorAll('.yr-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderChart();
+}
+function renderChart() {
+  const el = document.getElementById('chartEl');
+  if (!el) return;
+  el.innerHTML = '';
+  const data = D.revenue[activeYr] || D.revenue[2024];
+  const max = Math.max(...data);
+  data.forEach((v, i) => {
+    const col = document.createElement('div');
+    col.className = 'chcol';
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:8px;font-family:Rajdhani,sans-serif;font-weight:700;color:#3a3a3a;';
+    lbl.textContent = v + 'k';
+    const bar = document.createElement('div');
+    bar.className = 'chbar';
+    bar.title = v + 'k';
+    bar.style.cssText = `width:100%;height:0;transition:height .65s cubic-bezier(.25,.46,.45,.94) ${i * .04}s;`;
+    col.appendChild(lbl);
+    col.appendChild(bar);
+    el.appendChild(col);
+    setTimeout(() => { bar.style.height = (v / max * 100) + '%'; }, 60);
+  });
+}
+
+/* ── LIVE FEED ── */
+let livePtr = 0;
+function renderLive() {
+  const el = document.getElementById('liveEl');
+  if (!el) return;
+  el.innerHTML = '';
+  const items = [...D.live.slice(livePtr), ...D.live.slice(0, livePtr)].slice(0, 5);
+  items.forEach((it, i) => {
+    const d = document.createElement('div');
+    d.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:5px 7px;border-radius:7px;background:rgba(255,255,255,.016);border:1px solid rgba(255,255,255,.03);opacity:0;transition:opacity .28s ${i * .06}s;`;
+    d.innerHTML = `<div style="display:flex;align-items:center;gap:7px;"><div style="width:6px;height:6px;border-radius:50%;background:${it.color};flex-shrink:0;"></div><span style="font-size:12px;color:#888;">${it.label}</span></div><span style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:${it.color};">${it.status}</span>`;
+    el.appendChild(d);
+    requestAnimationFrame(() => { d.style.opacity = '1'; });
+  });
+}
+setInterval(() => { livePtr = (livePtr + 1) % D.live.length; renderLive(); }, 3500);
+
+/* ── FEATURED GRID ── */
+function renderFeatGrid() {
+  const g = document.getElementById('featGrid');
+  if (!g) return;
+  g.innerHTML = '';
+  D.featured.slice(0, 4).forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'post-card';
+    d.innerHTML = `${s.imgSrc ? `<img src="${s.imgSrc}" style="width:100%;height:75px;object-fit:cover;display:block;" alt="">` : `<div style="width:100%;height:75px;background:linear-gradient(135deg,#1e1e1e,#141414);display:flex;align-items:center;justify-content:center;"><i class="fas fa-star" style="font-size:18px;color:#2a2a2a;"></i></div>`}
+    <div style="padding:9px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:#ddd;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name}</div>
+      <div class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;">₱${fmt(s.price)}</div>
+    </div>`;
+    g.appendChild(d);
+  });
+}
+
+/* ── SHOP DASH GRID ── */
+function renderShopDash() {
+  const g = document.getElementById('shopGridDash');
+  if (!g) return;
+  g.innerHTML = '';
+  D.shop.slice(0, 4).forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'post-card';
+    d.innerHTML = `<div style="width:100%;height:80px;background:linear-gradient(135deg,#1e1e1e,#141414);display:flex;align-items:center;justify-content:center;"><i class="fas fa-box" style="font-size:18px;color:#2a2a2a;"></i></div>
+    <div style="padding:9px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:#ddd;margin-bottom:1px;">${s.name}</div>
+      <div class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;">₱${fmt(s.price)}</div>
+      <div style="font-size:9px;color:#3a3a3a;margin-top:2px;">${s.stock} in stock</div>
+    </div>`;
+    g.appendChild(d);
+  });
+}
+
+/* ── RECENT BOOKINGS ── */
+function renderRecent() {
+  const el = document.getElementById('recentEl');
+  if (!el) return;
+  el.innerHTML = '';
+  const icons = {confirmed:'fa-check', pending:'fa-clock', completed:'fa-check-double', cancelled:'fa-times'};
+  const rgb = {confirmed:'59,130,246', pending:'166,127,56', completed:'16,185,129', cancelled:'239,68,68'};
+  D.bookings.slice(0, 5).forEach(b => {
+    const c = rgb[b.status] || '166,127,56';
+    const d = document.createElement('div');
+    d.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 7px;border-radius:8px;cursor:pointer;border:1px solid rgba(255,255,255,.03);transition:background .15s;';
+    d.onmouseover = () => d.style.background = 'rgba(166,127,56,.04)';
+    d.onmouseout = () => d.style.background = 'transparent';
+    d.innerHTML = `<div style="width:26px;height:26px;border-radius:6px;background:rgba(${c},.1);border:1px solid rgba(${c},.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas ${icons[b.status]||'fa-circle'}" style="font-size:9px;color:rgb(${c});"></i></div><div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.customer}</div><div style="font-size:9px;color:#2a2a2a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.service}</div></div>${badge(b.status)}`;
+    d.onclick = () => showBk(b);
+    el.appendChild(d);
+  });
+}
+
+/* ── NOTIFICATIONS ── */
+function renderNotifs() {
+  const list = document.getElementById('nfList');
+  const b = document.getElementById('nBadge');
+  if (!list) return;
+  const unr = D.notifs.filter(n => !n.read).length;
+  b.textContent = unr;
+  b.style.display = unr ? 'flex' : 'none';
+  list.innerHTML = '';
+  D.notifs.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'nfi ' + (n.read ? 'rd' : 'unr');
+    d.innerHTML = `<div style="width:37px;height:37px;border-radius:50%;background:${n.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas ${n.icon}" style="color:${n.color};font-size:14px;"></i></div><div style="flex:1;"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span style="font-family:Rajdhani,sans-serif;font-weight:800;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:${n.read?'#333':'#A67F38'};">${n.tag}</span>${!n.read?'<span style="width:5px;height:5px;border-radius:50%;background:#F2DB94;display:inline-block;flex-shrink:0;"></span>':''}</div><p style="font-size:12px;color:${n.read?'#333':'#ccc'};line-height:1.5;margin-bottom:3px;">${n.text}</p><span style="font-size:9.5px;color:#222;">${n.time}</span></div>`;
+    d.onclick = () => { n.read = true; renderNotifs(); };
+    list.appendChild(d);
+  });
+}
+
+/* ── BOOKING MODAL ── */
+function showBk(b) {
+  document.getElementById('bkTitle').textContent = b.id;
+  document.getElementById('bkBody').innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${[['Customer',b.customer],['Service',b.service],['Date',b.date],['Time',b.time],['Status',b.status]].map(([k,v]) => `<div style="padding:10px;border-radius:9px;background:rgba(166,127,56,.04);border:1px solid rgba(166,127,56,.08);"><div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#282828;margin-bottom:4px;">${k}</div><div style="font-size:13px;color:#ccc;">${k==='Status'?badge(v):v}</div></div>`).join('')}</div>`;
+  openModal('bkModal');
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* ── NOTIFICATION PANEL ── */
+function openNotif() {
+  document.getElementById('nfPan').classList.add('open');
+  document.getElementById('nfOv').classList.add('show');
+  document.getElementById('bellBtn').classList.add('hidden');
+}
+function closeNotif() {
+  document.getElementById('nfPan').classList.remove('open');
+  document.getElementById('nfOv').classList.remove('show');
+  document.getElementById('bellBtn').classList.remove('hidden');
+}
+function markAllRead() { D.notifs.forEach(n => n.read = true); renderNotifs(); }
+function clearNotifs() { D.notifs.length = 0; renderNotifs(); }
+
+/* ── PROFILE DROPDOWN ── */
+let ddOpen = false;
+function toggleDD() {
+  ddOpen = !ddOpen;
+  document.getElementById('profDD').classList.toggle('open', ddOpen);
+  document.getElementById('pChev').style.transform = ddOpen ? 'rotate(180deg)' : '';
+}
+function closeDD() {
+  ddOpen = false;
+  document.getElementById('profDD').classList.remove('open');
+  document.getElementById('pChev').style.transform = '';
+}
+document.addEventListener('click', e => {
+  if (!document.getElementById('profWrap').contains(e.target)) closeDD();
+});
+
+/* ── SIDEBAR TOGGLE ── */
+function toggleSb() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sbOv').classList.toggle('show'); }
+function closeSb() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sbOv').classList.remove('show'); }
+
+/* ── CLOCK ── */
+function tick() {
+  const now = new Date();
+  const ct = document.getElementById('clkTime'), cd = document.getElementById('clkDate');
+  if (ct) ct.textContent = now.toLocaleTimeString('en-US', {hour12: false});
+  if (cd) cd.textContent = now.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+setInterval(tick, 1000);
+tick();
+
+/* ── RESPONSIVE ── */
+const mBtn = document.getElementById('menuBtn');
+function onResize() {
+  const mob = window.innerWidth < 1024;
+  mBtn.style.display = mob ? 'flex' : 'none';
+  document.getElementById('sbClose').style.display = mob ? 'block' : 'none';
+  if (!mob) closeSb();
+  document.getElementById('clkWrap').style.display = window.innerWidth >= 768 ? 'block' : 'none';
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+/* ── INIT ── */
+renderFeatGrid();
+renderShopDash();
+renderRecent();
+renderChart();
+renderLive();
+renderNotifs();
+</script>
+</body>
+</html>
