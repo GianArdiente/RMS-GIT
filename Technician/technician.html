@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REV — Technician Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* ═══════════════════════════════
+   TOKENS
+═══════════════════════════════ */
+:root {
+  --gold:        #F2DB94;
+  --gold-light:  #F9EFC4;
+  --gold-dark:   #D9B573;
+  --gold-deeper: #A67F38;
+  --gold-deep:   #7A5C20;
+  --gold-faint:  rgba(166,127,56,.08);
+
+  --bg:          #080806;
+  --bg-1:        #0e0e0b;
+  --bg-2:        #131310;
+  --bg-3:        #191916;
+  --bg-4:        #1f1f1b;
+  --bg-5:        #252520;
+
+  --text:        #e8e0cc;
+  --text-2:      #9a8f78;
+  --text-3:      #5a5244;
+  --text-4:      #3a3428;
+
+  --border:      rgba(166,127,56,.14);
+  --border-hi:   rgba(166,127,56,.3);
+
+  --green:       #22c55e;
+  --red:         #ef4444;
+  --amber:       #f59e0b;
+  --blue:        #3b82f6;
+
+  --sb-w: 220px;
+  --top-h: 58px;
+  --radius: 3px;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; overflow:hidden; }
+body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; }
+button { cursor:pointer; font-family:inherit; border:none; background:none; }
+input,textarea { font-family:inherit; }
+::-webkit-scrollbar { width:3px; height:3px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:#A67F38; border-radius:2px; }
+
+/* ═══════════════════════════════
+   KEYFRAMES
+═══════════════════════════════ */
+@keyframes fadeUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+@keyframes pulse    { 0%,100%{box-shadow:0 0 0 0 rgba(166,127,56,.5)} 50%{box-shadow:0 0 0 7px rgba(166,127,56,0)} }
+@keyframes pulseG   { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.5)} 50%{box-shadow:0 0 0 7px rgba(34,197,94,0)} }
+@keyframes spin     { to{transform:rotate(360deg)} }
+@keyframes shimmer  { from{left:-80%} to{left:120%} }
+@keyframes blink    { 0%,100%{opacity:.3} 50%{opacity:1} }
+@keyframes notifIn  { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:none} }
+@keyframes calPop   { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
+
+/* ═══════════════════════════════
+   LAYOUT SHELL
+═══════════════════════════════ */
+.shell { display:flex; height:100vh; overflow:hidden; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: var(--sb-w); flex-shrink:0;
+  background: linear-gradient(180deg,#0c0c09,#131310);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  position:relative; z-index:20;
+  transition: width .3s ease;
+}
+.sb-logo {
+  padding:18px 16px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:10px; flex-shrink:0;
+}
+.sb-logo-mark {
+  width:34px; height:34px; border-radius:6px; flex-shrink:0;
+  background:linear-gradient(135deg,#A67F38,#D9B573);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Barlow Condensed',sans-serif; font-weight:900;
+  font-size:15px; color:#000; letter-spacing:.5px;
+}
+.sb-logo-text { line-height:1.1; }
+.sb-logo-name {
+  font-family:'Barlow Condensed',sans-serif; font-size:17px;
+  font-weight:900; letter-spacing:1px; color:var(--gold-dark);
+}
+.sb-logo-sub { font-size:8px; letter-spacing:3px; text-transform:uppercase; color:var(--text-3); }
+
+.sb-tech-card {
+  margin:14px 12px; padding:12px;
+  background:var(--bg-3); border:1px solid var(--border-hi);
+  border-radius:var(--radius); position:relative; overflow:hidden;
+}
+.sb-tech-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-dark),transparent);
+}
+.sb-tech-avatar {
+  width:40px; height:40px; border-radius:50%; margin-bottom:8px;
+  background:linear-gradient(135deg,#A67F38,#D9B573);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:17px; color:#000;
+  border:2px solid rgba(166,127,56,.4); position:relative;
+}
+.sb-online { position:absolute; bottom:1px; right:1px; width:10px; height:10px;
+  border-radius:50%; background:var(--green); border:2px solid var(--bg-3);
+  animation:pulseG 2s infinite; }
+.sb-tech-name { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:800; color:var(--gold-light); }
+.sb-tech-id   { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-3); margin-top:1px; }
+.sb-tech-badge {
+  display:inline-flex; align-items:center; gap:4px; margin-top:6px;
+  background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.25);
+  border-radius:20px; padding:2px 8px;
+  font-size:9px; color:var(--green); letter-spacing:1px; text-transform:uppercase; font-weight:700;
+}
+
+.sb-nav { flex:1; overflow-y:auto; padding:8px 0; }
+.sb-section-lbl {
+  padding:10px 16px 4px; font-size:8.5px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--text-4);
+}
+.sb-item {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; margin:1px 8px; border-radius:var(--radius);
+  border:1px solid transparent; color:var(--text-3);
+  font-size:12.5px; font-weight:500; cursor:pointer; transition:all .2s;
+  position:relative; white-space:nowrap; overflow:hidden;
+}
+.sb-item i { width:16px; text-align:center; font-size:12px; color:var(--gold-deep); flex-shrink:0; }
+.sb-item:hover { background:var(--gold-faint); color:var(--text-2); border-color:var(--border); }
+.sb-item.active { background:linear-gradient(90deg,rgba(166,127,56,.18),rgba(166,127,56,.04));
+  color:var(--gold-light); border-color:rgba(166,127,56,.22); }
+.sb-item.active i { color:var(--gold-dark); }
+.sb-badge { margin-left:auto; min-width:18px; height:18px; border-radius:9px;
+  background:#dc2626; color:#fff; font-size:9px; font-weight:800;
+  display:flex; align-items:center; justify-content:center; padding:0 4px; flex-shrink:0; }
+
+.sb-footer { padding:12px; border-top:1px solid var(--border); flex-shrink:0; }
+.sb-footer-btn {
+  width:100%; padding:9px; border-radius:var(--radius);
+  border:1px solid rgba(239,68,68,.2); background:rgba(239,68,68,.05);
+  color:#ef4444; font-size:11px; font-weight:700; letter-spacing:1px;
+  text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:7px;
+  transition:all .2s;
+}
+.sb-footer-btn:hover { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.4); }
+
+/* ── Main ── */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+/* ── Topbar ── */
+.topbar {
+  height:var(--top-h); flex-shrink:0;
+  background:rgba(8,8,6,.95); border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 22px; gap:14px; z-index:10;
+}
+.tb-left { display:flex; align-items:center; gap:12px; }
+.tb-page-title {
+  font-family:'Barlow Condensed',sans-serif; font-size:22px;
+  font-weight:900; letter-spacing:.5px;
+  background:linear-gradient(135deg,var(--gold-light),var(--gold-dark));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.tb-breadcrumb { font-size:10px; color:var(--text-3); letter-spacing:1px; }
+.tb-right { display:flex; align-items:center; gap:8px; }
+.tb-btn {
+  width:34px; height:34px; border-radius:var(--radius);
+  border:1px solid var(--border); background:var(--bg-3);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--text-2); font-size:12px; transition:all .2s; position:relative;
+}
+.tb-btn:hover { border-color:var(--gold-deeper); color:var(--gold); }
+.tb-notif-dot { position:absolute; top:5px; right:5px; width:6px; height:6px;
+  border-radius:50%; background:#ef4444; border:1.5px solid var(--bg); }
+.tb-time {
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  color:var(--gold-deeper); letter-spacing:1px;
+  padding:5px 10px; border:1px solid var(--border); border-radius:var(--radius);
+  background:var(--bg-3);
+}
+.tb-avatar {
+  width:34px; height:34px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,#A67F38,#D9B573);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:14px; color:#000;
+  border:1.5px solid rgba(166,127,56,.5); cursor:pointer;
+}
+
+/* ── Content area ── */
+.content { flex:1; overflow:hidden; display:flex; }
+
+/* ═══════════════════════════════
+   HOME / LANDING VIEW
+═══════════════════════════════ */
+.view { display:none; flex:1; overflow-y:auto; padding:22px; flex-direction:column; gap:18px; }
+.view.active { display:flex; animation:fadeUp .3s ease; }
+
+/* Stat row */
+.stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; flex-shrink:0; }
+.stat-card {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px 18px;
+  position:relative; overflow:hidden; cursor:default;
+  transition:border-color .2s, transform .2s;
+}
+.stat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-deeper),transparent);
+}
+.stat-card:hover { border-color:var(--gold-deeper); transform:translateY(-2px); }
+.stat-shimmer {
+  position:absolute; top:0; left:-80%; bottom:0; width:60px;
+  background:linear-gradient(90deg,transparent,rgba(242,219,148,.06),transparent);
+  transform:skewX(-20deg); animation:shimmer 3.5s ease infinite;
+}
+.stat-icon {
+  width:36px; height:36px; border-radius:var(--radius); margin-bottom:10px;
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+}
+.stat-num {
+  font-family:'Barlow Condensed',sans-serif; font-size:36px; font-weight:900;
+  line-height:1; letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--gold-light),var(--gold-dark));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.stat-lbl { font-size:10px; color:var(--text-3); letter-spacing:1.5px; text-transform:uppercase; margin-top:3px; }
+.stat-delta { font-size:10px; margin-top:6px; display:flex; align-items:center; gap:4px; }
+
+/* Main grid */
+.home-grid { display:grid; grid-template-columns:1fr 340px; gap:14px; flex:1; min-height:0; }
+
+/* Jobs table */
+.panel {
+  background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
+  display:flex; flex-direction:column; overflow:hidden; position:relative;
+}
+.panel::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-deep),transparent);
+}
+.panel-hd {
+  padding:14px 16px 12px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+}
+.panel-title {
+  font-family:'Barlow Condensed',sans-serif; font-size:17px;
+  font-weight:800; letter-spacing:.5px; color:var(--gold-light);
+}
+.panel-body { flex:1; overflow-y:auto; padding:12px; }
+
+.job-table { width:100%; border-collapse:collapse; }
+.job-table th {
+  font-size:8.5px; letter-spacing:2.5px; text-transform:uppercase;
+  color:var(--text-4); font-weight:700; padding:0 10px 10px; text-align:left; border-bottom:1px solid var(--border);
+}
+.job-row { cursor:pointer; transition:background .18s; }
+.job-row:hover td { background:var(--gold-faint); }
+.job-row td { padding:11px 10px; border-bottom:1px solid rgba(166,127,56,.06); vertical-align:middle; }
+.job-id { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--gold-deeper); }
+.job-customer { font-size:12.5px; font-weight:600; color:var(--text); }
+.job-vehicle  { font-size:10px; color:var(--text-3); margin-top:1px; }
+.job-service  { font-size:11px; color:var(--text-2); }
+.job-time     { font-size:10px; color:var(--text-3); white-space:nowrap; }
+.job-status {
+  display:inline-flex; align-items:center; gap:5px; padding:3px 8px;
+  border-radius:20px; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+}
+.status-active   { background:rgba(34,197,94,.1);  color:var(--green); border:1px solid rgba(34,197,94,.25);  }
+.status-pending  { background:rgba(245,158,11,.1); color:var(--amber); border:1px solid rgba(245,158,11,.25); }
+.status-done     { background:rgba(166,127,56,.12); color:var(--gold-dark); border:1px solid rgba(166,127,56,.25); }
+.status-dot      { width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+/* Right column mini panels */
+.right-col { display:flex; flex-direction:column; gap:14px; min-height:0; overflow:hidden; }
+
+/* Mini calendar */
+.mini-cal { flex-shrink:0; }
+.cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.cal-month { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:800; color:var(--gold); }
+.cal-nav-btn { width:24px; height:24px; border-radius:4px; background:rgba(166,127,56,.1);
+  border:1px solid var(--border); color:var(--gold-deeper); font-size:9px;
+  display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.cal-nav-btn:hover { background:rgba(166,127,56,.2); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cal-dh { text-align:center; font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--text-4); padding:3px 0; }
+.cal-d { aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  border-radius:4px; font-size:11px; color:var(--text-3); cursor:default; transition:all .15s; }
+.cal-d.other { color:var(--text-4); }
+.cal-d.has-ev { color:var(--gold-dark); position:relative; }
+.cal-d.has-ev::after { content:''; position:absolute; bottom:2px; left:50%; transform:translateX(-50%);
+  width:3px; height:3px; border-radius:50%; background:var(--gold-deeper); }
+.cal-d.today { background:linear-gradient(135deg,#A67F38,#D9B573); color:#000; font-weight:800; }
+.cal-d.selected { background:rgba(166,127,56,.2); color:var(--gold-light); border:1px solid rgba(166,127,56,.4); }
+.cal-d:not(.today):hover { background:rgba(166,127,56,.1); color:var(--gold-light); }
+
+/* Upcoming jobs mini */
+.upcoming-item { display:flex; gap:10px; padding:9px 0; border-bottom:1px solid rgba(166,127,56,.06); align-items:flex-start; }
+.upcoming-item:last-child { border-bottom:none; }
+.up-time-col { flex-shrink:0; text-align:right; width:48px; }
+.up-time { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--gold-deeper); }
+.up-dot { width:1px; background:rgba(166,127,56,.2); flex-shrink:0; align-self:stretch; }
+.up-info { flex:1; min-width:0; }
+.up-name { font-size:12px; font-weight:600; color:var(--text); }
+.up-svc  { font-size:10px; color:var(--text-3); margin-top:1px; }
+
+/* ═══════════════════════════════
+   CALENDAR VIEW
+═══════════════════════════════ */
+#viewCalendar { padding:22px; flex-direction:column; gap:16px; }
+
+.cal-full-header { display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.cal-full-title  { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:900; color:var(--gold-light); }
+.cal-view-tabs   { display:flex; gap:4px; }
+.cal-vt {
+  padding:5px 12px; border-radius:var(--radius); border:1px solid var(--border);
+  background:var(--bg-3); color:var(--text-3); font-size:10px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .18s;
+}
+.cal-vt.active { background:linear-gradient(135deg,rgba(166,127,56,.25),rgba(166,127,56,.08));
+  color:var(--gold-light); border-color:rgba(166,127,56,.35); }
+
+.cal-full-grid-wrap { flex:1; display:grid; grid-template-columns:1fr 280px; gap:14px; min-height:0; }
+
+.cal-big { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px; display:flex; flex-direction:column; overflow:hidden; }
+.cal-big-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-shrink:0; }
+.cal-big-month { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:900; color:var(--gold); }
+.cal-big-nav-btn { width:30px; height:30px; border-radius:var(--radius); background:rgba(166,127,56,.1);
+  border:1px solid var(--border); color:var(--gold-deeper); font-size:11px;
+  display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.cal-big-nav-btn:hover { background:rgba(166,127,56,.2); }
+
+.cal-big-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; flex:1; }
+.cal-big-dh { text-align:center; font-size:8px; letter-spacing:2.5px; text-transform:uppercase;
+  color:var(--text-4); padding-bottom:8px; }
+.cal-big-d {
+  border-radius:var(--radius); min-height:52px; padding:5px 6px;
+  background:var(--bg-3); border:1px solid transparent;
+  cursor:pointer; transition:all .15s; display:flex; flex-direction:column;
+}
+.cal-big-d:hover { border-color:var(--border-hi); }
+.cal-big-d.other { background:rgba(255,255,255,.01); }
+.cal-big-d.today { border-color:var(--gold-deeper); background:rgba(166,127,56,.1); }
+.cal-big-d.selected { border-color:var(--gold-dark); background:rgba(166,127,56,.15); }
+.cal-big-num { font-size:11px; font-weight:700; color:var(--text-2); }
+.cal-big-d.today .cal-big-num { color:var(--gold); }
+.cal-big-d.other .cal-big-num { color:var(--text-4); }
+.cal-event-pip { margin-top:3px; padding:2px 5px; border-radius:2px;
+  font-size:8px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.cal-sidebar { display:flex; flex-direction:column; gap:12px; overflow-y:auto; }
+.cal-selected-day { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:800;
+  color:var(--gold-deeper); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.cal-ev-item {
+  display:flex; gap:10px; align-items:flex-start; padding:10px;
+  background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius);
+  margin-bottom:6px; cursor:pointer; transition:border-color .18s;
+}
+.cal-ev-item:hover { border-color:var(--gold-deeper); }
+.cal-ev-color { width:3px; border-radius:2px; flex-shrink:0; align-self:stretch; }
+.cal-ev-info { flex:1; }
+.cal-ev-time { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--gold-deeper); }
+.cal-ev-title { font-size:12px; font-weight:600; color:var(--text); margin-top:2px; }
+.cal-ev-sub   { font-size:10px; color:var(--text-3); margin-top:2px; }
+
+/* ═══════════════════════════════
+   CHAT VIEW
+═══════════════════════════════ */
+#viewChat {
+  padding:0; flex-direction:row; overflow:hidden;
+  background:var(--bg-1);
+}
+.chat-shell { display:flex; width:100%; height:100%; }
+
+/* Thread list */
+.thread-list {
+  width:280px; flex-shrink:0; border-right:1px solid var(--border);
+  display:flex; flex-direction:column; background:var(--bg-2);
+}
+.thread-hd {
+  padding:14px 14px 10px; border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.thread-hd-title {
+  font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:800;
+  color:var(--gold-light); margin-bottom:8px;
+}
+.thread-search {
+  width:100%; background:var(--bg-3); border:1px solid var(--border);
+  border-radius:var(--radius); padding:7px 10px 7px 28px; color:var(--text);
+  font-size:12px; outline:none; transition:border-color .2s;
+}
+.thread-search::placeholder { color:var(--text-4); }
+.thread-search:focus { border-color:var(--gold-deeper); }
+.thread-search-wrap { position:relative; }
+.thread-search-icon { position:absolute; left:9px; top:50%; transform:translateY(-50%);
+  color:var(--text-4); font-size:10px; pointer-events:none; }
+
+/* Category tabs */
+.chat-cats { display:flex; border-bottom:1px solid var(--border); flex-shrink:0; }
+.chat-cat {
+  flex:1; padding:9px 6px; text-align:center;
+  font-size:9.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+  color:var(--text-3); cursor:pointer; border-bottom:2px solid transparent;
+  transition:all .18s;
+}
+.chat-cat.active { color:var(--gold-dark); border-bottom-color:var(--gold-darker); }
+.chat-cat .cat-badge {
+  display:inline-block; margin-left:4px; background:#dc2626; color:#fff;
+  font-size:8px; padding:1px 4px; border-radius:8px; font-weight:800;
+}
+
+.thread-scroll { flex:1; overflow-y:auto; }
+.thread-item {
+  display:flex; gap:10px; padding:11px 13px; cursor:pointer;
+  border-bottom:1px solid rgba(166,127,56,.05); transition:background .15s;
+  position:relative;
+}
+.thread-item:hover { background:var(--gold-faint); }
+.thread-item.active { background:linear-gradient(90deg,rgba(166,127,56,.15),rgba(166,127,56,.04));
+  border-left:2px solid var(--gold-deeper); }
+.thread-avatar {
+  width:38px; height:38px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,#A67F38,#D9B573);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:14px; color:#000;
+  position:relative;
+}
+.thread-online { position:absolute; bottom:0; right:0; width:9px; height:9px;
+  border-radius:50%; border:2px solid var(--bg-2); }
+.online  { background:var(--green); }
+.away    { background:var(--amber); }
+.offline { background:var(--text-4); }
+.thread-info { flex:1; min-width:0; }
+.thread-name { font-size:12.5px; font-weight:600; color:var(--text);
+  display:flex; align-items:center; justify-content:space-between; }
+.thread-time { font-size:9.5px; color:var(--text-4); flex-shrink:0; }
+.thread-preview { font-size:11px; color:var(--text-3); white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; margin-top:2px; }
+.thread-unread { position:absolute; right:12px; bottom:11px; min-width:16px; height:16px;
+  border-radius:8px; background:#dc2626; color:#fff; font-size:8px; font-weight:800;
+  display:flex; align-items:center; justify-content:center; padding:0 3px; }
+.thread-type-badge { font-size:7.5px; letter-spacing:1px; text-transform:uppercase;
+  padding:1px 5px; border-radius:2px; font-weight:700; margin-left:4px; }
+.badge-customer { background:rgba(59,130,246,.15); color:#60a5fa; }
+.badge-staff    { background:rgba(166,127,56,.15);  color:var(--gold-dark); }
+.badge-admin    { background:rgba(239,68,68,.12);   color:#f87171; }
+
+/* Chat window */
+.chat-window { flex:1; display:flex; flex-direction:column; background:var(--bg-1); }
+.chat-win-hd {
+  padding:12px 18px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:12px; flex-shrink:0;
+  background:var(--bg-2);
+}
+.chat-win-avatar {
+  width:38px; height:38px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,#A67F38,#D9B573);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:14px; color:#000;
+  position:relative;
+}
+.chat-win-info { flex:1; }
+.chat-win-name { font-size:14px; font-weight:600; color:var(--text); }
+.chat-win-status { font-size:10px; color:var(--green); display:flex; align-items:center; gap:4px; margin-top:1px; }
+.chat-win-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulseG 2s infinite; }
+.chat-win-actions { display:flex; gap:6px; }
+.chat-win-btn { width:30px; height:30px; border-radius:var(--radius); border:1px solid var(--border);
+  background:var(--bg-3); color:var(--text-2); font-size:11px;
+  display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.chat-win-btn:hover { border-color:var(--gold-deeper); color:var(--gold); }
+
+.chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+.chat-date-sep { display:flex; align-items:center; gap:10px; font-size:9px; letter-spacing:2px;
+  text-transform:uppercase; color:var(--text-4); }
+.chat-date-sep::before,.chat-date-sep::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.msg { display:flex; flex-direction:column; max-width:72%; }
+.msg.them { align-self:flex-start; }
+.msg.me   { align-self:flex-end; }
+.msg-sender { font-size:9.5px; font-weight:700; color:var(--gold-deeper); margin-bottom:3px; padding:0 3px; }
+.msg-bubble { padding:9px 13px; border-radius:12px; font-size:12.5px; line-height:1.55; word-break:break-word; }
+.msg.them .msg-bubble { background:var(--bg-3); border:1px solid var(--border); color:var(--text); border-bottom-left-radius:3px; }
+.msg.me   .msg-bubble { background:linear-gradient(135deg,rgba(166,127,56,.28),rgba(166,127,56,.14));
+  border:1px solid rgba(166,127,56,.35); color:var(--gold-light); border-bottom-right-radius:3px; }
+.msg-meta { font-size:9px; color:var(--text-4); margin-top:3px; padding:0 3px; }
+.msg.me .msg-meta { text-align:right; }
+.msg-typing { align-self:flex-start; display:flex; align-items:center; gap:6px;
+  padding:9px 13px; border-radius:12px; background:var(--bg-3); border:1px solid var(--border);
+  border-bottom-left-radius:3px; }
+.typing-dot { width:5px; height:5px; border-radius:50%; background:var(--gold-deeper); animation:blink .9s infinite; }
+.typing-dot:nth-child(2) { animation-delay:.2s; }
+.typing-dot:nth-child(3) { animation-delay:.4s; }
+
+.chat-input-bar {
+  padding:10px 14px; border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:10px; background:var(--bg-2); flex-shrink:0;
+}
+.chat-input {
+  flex:1; background:var(--bg-3); border:1px solid var(--border);
+  border-radius:20px; padding:9px 14px; color:var(--text); font-size:12.5px; outline:none;
+  transition:border-color .2s;
+}
+.chat-input:focus { border-color:var(--gold-deeper); }
+.chat-input::placeholder { color:var(--text-4); }
+.chat-send {
+  width:36px; height:36px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,#A67F38,#D9B573); color:#000; font-size:12px;
+  display:flex; align-items:center; justify-content:center; transition:transform .2s, box-shadow .2s;
+}
+.chat-send:hover { transform:scale(1.1); box-shadow:0 4px 14px rgba(166,127,56,.4); }
+.chat-attach { width:34px; height:34px; border-radius:var(--radius); border:1px solid var(--border);
+  background:var(--bg-3); color:var(--text-3); font-size:11px;
+  display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.chat-attach:hover { color:var(--gold); border-color:var(--gold-deeper); }
+
+/* ═══════════════════════════════
+   JOBS VIEW
+═══════════════════════════════ */
+#viewJobs { padding:22px; flex-direction:column; gap:16px; }
+.jobs-toolbar { display:flex; align-items:center; gap:10px; flex-shrink:0; flex-wrap:wrap; }
+.jobs-filter {
+  padding:6px 14px; border-radius:20px; border:1px solid var(--border);
+  background:none; color:var(--text-3); font-size:10px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .2s;
+}
+.jobs-filter:hover { border-color:var(--gold-deeper); color:var(--gold); }
+.jobs-filter.active { background:linear-gradient(135deg,#A67F38,#D9B573); color:#000; border-color:transparent; }
+.jobs-search-wrap { position:relative; margin-left:auto; }
+.jobs-search { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius);
+  padding:7px 10px 7px 28px; color:var(--text); font-size:12px; outline:none;
+  width:200px; transition:border-color .2s; }
+.jobs-search:focus { border-color:var(--gold-deeper); }
+.jobs-search::placeholder { color:var(--text-4); }
+.jobs-search-icon { position:absolute; left:9px; top:50%; transform:translateY(-50%);
+  color:var(--text-4); font-size:10px; pointer-events:none; }
+.jobs-table-wrap { flex:1; overflow-y:auto; background:var(--bg-2); border:1px solid var(--border);
+  border-radius:var(--radius); position:relative; }
+.jobs-table-wrap::before { content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-deep),transparent); }
+
+/* ═══════════════════════════════
+   NOTIF TOAST
+═══════════════════════════════ */
+.toast-stack { position:fixed; bottom:24px; right:24px; z-index:999; display:flex; flex-direction:column-reverse; gap:8px; }
+.toast {
+  padding:10px 16px; border-radius:var(--radius); backdrop-filter:blur(20px);
+  display:flex; align-items:center; gap:10px; min-width:260px; max-width:340px;
+  font-size:12px; animation:notifIn .3s ease;
+  border:1px solid;
+}
+.toast.success { background:rgba(13,25,18,.92); border-color:rgba(34,197,94,.3); color:#86efac; }
+.toast.info    { background:rgba(10,18,28,.92); border-color:rgba(59,130,246,.3); color:#93c5fd; }
+.toast.warn    { background:rgba(24,18,8,.92);  border-color:rgba(245,158,11,.3); color:#fcd34d; }
+
+/* ═══════════════════════════════
+   MISC UTILS
+═══════════════════════════════ */
+.flex-center { display:flex; align-items:center; justify-content:center; }
+.gap-6 { gap:6px; }
+.gold-tag {
+  display:inline-flex; align-items:center; gap:4px;
+  background:rgba(166,127,56,.12); border:1px solid rgba(166,127,56,.25);
+  border-radius:2px; padding:2px 7px; font-size:9px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; color:var(--gold-deeper);
+}
+.icon-btn { width:28px; height:28px; border-radius:var(--radius); border:1px solid var(--border);
+  background:var(--bg-3); color:var(--text-2); font-size:10px;
+  display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.icon-btn:hover { color:var(--gold); border-color:var(--gold-deeper); }
+
+/* No thread selected */
+.no-thread { flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:14px; color:var(--text-4); text-align:center; }
+.no-thread-icon { width:60px; height:60px; border-radius:50%; background:var(--bg-3);
+  border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+  font-size:22px; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">REV</div>
+      <div class="sb-logo-text">
+        <div class="sb-logo-name">REV AUTO</div>
+        <div class="sb-logo-sub">Technician Portal</div>
+      </div>
+    </div>
+
+    <div class="sb-tech-card">
+      <div class="sb-tech-avatar">ML<span class="sb-online"></span></div>
+      <div class="sb-tech-name">Marco Lim</div>
+      <div class="sb-tech-id">TECH · #REV-041</div>
+      <div class="sb-tech-badge"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;"></span>On Duty</div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section-lbl">Main</div>
+      <div class="sb-item active" onclick="switchView('home',this)">
+        <i class="fas fa-tachometer-alt"></i>Dashboard
+      </div>
+      <div class="sb-item" onclick="switchView('jobs',this)">
+        <i class="fas fa-wrench"></i>Job Orders
+        <span class="sb-badge">3</span>
+      </div>
+      <div class="sb-item" onclick="switchView('calendar',this)">
+        <i class="fas fa-calendar-alt"></i>Calendar
+      </div>
+
+      <div class="sb-section-lbl">Communication</div>
+      <div class="sb-item" onclick="switchView('chat',this)">
+        <i class="fas fa-comments"></i>Messages
+        <span class="sb-badge">5</span>
+      </div>
+
+      <div class="sb-section-lbl">Account</div>
+      <div class="sb-item" onclick="showToast('Profile coming soon','info')">
+        <i class="fas fa-user-circle"></i>My Profile
+      </div>
+      <div class="sb-item" onclick="showToast('Settings coming soon','info')">
+        <i class="fas fa-cog"></i>Settings
+      </div>
+    </nav>
+
+    <div class="sb-footer">
+      <button class="sb-footer-btn" onclick="showToast('Logged out.','warn')">
+        <i class="fas fa-sign-out-alt"></i>Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="tb-left">
+        <div>
+          <div class="tb-page-title" id="tbTitle">Dashboard</div>
+          <div class="tb-breadcrumb">REV AUTO REPAIR &nbsp;·&nbsp; <span id="tbSub">Overview</span></div>
+        </div>
+      </div>
+      <div class="tb-right">
+        <div class="tb-time" id="liveClock">--:--:--</div>
+        <button class="tb-btn" onclick="showToast('2 new job alerts','warn')" title="Alerts">
+          <i class="fas fa-bell"></i>
+          <div class="tb-notif-dot"></div>
+        </button>
+        <button class="tb-btn" onclick="switchView('calendar',document.querySelector(\'[data-view=calendar]\'))" title="Calendar">
+          <i class="fas fa-calendar"></i>
+        </button>
+        <div class="tb-avatar" title="Marco Lim">ML</div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- ═══ HOME VIEW ═══ -->
+      <div class="view active" id="viewHome">
+
+        <!-- Stats -->
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-shimmer"></div>
+            <div class="stat-icon" style="background:rgba(166,127,56,.12);color:var(--gold-deeper);"><i class="fas fa-clipboard-list"></i></div>
+            <div class="stat-num">12</div>
+            <div class="stat-lbl">Total Bookings</div>
+            <div class="stat-delta" style="color:var(--green);"><i class="fas fa-arrow-up" style="font-size:8px;"></i>+3 this week</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-shimmer"></div>
+            <div class="stat-icon" style="background:rgba(34,197,94,.1);color:var(--green);"><i class="fas fa-tools"></i></div>
+            <div class="stat-num">4</div>
+            <div class="stat-lbl">Active Jobs</div>
+            <div class="stat-delta" style="color:var(--amber);"><i class="fas fa-minus" style="font-size:8px;"></i>In progress</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-shimmer"></div>
+            <div class="stat-icon" style="background:rgba(59,130,246,.1);color:#60a5fa;"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-num">8</div>
+            <div class="stat-lbl">Finished Jobs</div>
+            <div class="stat-delta" style="color:var(--green);"><i class="fas fa-arrow-up" style="font-size:8px;"></i>+2 today</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-shimmer"></div>
+            <div class="stat-icon" style="background:rgba(245,158,11,.1);color:var(--amber);"><i class="fas fa-star"></i></div>
+            <div class="stat-num">4.9</div>
+            <div class="stat-lbl">Rating</div>
+            <div class="stat-delta" style="color:var(--gold-darker);">Based on 47 reviews</div>
+          </div>
+        </div>
+
+        <!-- Grid -->
+        <div class="home-grid" style="flex:1;min-height:0;">
+
+          <!-- Jobs panel -->
+          <div class="panel">
+            <div class="panel-hd">
+              <div class="panel-title">Today's Job Orders</div>
+              <div style="display:flex;gap:6px;">
+                <div class="gold-tag"><i class="fas fa-circle" style="color:var(--green);font-size:7px;"></i>4 Active</div>
+                <button class="icon-btn" onclick="switchView('jobs',null)"><i class="fas fa-expand-alt"></i></button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <table class="job-table">
+                <thead>
+                  <tr>
+                    <th>Job ID</th>
+                    <th>Customer</th>
+                    <th>Service</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="jobTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Right col -->
+          <div class="right-col">
+
+            <!-- Mini calendar -->
+            <div class="panel mini-cal" style="padding:14px;">
+              <div class="cal-nav">
+                <button class="cal-nav-btn" onclick="miniCalNav(-1)"><i class="fas fa-chevron-left"></i></button>
+                <span class="cal-month" id="miniCalMonth"></span>
+                <button class="cal-nav-btn" onclick="miniCalNav(1)"><i class="fas fa-chevron-right"></i></button>
+              </div>
+              <div class="cal-grid" id="miniCalGrid"></div>
+            </div>
+
+            <!-- Upcoming -->
+            <div class="panel" style="flex:1;min-height:0;">
+              <div class="panel-hd">
+                <div class="panel-title">Upcoming Today</div>
+                <span class="gold-tag">3 remaining</span>
+              </div>
+              <div class="panel-body">
+                <div class="upcoming-item">
+                  <div class="up-time-col"><div class="up-time">10:00</div><div style="font-size:8px;color:var(--text-4);">AM</div></div>
+                  <div style="width:1px;background:rgba(166,127,56,.15);flex-shrink:0;"></div>
+                  <div class="up-info">
+                    <div class="up-name">Carlos Reyes</div>
+                    <div class="up-svc">Full Engine Tune-Up · Honda Civic</div>
+                  </div>
+                  <div class="status-active job-status"><div class="status-dot"></div>Active</div>
+                </div>
+                <div class="upcoming-item">
+                  <div class="up-time-col"><div class="up-time">01:30</div><div style="font-size:8px;color:var(--text-4);">PM</div></div>
+                  <div style="width:1px;background:rgba(166,127,56,.15);flex-shrink:0;"></div>
+                  <div class="up-info">
+                    <div class="up-name">Sofia Cruz</div>
+                    <div class="up-svc">Brake Pad Replacement · Toyota Vios</div>
+                  </div>
+                  <div class="status-pending job-status"><div class="status-dot"></div>Pending</div>
+                </div>
+                <div class="upcoming-item">
+                  <div class="up-time-col"><div class="up-time">03:00</div><div style="font-size:8px;color:var(--text-4);">PM</div></div>
+                  <div style="width:1px;background:rgba(166,127,56,.15);flex-shrink:0;"></div>
+                  <div class="up-info">
+                    <div class="up-name">Jay Santos</div>
+                    <div class="up-svc">Oil Change + Filter · Mitsubishi Montero</div>
+                  </div>
+                  <div class="status-pending job-status"><div class="status-dot"></div>Pending</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CALENDAR VIEW ═══ -->
+      <div class="view" id="viewCalendar">
+        <div class="cal-full-header">
+          <div class="cal-full-title">Calendar</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="cal-view-tabs">
+              <button class="cal-vt active">Month</button>
+              <button class="cal-vt">Week</button>
+              <button class="cal-vt">Day</button>
+            </div>
+            <button class="icon-btn" style="width:auto;padding:0 12px;font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:700;gap:5px;" onclick="showToast('New event added!','success')">
+              <i class="fas fa-plus"></i>Add Event
+            </button>
+          </div>
+        </div>
+
+        <div class="cal-full-grid-wrap">
+          <div class="cal-big">
+            <div class="cal-big-nav">
+              <button class="cal-big-nav-btn" onclick="bigCalNav(-1)"><i class="fas fa-chevron-left"></i></button>
+              <span class="cal-big-month" id="bigCalMonth"></span>
+              <button class="cal-big-nav-btn" onclick="bigCalNav(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="cal-big-grid" id="bigCalGrid"></div>
+          </div>
+
+          <div class="cal-sidebar panel" style="padding:14px;">
+            <div class="panel-title" style="margin-bottom:12px;">Schedule</div>
+            <div id="calEventList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CHAT VIEW ═══ -->
+      <div class="view" id="viewChat">
+        <div class="chat-shell">
+
+          <!-- Thread list -->
+          <div class="thread-list">
+            <div class="thread-hd">
+              <div class="thread-hd-title">Messages</div>
+              <div class="thread-search-wrap">
+                <i class="fas fa-search thread-search-icon"></i>
+                <input class="thread-search" placeholder="Search conversations…" oninput="filterThreads(this.value)">
+              </div>
+            </div>
+            <div class="chat-cats">
+              <div class="chat-cat active" onclick="filterCat('all',this)">All <span class="cat-badge">5</span></div>
+              <div class="chat-cat" onclick="filterCat('customer',this)">Customers</div>
+              <div class="chat-cat" onclick="filterCat('staff',this)">Staff</div>
+              <div class="chat-cat" onclick="filterCat('admin',this)">Admin</div>
+            </div>
+            <div class="thread-scroll" id="threadScroll"></div>
+          </div>
+
+          <!-- Chat window -->
+          <div class="chat-window" id="chatWindow">
+            <div class="no-thread" id="noThread">
+              <div class="no-thread-icon"><i class="fas fa-comments"></i></div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--text-3);">No conversation selected</div>
+              <div style="font-size:11px;">Pick a thread from the left to start chatting</div>
+            </div>
+            <div id="chatActive" style="display:none;flex-direction:column;height:100%;">
+              <div class="chat-win-hd">
+                <div class="chat-win-avatar" id="chatWinAvatar">ML</div>
+                <div class="chat-win-info">
+                  <div class="chat-win-name" id="chatWinName">—</div>
+                  <div class="chat-win-status" id="chatWinStatus">
+                    <div class="chat-win-dot"></div>Online
+                  </div>
+                </div>
+                <div class="chat-win-actions">
+                  <button class="chat-win-btn" onclick="showToast('Call feature coming soon','info')"><i class="fas fa-phone"></i></button>
+                  <button class="chat-win-btn" onclick="showToast('Info panel coming soon','info')"><i class="fas fa-info-circle"></i></button>
+                </div>
+              </div>
+              <div class="chat-messages" id="chatMessages"></div>
+              <div class="chat-input-bar">
+                <button class="chat-attach"><i class="fas fa-paperclip"></i></button>
+                <input class="chat-input" id="chatInput" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendMsg()">
+                <button class="chat-send" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ═══ JOBS VIEW ═══ -->
+      <div class="view" id="viewJobs">
+        <div class="jobs-toolbar">
+          <button class="jobs-filter active" onclick="filterJobs('all',this)">All</button>
+          <button class="jobs-filter" onclick="filterJobs('Active',this)">Active</button>
+          <button class="jobs-filter" onclick="filterJobs('Pending',this)">Pending</button>
+          <button class="jobs-filter" onclick="filterJobs('Done',this)">Done</button>
+          <div class="jobs-search-wrap">
+            <i class="fas fa-search jobs-search-icon"></i>
+            <input class="jobs-search" id="jobSearch" placeholder="Search jobs…" oninput="renderJobsView()">
+          </div>
+        </div>
+        <div class="jobs-table-wrap">
+          <table class="job-table" style="width:100%;">
+            <thead>
+              <tr>
+                <th style="padding:12px 14px 12px;">Job ID</th>
+                <th>Customer</th>
+                <th>Vehicle</th>
+                <th>Service</th>
+                <th>Date & Time</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="jobsViewBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- Toast stack -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* ═══════════════════
+   DATA
+═══════════════════ */
+const TECH = { name:'Marco Lim', id:'TECH-041', initials:'ML' };
+
+const JOBS = [
+  { id:'JOB-001', customer:'Carlos Reyes',   vehicle:'Honda Civic 2020',      service:'Full Engine Tune-Up',      date:'Today', time:'10:00 AM', status:'Active'  },
+  { id:'JOB-002', customer:'Sofia Cruz',     vehicle:'Toyota Vios 2022',      service:'Brake Pad Replacement',    date:'Today', time:'01:30 PM', status:'Pending' },
+  { id:'JOB-003', customer:'Jay Santos',     vehicle:'Mitsubishi Montero',    service:'Oil Change + Filter',      date:'Today', time:'03:00 PM', status:'Pending' },
+  { id:'JOB-004', customer:'Ana Dela Cruz',  vehicle:'Ford Ranger 2021',      service:'Suspension Check',         date:'Today', time:'04:30 PM', status:'Active'  },
+  { id:'JOB-005', customer:'Ben Torres',     vehicle:'Hyundai Tucson 2019',   service:'AC System Recharge',       date:'Mar 26','time':'09:00 AM', status:'Pending' },
+  { id:'JOB-006', customer:'Lia Gonzales',   vehicle:'Kia Sportage 2023',     service:'Wheel Alignment',          date:'Mar 26','time':'11:00 AM', status:'Done'    },
+  { id:'JOB-007', customer:'Ryan Ocampo',    vehicle:'Suzuki Swift 2021',     service:'Battery Replacement',      date:'Mar 25','time':'10:30 AM', status:'Done'    },
+  { id:'JOB-008', customer:'Mia Castillo',   vehicle:'Nissan Navara 2020',    service:'Transmission Flush',       date:'Mar 25','time:'02:00 PM', status:'Done'    },
+];
+
+const THREADS = [
+  { id:1,  name:'Carlos Reyes',    initials:'CR', type:'customer', status:'online',  unread:2, time:'Just now', preview:'Is the engine done? Ill be there in 20.',          msgs: [
+    { from:'them', text:'Hi Marco! Is the engine tune-up done already?', time:'10:12 AM' },
+    { from:'me',   text:'Almost done sir! Around 30 more minutes.', time:'10:14 AM' },
+    { from:'them', text:'Is the engine done? I\'ll be there in 20.', time:'10:28 AM' },
+  ]},
+  { id:2,  name:'Sofia Cruz',      initials:'SC', type:'customer', status:'away',    unread:1, time:'5 min',   preview:'Can I reschedule to 2PM?',                         msgs: [
+    { from:'them', text:'Good morning! Can I reschedule my 1:30 PM to 2:00 PM?', time:'9:45 AM' },
+    { from:'me',   text:'Good morning Sofia! Let me check with the front desk.', time:'9:47 AM' },
+    { from:'them', text:'Can I reschedule to 2PM?', time:'9:50 AM' },
+  ]},
+  { id:3,  name:'Ana Dela Cruz',   initials:'AD', type:'customer', status:'offline', unread:0, time:'1 hr',    preview:'Thanks Marco! Great service as always.',           msgs: [
+    { from:'them', text:'Thanks Marco! Great service as always.', time:'8:30 AM' },
+    { from:'me',   text:'Thank you Ma\'am Ana! See you next visit!', time:'8:32 AM' },
+  ]},
+  { id:4,  name:'Ryan Santos',     initials:'RS', type:'staff',    status:'online',  unread:1, time:'12 min',  preview:'Bro may extra torque wrench ka?',                  msgs: [
+    { from:'them', text:'Bro may extra torque wrench ka? Mine is missing.', time:'10:05 AM' },
+    { from:'me',   text:'Haha oo may spare. Kukunin mo later?', time:'10:07 AM' },
+    { from:'them', text:'Bro may extra torque wrench ka?', time:'10:18 AM' },
+  ]},
+  { id:5,  name:'Admin — REV HQ',  initials:'AD', type:'admin',    status:'online',  unread:1, time:'30 min',  preview:'Marco please file your weekly report by EOD.',    msgs: [
+    { from:'them', text:'Good morning Marco. Please make sure all job orders today are updated in the system.', time:'8:00 AM' },
+    { from:'me',   text:'Good morning! Noted po, will update as I go.', time:'8:03 AM' },
+    { from:'them', text:'Marco please file your weekly report by EOD.', time:'9:58 AM' },
+  ]},
+];
+
+const CAL_EVENTS = [
+  { day: new Date().getDate(),   month: new Date().getMonth(), color:'#A67F38', title:'Carlos Reyes — Engine Tune-Up',   time:'10:00 AM', sub:'Honda Civic 2020'     },
+  { day: new Date().getDate(),   month: new Date().getMonth(), color:'#ef4444', title:'Sofia Cruz — Brake Replacement',  time:'1:30 PM',  sub:'Toyota Vios 2022'     },
+  { day: new Date().getDate(),   month: new Date().getMonth(), color:'#3b82f6', title:'Jay Santos — Oil Change',         time:'3:00 PM',  sub:'Mitsubishi Montero'   },
+  { day: new Date().getDate()+2, month: new Date().getMonth(), color:'#22c55e', title:'Ben Torres — AC Recharge',        time:'9:00 AM',  sub:'Hyundai Tucson 2019'  },
+  { day: new Date().getDate()+2, month: new Date().getMonth(), color:'#8b5cf6', title:'Lia Gonzales — Wheel Alignment',  time:'11:00 AM', sub:'Kia Sportage 2023'    },
+  { day: new Date().getDate()+5, month: new Date().getMonth(), color:'#f59e0b', title:'Team Meeting — REV HQ',           time:'8:00 AM',  sub:'All technicians'      },
+];
+
+/* ═══════════════════
+   STATE
+═══════════════════ */
+let miniCalDate  = new Date();
+let bigCalDate   = new Date();
+let activeThread = null;
+let activeCat    = 'all';
+let activeJobFilter = 'all';
+
+/* ═══════════════════
+   CLOCK
+═══════════════════ */
+function tick() {
+  const now = new Date();
+  document.getElementById('liveClock').textContent = now.toLocaleTimeString('en-US', { hour12:false });
+}
+tick(); setInterval(tick, 1000);
+
+/* ═══════════════════
+   TOAST
+═══════════════════ */
+function showToast(msg, type='success') {
+  const stack = document.getElementById('toastStack');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = { success:'fa-check-circle', info:'fa-info-circle', warn:'fa-exclamation-triangle' };
+  t.innerHTML = `<i class="fas ${icons[type]||icons.success}"></i>${msg}`;
+  stack.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(20px)'; t.style.transition='.3s'; setTimeout(()=>t.remove(),300); }, 2800);
+}
+
+/* ═══════════════════
+   VIEW SWITCHING
+═══════════════════ */
+const VIEW_META = {
+  home:     { title:'Dashboard',  sub:'Overview'       },
+  calendar: { title:'Calendar',   sub:'Schedule'       },
+  chat:     { title:'Messages',   sub:'Conversations'  },
+  jobs:     { title:'Job Orders', sub:'My Assignments' },
+};
+
+function switchView(id, triggerEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view'+cap(id)).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  if (triggerEl) triggerEl.classList.add('active');
+  const m = VIEW_META[id] || {};
+  document.getElementById('tbTitle').textContent = m.title || id;
+  document.getElementById('tbSub').textContent   = m.sub   || '';
+  if (id === 'jobs') renderJobsView();
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+/* ═══════════════════
+   MINI CALENDAR
+═══════════════════ */
+function miniCalNav(d) { miniCalDate.setMonth(miniCalDate.getMonth()+d); renderMiniCal(); }
+function renderMiniCal() {
+  const y = miniCalDate.getFullYear(), m = miniCalDate.getMonth();
+  const today = new Date();
+  document.getElementById('miniCalMonth').textContent = miniCalDate.toLocaleString('en-US',{month:'short',year:'numeric'});
+  const days  = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const first = new Date(y,m,1).getDay();
+  const total = new Date(y,m+1,0).getDate();
+  const prevTotal = new Date(y,m,0).getDate();
+  let html = days.map(d=>`<div class="cal-dh">${d}</div>`).join('');
+  for(let i=first-1;i>=0;i--) html+=`<div class="cal-d other">${prevTotal-i}</div>`;
+  for(let d=1;d<=total;d++){
+    const isToday = d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+    const hasEv   = CAL_EVENTS.some(e=>e.day===d&&e.month===m);
+    html+=`<div class="cal-d ${isToday?'today':''} ${hasEv?'has-ev':''}">${d}</div>`;
+  }
+  const rem = (7-(first+total)%7)%7;
+  for(let d=1;d<=rem;d++) html+=`<div class="cal-d other">${d}</div>`;
+  document.getElementById('miniCalGrid').innerHTML = html;
+}
+
+/* ═══════════════════
+   BIG CALENDAR
+═══════════════════ */
+function bigCalNav(d) { bigCalDate.setMonth(bigCalDate.getMonth()+d); renderBigCal(); }
+function renderBigCal() {
+  const y = bigCalDate.getFullYear(), m = bigCalDate.getMonth();
+  const today = new Date();
+  document.getElementById('bigCalMonth').textContent = bigCalDate.toLocaleString('en-US',{month:'long',year:'numeric'});
+  const days  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const first = new Date(y,m,1).getDay();
+  const total = new Date(y,m+1,0).getDate();
+  const prevT = new Date(y,m,0).getDate();
+  let html = days.map(d=>`<div class="cal-big-dh">${d}</div>`).join('');
+  for(let i=first-1;i>=0;i--){
+    html+=`<div class="cal-big-d other"><div class="cal-big-num">${prevT-i}</div></div>`;
+  }
+  for(let d=1;d<=total;d++){
+    const isToday = d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+    const evs = CAL_EVENTS.filter(e=>e.day===d&&e.month===m);
+    let pipHtml = evs.slice(0,2).map(e=>`<div class="cal-event-pip" style="background:${e.color}22;color:${e.color};font-size:7.5px;">${e.title.split('—')[0].trim()}</div>`).join('');
+    if(evs.length>2) pipHtml+=`<div style="font-size:7px;color:var(--text-4);padding:1px 4px;">+${evs.length-2} more</div>`;
+    html+=`<div class="cal-big-d ${isToday?'today':''}" onclick="selectCalDay(${d},${m},${y})">
+      <div class="cal-big-num">${d}</div>${pipHtml}
+    </div>`;
+  }
+  const rem2=(7-(first+total)%7)%7;
+  for(let d=1;d<=rem2;d++) html+=`<div class="cal-big-d other"><div class="cal-big-num">${d}</div></div>`;
+  document.getElementById('bigCalGrid').innerHTML = html;
+  selectCalDay(today.getDate(), today.getMonth(), today.getFullYear());
+}
+
+function selectCalDay(d, m, y) {
+  document.querySelectorAll('.cal-big-d').forEach(el => el.classList.remove('selected'));
+  const evs = CAL_EVENTS.filter(e=>e.day===d&&e.month===m);
+  const list = document.getElementById('calEventList');
+  const ds = new Date(y,m,d).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  list.innerHTML = `<div class="cal-selected-day">${ds}</div>`;
+  if(!evs.length){
+    list.innerHTML += `<div style="font-size:11px;color:var(--text-4);text-align:center;padding:20px 0;">No events scheduled</div>`;
+    return;
+  }
+  evs.forEach(e=>{
+    list.innerHTML += `<div class="cal-ev-item">
+      <div class="cal-ev-color" style="background:${e.color};"></div>
+      <div class="cal-ev-info">
+        <div class="cal-ev-time">${e.time}</div>
+        <div class="cal-ev-title">${e.title}</div>
+        <div class="cal-ev-sub">${e.sub}</div>
+      </div>
+    </div>`;
+  });
+}
+
+/* ═══════════════════
+   JOBS TABLE
+═══════════════════ */
+function renderJobTable() {
+  const tbody = document.getElementById('jobTableBody');
+  tbody.innerHTML = JOBS.slice(0,6).map(j=>{
+    const cls = j.status==='Active'?'status-active':j.status==='Pending'?'status-pending':'status-done';
+    return `<tr class="job-row">
+      <td><div class="job-id">${j.id}</div></td>
+      <td><div class="job-customer">${j.customer}</div><div class="job-vehicle">${j.vehicle}</div></td>
+      <td><div class="job-service">${j.service}</div></td>
+      <td><div class="job-time">${j.time}</div><div style="font-size:9px;color:var(--text-4);">${j.date}</div></td>
+      <td><span class="job-status ${cls}"><span class="status-dot"></span>${j.status}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════
+   JOBS FULL VIEW
+═══════════════════ */
+function filterJobs(f, btn) {
+  activeJobFilter = f;
+  document.querySelectorAll('.jobs-filter').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderJobsView();
+}
+function renderJobsView() {
+  const q = (document.getElementById('jobSearch')?.value||'').toLowerCase();
+  let items = JOBS.filter(j=>{
+    const match = activeJobFilter==='all'||j.status===activeJobFilter;
+    const search = !q || j.customer.toLowerCase().includes(q) || j.service.toLowerCase().includes(q) || j.id.toLowerCase().includes(q);
+    return match && search;
+  });
+  const tbody = document.getElementById('jobsViewBody');
+  if(!tbody) return;
+  tbody.innerHTML = items.map(j=>{
+    const cls = j.status==='Active'?'status-active':j.status==='Pending'?'status-pending':'status-done';
+    return `<tr class="job-row">
+      <td style="padding:12px 14px;"><div class="job-id">${j.id}</div></td>
+      <td><div class="job-customer">${j.customer}</div></td>
+      <td><div class="job-vehicle">${j.vehicle}</div></td>
+      <td><div class="job-service">${j.service}</div></td>
+      <td><div class="job-time">${j.date} · ${j.time}</div></td>
+      <td><span class="job-status ${cls}"><span class="status-dot"></span>${j.status}</span></td>
+      <td>
+        <button class="icon-btn" onclick="showToast('Job ${j.id} — Updated to done!','success')" title="Mark done"><i class="fas fa-check"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════
+   THREADS
+═══════════════════ */
+function threadBg(type){ return type==='customer'?'badge-customer':type==='staff'?'badge-staff':'badge-admin'; }
+
+function renderThreads(filter='', cat='all') {
+  const scroll = document.getElementById('threadScroll');
+  const items  = THREADS.filter(t=>{
+    const matchCat  = cat==='all'||t.type===cat;
+    const matchQ    = !filter||t.name.toLowerCase().includes(filter.toLowerCase());
+    return matchCat && matchQ;
+  });
+  scroll.innerHTML = items.map(t=>`
+    <div class="thread-item ${activeThread===t.id?'active':''}" onclick="openThread(${t.id})" id="thread-${t.id}">
+      <div class="thread-avatar" style="${t.type==='admin'?'background:linear-gradient(135deg,#7f1d1d,#dc2626);':t.type==='staff'?'background:linear-gradient(135deg,#A67F38,#D9B573);':''}">${t.initials}
+        <div class="thread-online ${t.status}"></div>
+      </div>
+      <div class="thread-info">
+        <div class="thread-name">${t.name}
+          <span class="thread-type-badge ${threadBg(t.type)}">${t.type}</span>
+          <span class="thread-time">${t.time}</span>
+        </div>
+        <div class="thread-preview">${t.preview}</div>
+      </div>
+      ${t.unread>0?`<div class="thread-unread">${t.unread}</div>`:''}
+    </div>`).join('');
+}
+
+function filterThreads(q) { renderThreads(q, activeCat); }
+function filterCat(cat, el) {
+  activeCat = cat;
+  document.querySelectorAll('.chat-cat').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderThreads('', cat);
+}
+
+function openThread(id) {
+  activeThread = id;
+  const t = THREADS.find(x=>x.id===id);
+  if(!t) return;
+  t.unread = 0;
+  renderThreads('', activeCat);
+
+  document.getElementById('noThread').style.display   = 'none';
+  const chatActive = document.getElementById('chatActive');
+  chatActive.style.display = 'flex';
+
+  document.getElementById('chatWinName').textContent    = t.name;
+  document.getElementById('chatWinAvatar').textContent  = t.initials;
+  document.getElementById('chatWinAvatar').style.background = t.type==='admin'
+    ? 'linear-gradient(135deg,#7f1d1d,#dc2626)'
+    : t.type==='staff'
+      ? 'linear-gradient(135deg,#A67F38,#D9B573)'
+      : 'linear-gradient(135deg,#1e3a5f,#3b82f6)';
+  document.getElementById('chatWinStatus').innerHTML = t.status==='online'
+    ? `<div class="chat-win-dot"></div>Online`
+    : t.status==='away'
+      ? `<div class="chat-win-dot" style="background:var(--amber);animation:none;"></div>Away`
+      : `<div class="chat-win-dot" style="background:var(--text-4);animation:none;"></div>Offline`;
+
+  renderMessages(t.msgs);
+}
+
+function renderMessages(msgs) {
+  const box = document.getElementById('chatMessages');
+  const today = new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  box.innerHTML = `<div class="chat-date-sep">${today}</div>`;
+  msgs.forEach(m=>{
+    const div = document.createElement('div');
+    div.className = `msg ${m.from==='me'?'me':'them'}`;
+    if(m.from!=='me') { const sl = document.createElement('div'); sl.className='msg-sender'; sl.textContent=THREADS.find(t=>t.id===activeThread)?.name||''; div.appendChild(sl); }
+    const bubble = document.createElement('div'); bubble.className='msg-bubble'; bubble.textContent=m.text; div.appendChild(bubble);
+    const meta   = document.createElement('div'); meta.className='msg-meta';   meta.textContent=m.time;  div.appendChild(meta);
+    box.appendChild(div);
+  });
+  setTimeout(()=>{ box.scrollTop = box.scrollHeight; }, 50);
+}
+
+function sendMsg() {
+  const inp = document.getElementById('chatInput');
+  const txt = inp.value.trim();
+  if(!txt||!activeThread) return;
+  const t = THREADS.find(x=>x.id===activeThread);
+  t.msgs.push({ from:'me', text:txt, time: new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) });
+  inp.value='';
+  renderMessages(t.msgs);
+  t.preview = txt;
+  renderThreads('', activeCat);
+
+  // Simulated reply
+  setTimeout(()=>{
+    const replies = ['Got it, thanks!','Noted!','OK, will do.','Sure thing!','Received.','Understood, marco.'];
+    t.msgs.push({ from:'them', text:replies[Math.floor(Math.random()*replies.length)], time: new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) });
+    t.preview = t.msgs[t.msgs.length-1].text;
+    renderMessages(t.msgs);
+    renderThreads('', activeCat);
+  }, 1200);
+}
+
+/* ═══════════════════
+   INIT
+═══════════════════ */
+renderJobTable();
+renderMiniCal();
+renderBigCal();
+renderThreads();
+
+// Ensure chat view tabs work
+document.querySelectorAll('.cal-vt').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.cal-vt').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    showToast(`Switched to ${this.textContent} view`,'info');
+  });
+});
+</script>
+</body>
+</html>
