@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>REV — Customers</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{gold:{DEFAULT:'#F2DB94',dark:'#A67F38',light:'#F2E1AE'}},fontFamily:{condensed:['Barlow Condensed','sans-serif'],raj:['Rajdhani','sans-serif'],dm:['DM Sans','sans-serif']}}}};</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+
+<!-- ═══════════════════════════════════════════
+     STYLES
+═══════════════════════════════════════════ -->
+<style>
+/* ── ROOT / RESET ── */
+:root{--g:#F2DB94;--gd:#A67F38;--gdl:#F2E1AE;--gdk:#D9B573;--black:#080808;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:#080808;color:#fff;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#A67F38;border-radius:2px;}
+
+/* ── GOLD GRADIENT TEXT ── */
+.gt{
+  background:linear-gradient(135deg,#F2E1AE,#F2DB94,#A67F38);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.afu{animation:fadeUp .4s ease both;}
+
+/* ── PAGE LAYOUT ── */
+#ca{padding:18px;background:#080808;min-height:100vh;}
+
+/* ── STAT CARDS ── */
+.sc{
+  border-radius:14px;
+  padding:17px 20px;
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(135deg,#1a1608,#131313);
+  border:1px solid rgba(166,127,56,.26);
+  cursor:pointer;
+  transition:border-color .3s,box-shadow .3s;
+}
+.sc::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,transparent,#A67F38,#F2DB94,#A67F38,transparent);
+}
+.sc:hover{border-color:rgba(166,127,56,.5);box-shadow:0 10px 35px rgba(166,127,56,.1);}
+.sc-v{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:34px;font-weight:900;line-height:1;
+}
+
+/* ── CARD WRAPPER ── */
+.card{
+  background:linear-gradient(135deg,#141414,#0e0e0e);
+  border:1px solid rgba(166,127,56,.1);
+  border-radius:14px;
+  position:relative;
+  overflow:hidden;
+}
+.card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(166,127,56,.24),transparent);
+}
+
+/* ── BADGES ── */
+.b{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:20px;
+  font-family:'Rajdhani',sans-serif;font-size:9.5px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;white-space:nowrap;
+}
+.bg{background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);}
+.bd{background:rgba(166,127,56,.11);color:#F2DB94;border:1px solid rgba(166,127,56,.26);}
+.bb{background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.2);}
+.br{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2);}
+.bp{background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.2);}
+
+/* ── DATA TABLE ── */
+.dt{width:100%;}
+.dt th{
+  font-family:'Rajdhani',sans-serif;font-size:9.5px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:#2a2a2a;
+  padding:9px 12px;text-align:left;
+}
+.dt td{padding:9px 12px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.025);}
+.dt tbody tr{transition:background .15s;cursor:pointer;}
+.dt tbody tr:hover{background:rgba(166,127,56,.04);}
+.dt tbody tr:last-child td{border-bottom:none;}
+
+/* ── BUTTONS ── */
+.btn-g{
+  padding:8px 15px;border-radius:8px;
+  background:linear-gradient(135deg,#A67F38,#D9B573);
+  font-family:'Rajdhani',sans-serif;font-weight:700;
+  color:#080808;font-size:12px;border:none;cursor:pointer;
+  position:relative;overflow:hidden;transition:filter .2s;
+}
+.btn-g::after{
+  content:'';position:absolute;top:-50%;left:-80%;width:45%;height:200%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+  transform:skewX(-18deg);transition:left .5s;
+}
+.btn-g:hover::after{left:135%;}
+
+.btn-gh{
+  padding:8px 15px;border-radius:8px;
+  border:1px solid rgba(166,127,56,.28);background:transparent;
+  color:#F2E1AE;font-size:12px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-weight:600;
+}
+.btn-gh:hover{border-color:rgba(166,127,56,.5);}
+
+.btn-e{
+  padding:6px 12px;border-radius:7px;
+  background:rgba(59,130,246,.09);border:1px solid rgba(59,130,246,.2);
+  color:#60a5fa;font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:10px;cursor:pointer;
+}
+.btn-e:hover{background:rgba(59,130,246,.16);}
+
+.btn-d{
+  padding:6px 12px;border-radius:7px;
+  background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.2);
+  color:#f87171;font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:10px;cursor:pointer;
+}
+.btn-d:hover{background:rgba(239,68,68,.16);}
+
+/* ── SEARCH BAR ── */
+.hsr{
+  display:flex;align-items:center;gap:7px;
+  background:#141414;border:1px solid rgba(166,127,56,.11);
+  border-radius:8px;padding:6px 10px;
+}
+.hsr input{
+  background:transparent;border:none;outline:none;
+  color:#ccc;font-size:13px;font-family:'DM Sans',sans-serif;width:180px;
+}
+.hsr input::placeholder{color:#252525;}
+
+/* ── INPUTS ── */
+.ci{
+  width:100%;background:rgba(255,255,255,.024);
+  border:1px solid rgba(166,127,56,.14);border-radius:8px;
+  padding:9px 12px;color:#fff;font-family:'DM Sans',sans-serif;
+  font-size:13px;outline:none;transition:border-color .2s;
+}
+.ci:focus{border-color:#A67F38;background:rgba(166,127,56,.04);}
+.ci::placeholder{color:#282828;}
+select.ci option{background:#1a1a1a;color:#ccc;}
+.ci-lbl{
+  display:block;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;color:#333;margin-bottom:5px;
+}
+
+/* ── MODAL ── */
+.mw{
+  position:fixed;inset:0;z-index:400;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;transition:opacity .25s;padding:16px;
+}
+.mw.open{opacity:1;pointer-events:all;}
+.mb{
+  background:linear-gradient(150deg,#1c1c1c,#101010);
+  border:1px solid rgba(166,127,56,.28);border-radius:18px;
+  box-shadow:0 50px 120px rgba(0,0,0,.8);
+  transform:translateY(14px) scale(.97);
+  transition:transform .28s cubic-bezier(.25,.46,.45,.94);
+  max-height:92vh;overflow-y:auto;
+  position:relative;width:100%;
+}
+.mw.open .mb{transform:none;}
+.mtbar{
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,#A67F38,#F2DB94,#A67F38,transparent);
+}
+
+/* ── DELETE MODAL ── */
+.mw-del{
+  position:fixed;inset:0;z-index:500;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;transition:opacity .25s;padding:16px;
+}
+.mw-del.open{opacity:1;pointer-events:all;}
+
+/* ── TABS ── */
+.tab-row{display:flex;gap:6px;border-bottom:1px solid rgba(166,127,56,.1);margin-bottom:16px;}
+.tab-btn{
+  padding:8px 16px;border:none;background:transparent;
+  color:#444;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .2s,border-color .2s;
+}
+.tab-btn.active{color:#F2DB94;border-bottom-color:#A67F38;}
+.tab-btn:hover:not(.active){color:#888;}
+
+/* ── TOAST ── */
+@keyframes toastIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.toast-msg{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,#A67F38,#D9B573);
+  color:#080808;padding:10px 20px;border-radius:10px;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;
+  z-index:9999;box-shadow:0 8px 30px rgba(0,0,0,.5);
+  animation:toastIn .3s ease both;
+}
+
+/* ── FILTER TABS ── */
+.filter-btn{
+  padding:5px 14px;border-radius:8px;
+  border:1px solid rgba(166,127,56,.18);background:transparent;
+  color:#444;font-size:11px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-weight:700;
+  transition:all .2s;
+}
+.filter-btn.active{
+  background:linear-gradient(135deg,#A67F38,#D9B573);
+  color:#080808;border-color:transparent;
+}
+.filter-btn:hover:not(.active){border-color:rgba(166,127,56,.5);color:#ccc;}
+
+/* ── PROGRESS BAR ── */
+.prog-t{height:4px;border-radius:3px;background:rgba(255,255,255,.05);}
+.prog-f{height:100%;border-radius:3px;background:linear-gradient(90deg,#A67F38,#F2DB94);transition:width .8s ease;}
+</style>
+</head>
+<body>
+<div id="ca">
+
+  <!-- ═══ PAGE HEADER ═══ -->
+  <div class="afu" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div>
+      <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#F2DB94;font-family:'Rajdhani',sans-serif;font-weight:700;margin-bottom:3px;">People</div>
+      <h2 class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;">Customers</h2>
+    </div>
+    <button onclick="openAddCustomer()" class="btn-g" style="font-size:13px;padding:9px 16px;">
+      <i class="fas fa-user-plus" style="margin-right:5px;"></i>Add Customer
+    </button>
+  </div>
+
+  <!-- ═══ STAT CARDS ═══ -->
+  <div class="afu" style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:14px;">
+    <div class="sc">
+      <div class="sc-v gt" id="statTotal">50</div>
+      <div style="font-size:11px;color:#333;margin-top:3px;">Total Customers</div>
+    </div>
+    <div class="sc">
+      <div class="sc-v gt" id="statActive">38</div>
+      <div style="font-size:11px;color:#333;margin-top:3px;">Active</div>
+    </div>
+    <div class="sc">
+      <div class="sc-v gt" id="statNewMonth">12</div>
+      <div style="font-size:11px;color:#333;margin-top:3px;">New This Month</div>
+    </div>
+    <div class="sc">
+      <div class="sc-v gt" id="statRating">4.9</div>
+      <div style="font-size:11px;color:#333;margin-top:3px;">Avg Rating</div>
+    </div>
+  </div>
+
+  <!-- ═══ FILTERS + SEARCH ═══ -->
+  <div class="afu" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;" id="statusFilterBtns">
+      <button class="filter-btn active" onclick="filterByStatus('All',this)">All</button>
+      <button class="filter-btn" onclick="filterByStatus('active',this)">Active</button>
+      <button class="filter-btn" onclick="filterByStatus('inactive',this)">Inactive</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="hsr">
+        <i class="fas fa-search" style="color:#252525;font-size:11px;"></i>
+        <input type="text" id="cusSearch" placeholder="Search customers..." oninput="filterCustomers()">
+      </div>
+      <select class="btn-gh" onchange="sortCustomers(this.value)" style="padding:7px 11px;font-size:11px;">
+        <option value="">Sort by...</option>
+        <option value="name">Name A–Z</option>
+        <option value="visits-desc">Most Visits</option>
+        <option value="visits-asc">Least Visits</option>
+        <option value="status">Status</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ═══ TABLE ═══ -->
+  <div class="card afu" style="overflow:hidden;">
+    <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(166,127,56,.06);">
+      <span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;color:#A67F38;" id="tableCountLabel">50 Customers</span>
+      <div style="display:flex;gap:6px;">
+        <button onclick="exportCSV()" class="btn-gh" style="font-size:10px;padding:5px 10px;">
+          <i class="fas fa-download" style="margin-right:3px;"></i>Export CSV
+        </button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="dt">
+        <thead style="background:rgba(0,0,0,.2);">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Visits</th>
+            <th>Rating</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="cusTb"></tbody>
+      </table>
+    </div>
+
+    <!-- PAGINATION -->
+    <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(166,127,56,.06);flex-wrap:wrap;gap:8px;">
+      <span style="font-size:11px;color:#333;font-family:'Rajdhani',sans-serif;" id="pagInfo"></span>
+      <div id="pagBtns" style="display:flex;gap:4px;"></div>
+    </div>
+  </div>
+
+</div><!-- /#ca -->
+
+
+<!-- ═══════════════════════════════════════════
+     CUSTOMER DETAIL MODAL
+═══════════════════════════════════════════ -->
+<div id="cusModal" class="mw" onclick="if(event.target===this)closeModal('cusModal')">
+  <div class="mb" style="max-width:500px;padding:26px;">
+    <div class="mtbar"></div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <h2 id="cusModalTitle" class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;">Customer Details</h2>
+      <button onclick="closeModal('cusModal')" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Avatar + info -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px;border-radius:12px;background:rgba(166,127,56,.05);border:1px solid rgba(166,127,56,.1);">
+      <div id="modalAvatar" style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#A67F38,#D9B573);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#080808;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;"></div>
+      <div>
+        <div id="modalName" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#ddd;"></div>
+        <div id="modalId"   style="font-family:'Rajdhani',sans-serif;font-size:11px;color:#A67F38;letter-spacing:1px;"></div>
+        <div id="modalStatus" style="margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <!-- Detail fields -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div style="padding:10px;border-radius:9px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);">
+        <div style="font-size:9px;color:#2a2a2a;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;">Email</div>
+        <div id="modalEmail" style="font-size:13px;color:#ccc;word-break:break-all;"></div>
+      </div>
+      <div style="padding:10px;border-radius:9px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);">
+        <div style="font-size:9px;color:#2a2a2a;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;">Phone</div>
+        <div id="modalPhone" style="font-size:13px;color:#ccc;"></div>
+      </div>
+      <div style="padding:10px;border-radius:9px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);">
+        <div style="font-size:9px;color:#2a2a2a;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;">Total Visits</div>
+        <div id="modalVisits" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;" class="gt"></div>
+      </div>
+      <div style="padding:10px;border-radius:9px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);">
+        <div style="font-size:9px;color:#2a2a2a;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;">Rating</div>
+        <div id="modalRating" style="font-size:15px;color:#F2DB94;"></div>
+      </div>
+    </div>
+
+    <!-- Loyalty bar -->
+    <div style="margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+        <span style="font-size:10px;color:#333;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Loyalty Progress</span>
+        <span id="modalLoyalty" style="font-size:10px;color:#A67F38;font-family:'Rajdhani',sans-serif;font-weight:700;"></span>
+      </div>
+      <div class="prog-t"><div class="prog-f" id="modalLoyaltyBar" style="width:0%;"></div></div>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex;gap:10px;">
+      <button onclick="openEditCustomer()" class="btn-e" style="flex:1;padding:10px;font-size:12px;">
+        <i class="fas fa-pen" style="margin-right:4px;"></i>Edit
+      </button>
+      <button onclick="openDeleteConfirm()" class="btn-d" style="flex:1;padding:10px;font-size:12px;">
+        <i class="fas fa-trash" style="margin-right:4px;"></i>Delete
+      </button>
+      <button onclick="closeModal('cusModal')" class="btn-gh" style="flex:1;padding:10px;font-size:12px;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     ADD / EDIT CUSTOMER MODAL
+═══════════════════════════════════════════ -->
+<div id="editModal" class="mw" onclick="if(event.target===this)closeModal('editModal')">
+  <div class="mb" style="max-width:520px;padding:26px;">
+    <div class="mtbar"></div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <h2 id="editModalTitle" class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;">Add Customer</h2>
+      <button onclick="closeModal('editModal')" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label class="ci-lbl">First Name</label>
+          <input type="text" class="ci" id="editFname" placeholder="e.g. Maria">
+        </div>
+        <div>
+          <label class="ci-lbl">Last Name</label>
+          <input type="text" class="ci" id="editLname" placeholder="e.g. Santos">
+        </div>
+      </div>
+      <div>
+        <label class="ci-lbl">Email Address</label>
+        <input type="email" class="ci" id="editEmail" placeholder="email@example.com">
+      </div>
+      <div>
+        <label class="ci-lbl">Phone Number</label>
+        <input type="tel" class="ci" id="editPhone" placeholder="09xxxxxxxxx">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label class="ci-lbl">Total Visits</label>
+          <input type="number" class="ci" id="editVisits" placeholder="0" min="0">
+        </div>
+        <div>
+          <label class="ci-lbl">Rating (0–5)</label>
+          <input type="number" class="ci" id="editRating" placeholder="5.0" min="0" max="5" step="0.1">
+        </div>
+      </div>
+      <div>
+        <label class="ci-lbl">Status</label>
+        <select class="ci" id="editStatus">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <div id="editErrMsg" style="display:none;padding:9px 12px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171;font-size:12px;"></div>
+    </div>
+
+    <input type="hidden" id="editIdx" value="-1">
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button onclick="saveCustomer()" class="btn-g" style="flex:1;padding:11px;font-size:13px;" id="editSaveBtn">Add Customer</button>
+      <button onclick="closeModal('editModal')" class="btn-gh" style="flex:1;padding:11px;font-size:13px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     DELETE CONFIRM MODAL
+═══════════════════════════════════════════ -->
+<div id="delModal" class="mw" onclick="if(event.target===this)closeModal('delModal')">
+  <div class="mb" style="max-width:360px;padding:24px;">
+    <div class="mtbar"></div>
+    <div style="text-align:center;padding:8px 0 16px;">
+      <div style="width:50px;height:50px;border-radius:50%;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+        <i class="fas fa-trash" style="color:#f87171;font-size:17px;"></i>
+      </div>
+      <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:#f87171;margin-bottom:5px;">Confirm Delete</h3>
+      <p style="font-size:12px;color:#555;" id="delMsg">Are you sure you want to delete this customer?</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="doDelete()" class="btn-d" style="flex:1;padding:10px;font-size:13px;">Yes, Delete</button>
+      <button onclick="closeModal('delModal')" class="btn-gh" style="flex:1;padding:10px;font-size:13px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+
+/* ──────────────────────────────────────────
+   DATA
+────────────────────────────────────────── */
+let customers = [
+  {id:'CU-001',name:'Maria Santos',   email:'maria@gmail.com',  phone:'09171234567',visits:8,  rating:4.9,status:'active'},
+  {id:'CU-002',name:'Jose Reyes',     email:'jose@gmail.com',   phone:'09181234567',visits:3,  rating:4.5,status:'active'},
+  {id:'CU-003',name:'Ana Cruz',       email:'ana@gmail.com',    phone:'09191234567',visits:12, rating:4.8,status:'active'},
+  {id:'CU-004',name:'Carlos Lim',     email:'carlos@gmail.com', phone:'09201234567',visits:1,  rating:3.9,status:'inactive'},
+  {id:'CU-005',name:'Eva Mendoza',    email:'eva@gmail.com',    phone:'09211234567',visits:5,  rating:4.7,status:'active'},
+  {id:'CU-006',name:'Ramon Torres',   email:'ramon@gmail.com',  phone:'09221234567',visits:7,  rating:4.6,status:'active'},
+  {id:'CU-007',name:'Liza Bautista',  email:'liza@gmail.com',   phone:'09231234567',visits:2,  rating:4.2,status:'inactive'},
+  {id:'CU-008',name:'Marco Dela Cruz',email:'marco@gmail.com',  phone:'09241234567',visits:15, rating:5.0,status:'active'},
+  {id:'CU-009',name:'Sofia Garcia',   email:'sofia@gmail.com',  phone:'09251234567',visits:9,  rating:4.8,status:'active'},
+  {id:'CU-010',name:'Dante Villanueva',email:'dante@gmail.com', phone:'09261234567',visits:4,  rating:4.3,status:'active'},
+];
+
+/* Pagination & filter state */
+let filteredCustomers = [...customers];
+let currentPage     = 1;
+const perPage       = 5;
+let activeStatus    = 'All';
+let activeSort      = '';
+let viewingIdx      = -1;  // index of currently viewed customer
+
+
+/* ──────────────────────────────────────────
+   HELPERS
+────────────────────────────────────────── */
+function badge(s){
+  const m = {active:'bg',inactive:'br',pending:'bd'};
+  const labels = {active:'Active',inactive:'Inactive',pending:'Pending'};
+  return `<span class="b ${m[s]||'bd'}">${labels[s]||s}</span>`;
+}
+
+function initials(name){
+  const parts = name.trim().split(' ');
+  return (parts[0][0]+(parts[1]?parts[1][0]:'')).toUpperCase();
+}
+
+function loyaltyTier(visits){
+  if(visits >= 15) return {label:'Gold Member',pct:100};
+  if(visits >= 8)  return {label:'Silver Member',pct:Math.round(visits/15*100)};
+  if(visits >= 3)  return {label:'Bronze Member',pct:Math.round(visits/15*100)};
+  return {label:'New Member',pct:Math.round(visits/15*100)};
+}
+
+function starStr(rating){
+  const full  = Math.floor(rating);
+  const half  = rating % 1 >= 0.5 ? 1 : 0;
+  const empty = 5 - full - half;
+  return '★'.repeat(full) + (half?'½':'') + '☆'.repeat(empty) + ` (${rating})`;
+}
+
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast-msg';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+function openModal(id){  document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+
+/* ──────────────────────────────────────────
+   STATS
+────────────────────────────────────────── */
+function updateStats(){
+  const total  = customers.length;
+  const active = customers.filter(c=>c.status==='active').length;
+  const avg    = customers.reduce((a,c)=>a+c.rating,0)/customers.length;
+  document.getElementById('statTotal').textContent    = total;
+  document.getElementById('statActive').textContent   = active;
+  document.getElementById('statNewMonth').textContent = Math.floor(total * 0.24); // mock
+  document.getElementById('statRating').textContent   = avg.toFixed(1);
+}
+
+
+/* ──────────────────────────────────────────
+   FILTER + SORT
+────────────────────────────────────────── */
+function filterByStatus(status, btn){
+  activeStatus = status;
+  document.querySelectorAll('#statusFilterBtns .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function filterCustomers(){
+  applyFilters();
+}
+
+function sortCustomers(val){
+  activeSort = val;
+  applyFilters();
+}
+
+function applyFilters(){
+  const q = (document.getElementById('cusSearch').value||'').toLowerCase();
+
+  filteredCustomers = customers.filter(c=>{
+    const matchStatus = activeStatus==='All' || c.status===activeStatus;
+    const matchSearch = !q ||
+      c.name.toLowerCase().includes(q)  ||
+      c.email.toLowerCase().includes(q) ||
+      c.phone.includes(q)               ||
+      c.id.toLowerCase().includes(q);
+    return matchStatus && matchSearch;
+  });
+
+  if(activeSort === 'name'){
+    filteredCustomers.sort((a,b)=>a.name.localeCompare(b.name));
+  } else if(activeSort === 'visits-desc'){
+    filteredCustomers.sort((a,b)=>b.visits-a.visits);
+  } else if(activeSort === 'visits-asc'){
+    filteredCustomers.sort((a,b)=>a.visits-b.visits);
+  } else if(activeSort === 'status'){
+    filteredCustomers.sort((a,b)=>a.status.localeCompare(b.status));
+  }
+
+  currentPage = 1;
+  renderTable();
+}
+
+
+/* ──────────────────────────────────────────
+   TABLE RENDER
+────────────────────────────────────────── */
+function renderTable(){
+  const tb = document.getElementById('cusTb');
+  const total = filteredCustomers.length;
+  const start = (currentPage-1)*perPage;
+  const slice = filteredCustomers.slice(start, start+perPage);
+
+  document.getElementById('tableCountLabel').textContent =
+    total + ' Customer' + (total!==1?'s':'');
+
+  if(!slice.length){
+    tb.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:#333;font-size:13px;">
+      <i class="fas fa-users" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+      No customers found
+    </td></tr>`;
+    renderPagination(0);
+    return;
+  }
+
+  tb.innerHTML = slice.map((c, i) => {
+    const realIdx = customers.indexOf(c);
+    return `<tr onclick="viewCustomer(${realIdx})">
+      <td style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;color:#A67F38;">${c.id}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#A67F38,#D9B573);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#080808;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;">${initials(c.name)}</div>
+          <span style="color:#ccc;font-weight:500;">${c.name}</span>
+        </div>
+      </td>
+      <td style="color:#666;font-size:12px;">${c.email}</td>
+      <td style="color:#666;font-size:12px;">${c.phone}</td>
+      <td style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;" class="gt">${c.visits}</td>
+      <td style="color:#F2DB94;font-size:12px;">★ ${c.rating}</td>
+      <td>${badge(c.status)}</td>
+      <td>
+        <div style="display:flex;gap:5px;" onclick="event.stopPropagation()">
+          <button onclick="viewCustomer(${realIdx})" class="btn-e" style="padding:5px 9px;font-size:10px;"><i class="fas fa-eye"></i></button>
+          <button onclick="openEditCustomerDirect(${realIdx})" class="btn-e" style="padding:5px 9px;font-size:10px;"><i class="fas fa-pen"></i></button>
+          <button onclick="openDeleteDirect(${realIdx})" class="btn-d" style="padding:5px 9px;font-size:10px;"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(total);
+}
+
+function renderPagination(total){
+  const pages  = Math.max(1, Math.ceil(total/perPage));
+  const infoEl = document.getElementById('pagInfo');
+  const pagEl  = document.getElementById('pagBtns');
+
+  const start = total ? (currentPage-1)*perPage+1 : 0;
+  const end   = Math.min(currentPage*perPage, total);
+  infoEl.textContent = total ? `Showing ${start}–${end} of ${total}` : '0 results';
+
+  if(pages <= 1){ pagEl.innerHTML=''; return; }
+
+  let h = `<button onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''} style="padding:4px 9px;border-radius:6px;background:#141414;border:1px solid rgba(166,127,56,.18);color:#888;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;">‹</button>`;
+  for(let p=1; p<=pages; p++){
+    h += `<button onclick="goPage(${p})" style="padding:4px 9px;border-radius:6px;${p===currentPage?'background:linear-gradient(135deg,#A67F38,#D9B573);color:#080808;border:none;':'background:#141414;border:1px solid rgba(166,127,56,.12);color:#888;'}cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;">${p}</button>`;
+  }
+  h += `<button onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''} style="padding:4px 9px;border-radius:6px;background:#141414;border:1px solid rgba(166,127,56,.18);color:#888;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;">›</button>`;
+  pagEl.innerHTML = h;
+}
+
+function goPage(p){
+  const pages = Math.ceil(filteredCustomers.length/perPage);
+  if(p<1||p>pages) return;
+  currentPage = p;
+  renderTable();
+}
+
+
+/* ──────────────────────────────────────────
+   VIEW CUSTOMER MODAL
+────────────────────────────────────────── */
+function viewCustomer(idx){
+  viewingIdx = idx;
+  const c = customers[idx];
+  const loy = loyaltyTier(c.visits);
+
+  document.getElementById('modalAvatar').textContent = initials(c.name);
+  document.getElementById('modalName').textContent   = c.name;
+  document.getElementById('modalId').textContent     = c.id;
+  document.getElementById('modalStatus').innerHTML   = badge(c.status);
+  document.getElementById('modalEmail').textContent  = c.email;
+  document.getElementById('modalPhone').textContent  = c.phone;
+  document.getElementById('modalVisits').textContent = c.visits;
+  document.getElementById('modalRating').textContent = starStr(c.rating);
+  document.getElementById('modalLoyalty').textContent = loy.label;
+  document.getElementById('modalLoyaltyBar').style.width = '0%';
+  setTimeout(()=>{ document.getElementById('modalLoyaltyBar').style.width = loy.pct+'%'; }, 80);
+
+  openModal('cusModal');
+}
+
+
+/* ──────────────────────────────────────────
+   ADD CUSTOMER
+────────────────────────────────────────── */
+function openAddCustomer(){
+  document.getElementById('editModalTitle').textContent = 'Add Customer';
+  document.getElementById('editSaveBtn').textContent    = 'Add Customer';
+  document.getElementById('editIdx').value = '-1';
+  ['editFname','editLname','editEmail','editPhone'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('editVisits').value  = '0';
+  document.getElementById('editRating').value  = '5.0';
+  document.getElementById('editStatus').value  = 'active';
+  document.getElementById('editErrMsg').style.display = 'none';
+  openModal('editModal');
+}
+
+
+/* ──────────────────────────────────────────
+   EDIT CUSTOMER (from detail modal)
+────────────────────────────────────────── */
+function openEditCustomer(){
+  if(viewingIdx < 0) return;
+  closeModal('cusModal');
+  setTimeout(()=>openEditCustomerDirect(viewingIdx), 200);
+}
+
+function openEditCustomerDirect(idx){
+  const c = customers[idx];
+  const parts = c.name.split(' ');
+  document.getElementById('editModalTitle').textContent = 'Edit Customer';
+  document.getElementById('editSaveBtn').textContent    = 'Save Changes';
+  document.getElementById('editIdx').value   = idx;
+  document.getElementById('editFname').value = parts[0]||'';
+  document.getElementById('editLname').value = parts.slice(1).join(' ')||'';
+  document.getElementById('editEmail').value = c.email;
+  document.getElementById('editPhone').value = c.phone;
+  document.getElementById('editVisits').value = c.visits;
+  document.getElementById('editRating').value = c.rating;
+  document.getElementById('editStatus').value = c.status;
+  document.getElementById('editErrMsg').style.display = 'none';
+  openModal('editModal');
+}
+
+
+/* ──────────────────────────────────────────
+   SAVE (ADD / EDIT)
+────────────────────────────────────────── */
+function saveCustomer(){
+  const fn     = document.getElementById('editFname').value.trim();
+  const ln     = document.getElementById('editLname').value.trim();
+  const email  = document.getElementById('editEmail').value.trim();
+  const phone  = document.getElementById('editPhone').value.trim();
+  const visits = parseInt(document.getElementById('editVisits').value) || 0;
+  const rating = parseFloat(document.getElementById('editRating').value) || 5.0;
+  const status = document.getElementById('editStatus').value;
+  const idx    = parseInt(document.getElementById('editIdx').value);
+  const errEl  = document.getElementById('editErrMsg');
+
+  errEl.style.display = 'none';
+  if(!fn)    return showErr('First name is required.');
+  if(!email) return showErr('Email address is required.');
+  if(!phone) return showErr('Phone number is required.');
+  if(rating < 0 || rating > 5) return showErr('Rating must be between 0 and 5.');
+
+  const obj = {
+    id:     idx >= 0 ? customers[idx].id : 'CU-'+String(customers.length+1).padStart(3,'0'),
+    name:   fn + (ln?' '+ln:''),
+    email, phone, visits,
+    rating: Math.round(rating * 10)/10,
+    status
+  };
+
+  if(idx >= 0){
+    customers[idx] = obj;
+    showToast('Customer updated successfully!');
+  } else {
+    customers.push(obj);
+    showToast('Customer added successfully!');
+  }
+
+  closeModal('editModal');
+  applyFilters();
+  updateStats();
+
+  function showErr(msg){ errEl.textContent=msg; errEl.style.display='block'; }
+}
+
+
+/* ──────────────────────────────────────────
+   DELETE
+────────────────────────────────────────── */
+let pendingDelIdx = -1;
+
+function openDeleteConfirm(){
+  if(viewingIdx < 0) return;
+  closeModal('cusModal');
+  setTimeout(()=>openDeleteDirect(viewingIdx), 200);
+}
+
+function openDeleteDirect(idx){
+  pendingDelIdx = idx;
+  const c = customers[idx];
+  document.getElementById('delMsg').textContent =
+    `Delete "${c.name}" (${c.id})? This action cannot be undone.`;
+  openModal('delModal');
+}
+
+function doDelete(){
+  if(pendingDelIdx < 0) return;
+  const name = customers[pendingDelIdx].name;
+  customers.splice(pendingDelIdx, 1);
+  pendingDelIdx = -1;
+  viewingIdx    = -1;
+  closeModal('delModal');
+  applyFilters();
+  updateStats();
+  showToast(`"${name}" removed.`);
+}
+
+
+/* ──────────────────────────────────────────
+   EXPORT CSV
+────────────────────────────────────────── */
+function exportCSV(){
+  const rows = [['ID','Name','Email','Phone','Visits','Rating','Status']];
+  filteredCustomers.forEach(c=>rows.push([c.id,c.name,c.email,c.phone,c.visits,c.rating,c.status]));
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a   = document.createElement('a');
+  a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'REV_Customers_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  showToast('CSV exported!');
+}
+
+
+/* ──────────────────────────────────────────
+   INIT
+────────────────────────────────────────── */
+updateStats();
+applyFilters();
+
+</script>
+</body>
+</html>

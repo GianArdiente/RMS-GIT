@@ -69,12 +69,16 @@ $('signupForm').addEventListener('submit', e => {
   const firstName = $('firstName').value.trim();
   const lastName = $('lastName').value.trim();
   const email= $('email').value.trim();
+  const phone= $('phone').value.trim();
+  const address= $('address').value.trim();
   const pw   = $('password').value;
   const pw2  = $('confirmPassword').value;
 
   if (!firstName)    { showToast('Please enter your first name.', 'error');             return; }
   if (!lastName)     { showToast('Please enter your last name.', 'error');              return; }
-  if (!email)        { showToast('Please enter your email address.', 'error');         return; }
+  if (!email)        { showToast('Please enter your email address.', 'error');           return; }  
+  if (!phone)        { showToast('Please enter your phone number.', 'error');          return; }
+  if (!address)      { showToast('Please enter your address.', 'error');                return; }
   if (pw.length < 6) { showToast('Password must be at least 6 characters.', 'error'); return; }
   if (pw !== pw2)    { showToast('Passwords do not match.', 'error');                  return; }
 

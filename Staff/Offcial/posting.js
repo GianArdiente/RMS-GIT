@@ -703,3 +703,374 @@ window.addEventListener('resize',onResize);onResize();
 /* INIT */
 renderFeatGrid(); renderShopDash(); renderRecent(); renderChart(); renderLive(); renderNotifs(); updateStats(); renderPostsList();
 renderTechRoster(); renderBookingQueue(); renderAssignLog(); updateTechStats();
+
+
+
+/*Customers*/
+/* ──────────────────────────────────────────
+   DATA
+────────────────────────────────────────── */
+let customers = [
+  {id:'CU-001',name:'Maria Santos',   email:'maria@gmail.com',  phone:'09171234567',visits:8,  rating:4.9,status:'active'},
+  {id:'CU-002',name:'Jose Reyes',     email:'jose@gmail.com',   phone:'09181234567',visits:3,  rating:4.5,status:'active'},
+  {id:'CU-003',name:'Ana Cruz',       email:'ana@gmail.com',    phone:'09191234567',visits:12, rating:4.8,status:'active'},
+  {id:'CU-004',name:'Carlos Lim',     email:'carlos@gmail.com', phone:'09201234567',visits:1,  rating:3.9,status:'inactive'},
+  {id:'CU-005',name:'Eva Mendoza',    email:'eva@gmail.com',    phone:'09211234567',visits:5,  rating:4.7,status:'active'},
+  {id:'CU-006',name:'Ramon Torres',   email:'ramon@gmail.com',  phone:'09221234567',visits:7,  rating:4.6,status:'active'},
+  {id:'CU-007',name:'Liza Bautista',  email:'liza@gmail.com',   phone:'09231234567',visits:2,  rating:4.2,status:'inactive'},
+  {id:'CU-008',name:'Marco Dela Cruz',email:'marco@gmail.com',  phone:'09241234567',visits:15, rating:5.0,status:'active'},
+  {id:'CU-009',name:'Sofia Garcia',   email:'sofia@gmail.com',  phone:'09251234567',visits:9,  rating:4.8,status:'active'},
+  {id:'CU-010',name:'Dante Villanueva',email:'dante@gmail.com', phone:'09261234567',visits:4,  rating:4.3,status:'active'},
+];
+
+/* Pagination & filter state */
+let filteredCustomers = [...customers];
+let currentPage     = 1;
+const perPage       = 5;
+let activeStatus    = 'All';
+let activeSort      = '';
+let viewingIdx      = -1;  // index of currently viewed customer
+
+
+/* ──────────────────────────────────────────
+   HELPERS
+────────────────────────────────────────── */
+function badge(s){
+  const m = {active:'bg',inactive:'br',pending:'bd'};
+  const labels = {active:'Active',inactive:'Inactive',pending:'Pending'};
+  return `<span class="b ${m[s]||'bd'}">${labels[s]||s}</span>`;
+}
+
+function initials(name){
+  const parts = name.trim().split(' ');
+  return (parts[0][0]+(parts[1]?parts[1][0]:'')).toUpperCase();
+}
+
+function loyaltyTier(visits){
+  if(visits >= 15) return {label:'Gold Member',pct:100};
+  if(visits >= 8)  return {label:'Silver Member',pct:Math.round(visits/15*100)};
+  if(visits >= 3)  return {label:'Bronze Member',pct:Math.round(visits/15*100)};
+  return {label:'New Member',pct:Math.round(visits/15*100)};
+}
+
+function starStr(rating){
+  const full  = Math.floor(rating);
+  const half  = rating % 1 >= 0.5 ? 1 : 0;
+  const empty = 5 - full - half;
+  return '★'.repeat(full) + (half?'½':'') + '☆'.repeat(empty) + ` (${rating})`;
+}
+
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast-msg';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+function openModal(id){  document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+
+/* ──────────────────────────────────────────
+   STATS
+────────────────────────────────────────── */
+function updateStats(){
+  const total  = customers.length;
+  const active = customers.filter(c=>c.status==='active').length;
+  const avg    = customers.reduce((a,c)=>a+c.rating,0)/customers.length;
+  document.getElementById('statTotal').textContent    = total;
+  document.getElementById('statActive').textContent   = active;
+  document.getElementById('statNewMonth').textContent = Math.floor(total * 0.24); // mock
+  document.getElementById('statRating').textContent   = avg.toFixed(1);
+}
+
+
+/* ──────────────────────────────────────────
+   FILTER + SORT
+────────────────────────────────────────── */
+function filterByStatus(status, btn){
+  activeStatus = status;
+  document.querySelectorAll('#statusFilterBtns .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function filterCustomers(){
+  applyFilters();
+}
+
+function sortCustomers(val){
+  activeSort = val;
+  applyFilters();
+}
+
+function applyFilters(){
+  const q = (document.getElementById('cusSearch').value||'').toLowerCase();
+
+  filteredCustomers = customers.filter(c=>{
+    const matchStatus = activeStatus==='All' || c.status===activeStatus;
+    const matchSearch = !q ||
+      c.name.toLowerCase().includes(q)  ||
+      c.email.toLowerCase().includes(q) ||
+      c.phone.includes(q)               ||
+      c.id.toLowerCase().includes(q);
+    return matchStatus && matchSearch;
+  });
+
+  if(activeSort === 'name'){
+    filteredCustomers.sort((a,b)=>a.name.localeCompare(b.name));
+  } else if(activeSort === 'visits-desc'){
+    filteredCustomers.sort((a,b)=>b.visits-a.visits);
+  } else if(activeSort === 'visits-asc'){
+    filteredCustomers.sort((a,b)=>a.visits-b.visits);
+  } else if(activeSort === 'status'){
+    filteredCustomers.sort((a,b)=>a.status.localeCompare(b.status));
+  }
+
+  currentPage = 1;
+  renderTable();
+}
+
+
+/* ──────────────────────────────────────────
+   TABLE RENDER
+────────────────────────────────────────── */
+function renderTable(){
+  const tb = document.getElementById('cusTb');
+  const total = filteredCustomers.length;
+  const start = (currentPage-1)*perPage;
+  const slice = filteredCustomers.slice(start, start+perPage);
+
+  document.getElementById('tableCountLabel').textContent =
+    total + ' Customer' + (total!==1?'s':'');
+
+  if(!slice.length){
+    tb.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:#333;font-size:13px;">
+      <i class="fas fa-users" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+      No customers found
+    </td></tr>`;
+    renderPagination(0);
+    return;
+  }
+
+  tb.innerHTML = slice.map((c, i) => {
+    const realIdx = customers.indexOf(c);
+    return `<tr onclick="viewCustomer(${realIdx})">
+      <td style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;color:#A67F38;">${c.id}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#A67F38,#D9B573);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#080808;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;">${initials(c.name)}</div>
+          <span style="color:#ccc;font-weight:500;">${c.name}</span>
+        </div>
+      </td>
+      <td style="color:#666;font-size:12px;">${c.email}</td>
+      <td style="color:#666;font-size:12px;">${c.phone}</td>
+      <td style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;" class="gt">${c.visits}</td>
+      <td style="color:#F2DB94;font-size:12px;">★ ${c.rating}</td>
+      <td>${badge(c.status)}</td>
+      <td>
+        <div style="display:flex;gap:5px;" onclick="event.stopPropagation()">
+          <button onclick="viewCustomer(${realIdx})" class="btn-e" style="padding:5px 9px;font-size:10px;"><i class="fas fa-eye"></i></button>
+          <button onclick="openEditCustomerDirect(${realIdx})" class="btn-e" style="padding:5px 9px;font-size:10px;"><i class="fas fa-pen"></i></button>
+          <button onclick="openDeleteDirect(${realIdx})" class="btn-d" style="padding:5px 9px;font-size:10px;"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(total);
+}
+
+function renderPagination(total){
+  const pages  = Math.max(1, Math.ceil(total/perPage));
+  const infoEl = document.getElementById('pagInfo');
+  const pagEl  = document.getElementById('pagBtns');
+
+  const start = total ? (currentPage-1)*perPage+1 : 0;
+  const end   = Math.min(currentPage*perPage, total);
+  infoEl.textContent = total ? `Showing ${start}–${end} of ${total}` : '0 results';
+
+  if(pages <= 1){ pagEl.innerHTML=''; return; }
+
+  let h = `<button onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''} style="padding:4px 9px;border-radius:6px;background:#141414;border:1px solid rgba(166,127,56,.18);color:#888;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;">‹</button>`;
+  for(let p=1; p<=pages; p++){
+    h += `<button onclick="goPage(${p})" style="padding:4px 9px;border-radius:6px;${p===currentPage?'background:linear-gradient(135deg,#A67F38,#D9B573);color:#080808;border:none;':'background:#141414;border:1px solid rgba(166,127,56,.12);color:#888;'}cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;">${p}</button>`;
+  }
+  h += `<button onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''} style="padding:4px 9px;border-radius:6px;background:#141414;border:1px solid rgba(166,127,56,.18);color:#888;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;">›</button>`;
+  pagEl.innerHTML = h;
+}
+
+function goPage(p){
+  const pages = Math.ceil(filteredCustomers.length/perPage);
+  if(p<1||p>pages) return;
+  currentPage = p;
+  renderTable();
+}
+
+
+/* ──────────────────────────────────────────
+   VIEW CUSTOMER MODAL
+────────────────────────────────────────── */
+function viewCustomer(idx){
+  viewingIdx = idx;
+  const c = customers[idx];
+  const loy = loyaltyTier(c.visits);
+
+  document.getElementById('modalAvatar').textContent = initials(c.name);
+  document.getElementById('modalName').textContent   = c.name;
+  document.getElementById('modalId').textContent     = c.id;
+  document.getElementById('modalStatus').innerHTML   = badge(c.status);
+  document.getElementById('modalEmail').textContent  = c.email;
+  document.getElementById('modalPhone').textContent  = c.phone;
+  document.getElementById('modalVisits').textContent = c.visits;
+  document.getElementById('modalRating').textContent = starStr(c.rating);
+  document.getElementById('modalLoyalty').textContent = loy.label;
+  document.getElementById('modalLoyaltyBar').style.width = '0%';
+  setTimeout(()=>{ document.getElementById('modalLoyaltyBar').style.width = loy.pct+'%'; }, 80);
+
+  openModal('cusModal');
+}
+
+
+/* ──────────────────────────────────────────
+   ADD CUSTOMER
+────────────────────────────────────────── */
+function openAddCustomer(){
+  document.getElementById('editModalTitle').textContent = 'Add Customer';
+  document.getElementById('editSaveBtn').textContent    = 'Add Customer';
+  document.getElementById('editIdx').value = '-1';
+  ['editFname','editLname','editEmail','editPhone'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('editVisits').value  = '0';
+  document.getElementById('editRating').value  = '5.0';
+  document.getElementById('editStatus').value  = 'active';
+  document.getElementById('editErrMsg').style.display = 'none';
+  openModal('editModal');
+}
+
+
+/* ──────────────────────────────────────────
+   EDIT CUSTOMER (from detail modal)
+────────────────────────────────────────── */
+function openEditCustomer(){
+  if(viewingIdx < 0) return;
+  closeModal('cusModal');
+  setTimeout(()=>openEditCustomerDirect(viewingIdx), 200);
+}
+
+function openEditCustomerDirect(idx){
+  const c = customers[idx];
+  const parts = c.name.split(' ');
+  document.getElementById('editModalTitle').textContent = 'Edit Customer';
+  document.getElementById('editSaveBtn').textContent    = 'Save Changes';
+  document.getElementById('editIdx').value   = idx;
+  document.getElementById('editFname').value = parts[0]||'';
+  document.getElementById('editLname').value = parts.slice(1).join(' ')||'';
+  document.getElementById('editEmail').value = c.email;
+  document.getElementById('editPhone').value = c.phone;
+  document.getElementById('editVisits').value = c.visits;
+  document.getElementById('editRating').value = c.rating;
+  document.getElementById('editStatus').value = c.status;
+  document.getElementById('editErrMsg').style.display = 'none';
+  openModal('editModal');
+}
+
+
+/* ──────────────────────────────────────────
+   SAVE (ADD / EDIT)
+────────────────────────────────────────── */
+function saveCustomer(){
+  const fn     = document.getElementById('editFname').value.trim();
+  const ln     = document.getElementById('editLname').value.trim();
+  const email  = document.getElementById('editEmail').value.trim();
+  const phone  = document.getElementById('editPhone').value.trim();
+  const visits = parseInt(document.getElementById('editVisits').value) || 0;
+  const rating = parseFloat(document.getElementById('editRating').value) || 5.0;
+  const status = document.getElementById('editStatus').value;
+  const idx    = parseInt(document.getElementById('editIdx').value);
+  const errEl  = document.getElementById('editErrMsg');
+
+  errEl.style.display = 'none';
+  if(!fn)    return showErr('First name is required.');
+  if(!email) return showErr('Email address is required.');
+  if(!phone) return showErr('Phone number is required.');
+  if(rating < 0 || rating > 5) return showErr('Rating must be between 0 and 5.');
+
+  const obj = {
+    id:     idx >= 0 ? customers[idx].id : 'CU-'+String(customers.length+1).padStart(3,'0'),
+    name:   fn + (ln?' '+ln:''),
+    email, phone, visits,
+    rating: Math.round(rating * 10)/10,
+    status
+  };
+
+  if(idx >= 0){
+    customers[idx] = obj;
+    showToast('Customer updated successfully!');
+  } else {
+    customers.push(obj);
+    showToast('Customer added successfully!');
+  }
+
+  closeModal('editModal');
+  applyFilters();
+  updateStats();
+
+  function showErr(msg){ errEl.textContent=msg; errEl.style.display='block'; }
+}
+
+
+/* ──────────────────────────────────────────
+   DELETE
+────────────────────────────────────────── */
+let pendingDelIdx = -1;
+
+function openDeleteConfirm(){
+  if(viewingIdx < 0) return;
+  closeModal('cusModal');
+  setTimeout(()=>openDeleteDirect(viewingIdx), 200);
+}
+
+function openDeleteDirect(idx){
+  pendingDelIdx = idx;
+  const c = customers[idx];
+  document.getElementById('delMsg').textContent =
+    `Delete "${c.name}" (${c.id})? This action cannot be undone.`;
+  openModal('delModal');
+}
+
+function doDelete(){
+  if(pendingDelIdx < 0) return;
+  const name = customers[pendingDelIdx].name;
+  customers.splice(pendingDelIdx, 1);
+  pendingDelIdx = -1;
+  viewingIdx    = -1;
+  closeModal('delModal');
+  applyFilters();
+  updateStats();
+  showToast(`"${name}" removed.`);
+}
+
+
+/* ──────────────────────────────────────────
+   EXPORT CSV
+────────────────────────────────────────── */
+function exportCSV(){
+  const rows = [['ID','Name','Email','Phone','Visits','Rating','Status']];
+  filteredCustomers.forEach(c=>rows.push([c.id,c.name,c.email,c.phone,c.visits,c.rating,c.status]));
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a   = document.createElement('a');
+  a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'REV_Customers_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  showToast('CSV exported!');
+}
+
+
+/* ──────────────────────────────────────────
+   INIT
+────────────────────────────────────────── */
+updateStats();
+applyFilters();
