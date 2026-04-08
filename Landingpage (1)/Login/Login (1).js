@@ -66,12 +66,14 @@ pwToggle('toggleLoginPassword',   'loginPassword');
 /* ── Sign Up ── */
 $('signupForm').addEventListener('submit', e => {
   e.preventDefault();
-  const name = $('fullName').value.trim();
+  const firstName = $('firstName').value.trim();
+  const lastName = $('lastName').value.trim();
   const email= $('email').value.trim();
   const pw   = $('password').value;
   const pw2  = $('confirmPassword').value;
 
-  if (!name)         { showToast('Please enter your full name.', 'error');             return; }
+  if (!firstName)    { showToast('Please enter your first name.', 'error');             return; }
+  if (!lastName)     { showToast('Please enter your last name.', 'error');              return; }
   if (!email)        { showToast('Please enter your email address.', 'error');         return; }
   if (pw.length < 6) { showToast('Password must be at least 6 characters.', 'error'); return; }
   if (pw !== pw2)    { showToast('Passwords do not match.', 'error');                  return; }

@@ -132,11 +132,19 @@
       <form class="form" id="signupForm" novalidate>
         <div class="field">
           <i class="fas fa-user field-icon"></i>
-          <input type="text"     id="fullName"        placeholder="Full Name"        autocomplete="name"         required>
+          <input type="text"     id="firstName"       placeholder="First Name"        autocomplete="given-name"   required>
+        </div>
+        <div class="field">
+          <i class="fas fa-user field-icon"></i>
+          <input type="text"     id="lastName"        placeholder="Last Name"         autocomplete="family-name"  required>
         </div>
         <div class="field">
           <i class="fas fa-envelope field-icon"></i>
           <input type="email"    id="email"            placeholder="Email Address"    autocomplete="email"        required>
+        </div>
+        <div class="field">
+          <i class="fas fa-phone field-icon"></i>
+          <input type="tel"      id="phone"            placeholder="Phone Number"     autocomplete="tel"          required>
         </div>
         <div class="field">
           <i class="fas fa-lock field-icon"></i>
