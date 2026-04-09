@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile Card — REV Auto</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ══════════════════════════════════════════
+       CSS VARIABLES & RESET
+    ══════════════════════════════════════════ */
+    :root {
+      --gold:        #F2DB94;
+      --gold-light:  #F2E1AE;
+      --gold-dark:   #D9B573;
+      --gold-deeper: #A67F38;
+      --gold-deep:   #7A5C20;
+
+      --bg-base:     #080808;
+      --bg-ink:      #101010;
+      --bg-ink2:     #141414;
+      --bg-ink3:     #1a1a1a;
+      --bg-ink4:     #1e1e1e;
+      --bg-surface:  rgba(255,255,255,.025);
+      --bg-surface2: rgba(255,255,255,.04);
+
+      --text-primary:   #dddddd;
+      --text-secondary: #888888;
+      --text-muted:     #484848;
+      --text-faint:     #2e2e2e;
+      --text-dim:       #3a3a3a;
+
+      --border:      rgba(166,127,56,.16);
+      --border-hi:   rgba(166,127,56,.32);
+      --border-soft: rgba(166,127,56,.1);
+
+      --overlay-bg: rgba(0,0,0,.6);
+    }
+
+    [data-theme="light"] {
+      --bg-base:     #f5f2ec;
+      --bg-ink:      #ffffff;
+      --bg-ink2:     #f0ede6;
+      --bg-ink3:     #e8e4dc;
+      --bg-ink4:     #dedad0;
+
+      --text-primary:   #111008;
+      --text-secondary: #3a3020;
+      --text-muted:     #5c5038;
+      --text-faint:     #8a7a60;
+      --text-dim:       #7a6c52;
+
+      --border:      rgba(130,98,40,.3);
+      --border-hi:   rgba(130,98,40,.55);
+      --border-soft: rgba(130,98,40,.2);
+
+      --overlay-bg: rgba(0,0,0,.5);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    button { cursor: pointer; font-family: inherit; border: none; background: none; }
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      transition: background .35s ease, color .35s ease;
+    }
+
+    @keyframes pulseDot { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.6)} 50%{box-shadow:0 0 0 8px rgba(16,185,129,0)} }
+    @keyframes pcPopin { from{opacity:0;transform:translateY(30px) scale(.94)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+    .gt {
+      background: linear-gradient(135deg,var(--gold-light),var(--gold),var(--gold-deeper));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ════════════════════════════
+       PROFILE CARD MODAL
+    ════════════════════════════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+      background: rgba(0,0,0,.78);
+      backdrop-filter: blur(10px);
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .pc-flip-card {
+      width: 300px;
+      height: 480px;
+      perspective: 1200px;
+      position: relative;
+      z-index: 10;
+      opacity: 0;
+      transform: translateY(30px) scale(.94);
+      transition: opacity .38s cubic-bezier(.25,.46,.45,.94), transform .38s cubic-bezier(.25,.46,.45,.94);
+    }
+
+    .pc-flip-card.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .pc-flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform .7s cubic-bezier(.4,0,.2,1);
+    }
+
+    .pc-flip-card.flipped .pc-flip-inner {
+      transform: rotateY(180deg);
+    }
+
+    .pc-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 0 0 2px #A67F38, 0 40px 100px rgba(0,0,0,.85);
+    }
+
+    .pc-front { background: #1a1a1a; }
+    .pc-back {
+      transform: rotateY(180deg);
+      background: linear-gradient(160deg,#1d1d1d,#111);
+    }
+
+    [data-theme="light"] .pc-back {
+      background: linear-gradient(160deg,#eeeae0,#ddd8cc);
+    }
+
+    .pc-flip-card.flipped #pcFront { pointer-events: none; }
+    .pc-flip-card:not(.flipped) #pcBack { pointer-events: none; }
+
+    .pc-gold-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      z-index: 10;
+      background: linear-gradient(90deg, transparent, #F2DB94, #A67F38, #F2DB94, transparent);
+    }
+
+    .pc-close-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 20;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0,0,0,.5);
+      color: #888;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      transition: all .2s;
+    }
+
+    .pc-close-btn:hover {
+      background: rgba(239,68,68,.2);
+      color: #ef4444;
+    }
+
+    /* ── Front Face ── */
+    .pc-photo-wrap {
+      position: relative;
+      height: 300px;
+      background: linear-gradient(135deg,#1e1e1e,#2a2a2a);
+    }
+
+    .pc-photo-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .pc-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top;
+    }
+
+    .pc-photo-grad {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,.04) 35%, rgba(10,10,10,.94) 100%);
+    }
+
+    .pc-status-dot {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 2px solid #1a1a1a;
+      animation: pulseDot 1.5s infinite;
+      box-shadow: 0 0 8px rgba(16,185,129,.7);
+    }
+
+    .pc-details-btn {
+      position: absolute;
+      bottom: 10px;
+      left: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(6px);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all .2s;
+      z-index: 10;
+    }
+
+    .pc-details-btn:hover {
+      background: rgba(166,127,56,.5);
+    }
+
+    .pc-name-block {
+      position: absolute;
+      bottom: 14px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      padding: 0 14px;
+    }
+
+    .pc-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 24px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+      text-shadow: 0 2px 12px rgba(0,0,0,.9);
+    }
+
+    .pc-role-badge {
+      font-size: 13px;
+      font-weight: 500;
+      color: #D9B573;
+      text-shadow: 0 1px 6px rgba(0,0,0,.8);
+    }
+
+    .pc-contact-strip {
+      padding: 16px;
+      background: linear-gradient(180deg,#161616,#111);
+      border-top: 1px solid rgba(166,127,56,.18);
+    }
+
+    [data-theme="light"] .pc-contact-strip {
+      background: linear-gradient(180deg,#e8e3d8,#ddd8cc);
+    }
+
+    .pc-contact-icons {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .pc-icon-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .pc-icon-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(166,127,56,.1);
+      border: 1.5px solid rgba(166,127,56,.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pc-icon-label {
+      font-size: 10px;
+      color: #A67F38;
+      letter-spacing: .5px;
+    }
+
+    .pc-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(166,127,56,.28), transparent);
+      margin-bottom: 10px;
+    }
+
+    .pc-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+    }
+
+    .pc-meta-col {
+      text-align: center;
+    }
+
+    .pc-meta-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      margin-bottom: 2px;
+    }
+
+    .pc-meta-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: #D9B573;
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    .pc-meta-status {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      justify-content: center;
+    }
+
+    .status-dot-green {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+    }
+
+    /* ── Back Face ── */
+    .pc-back-scroll {
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 14px;
+      box-sizing: border-box;
+    }
+
+    .pc-back-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .pc-see-less-btn, .pc-edit-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(166,127,56,.12);
+      border: 1px solid rgba(166,127,56,.28);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: #D9B573;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: all .2s;
+    }
+
+    .pc-see-less-btn:hover, .pc-edit-btn:hover {
+      background: rgba(166,127,56,.22);
+    }
+
+    .pc-back-avatar-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .pc-back-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: top;
+      border: 3px solid #A67F38;
+      box-shadow: 0 0 20px rgba(166,127,56,.4);
+    }
+
+    .pc-back-status-dot {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 2px solid #1d1d1d;
+      animation: pulseDot 1.5s infinite;
+    }
+
+    .pc-back-name-block {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .pc-back-name-block > div:first-child {
+      color: var(--text-primary);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .pc-back-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(166,127,56,.22), transparent);
+      margin-bottom: 14px;
+    }
+
+    .pc-fields-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pc-field-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      margin-bottom: 5px;
+    }
+
+    .pc-field-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(166,127,56,.14);
+    }
+
+    .pc-field-icon {
+      color: #A67F38;
+      font-size: 11px;
+      width: 14px;
+      flex-shrink: 0;
+    }
+
+    .pc-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-family: inherit;
+      min-width: 0;
+    }
+
+    .pc-input:disabled {
+      color: var(--text-secondary);
+    }
+
+    .pc-input:not(:disabled) {
+      color: var(--text-primary);
+      border-bottom: 1px solid rgba(166,127,56,.4);
+    }
+
+    .pc-action-btns {
+      display: flex;
+      gap: 8px;
+      padding-top: 12px;
+    }
+
+    .pc-action-btns.hidden {
+      display: none;
+    }
+
+    .pc-save-btn {
+      flex: 1;
+      padding: 10px;
+      background: linear-gradient(90deg, #8B6914, #D4A843, #F0C860);
+      border: none;
+      border-radius: 20px;
+      color: #000;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .pc-save-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(212,168,67,.4);
+    }
+
+    .pc-cancel-btn {
+      flex: 1;
+      padding: 10px;
+      background: var(--bg-ink3);
+      border: none;
+      border-radius: 20px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: background .2s;
+    }
+
+    .pc-cancel-btn:hover {
+      background: var(--bg-ink4);
+      color: var(--text-primary);
+    }
+
+    /* Light mode overrides */
+    [data-theme="light"] .pc-back-name-block > div:first-child {
+      color: #111008;
+    }
+
+    [data-theme="light"] .pc-field-row {
+      background: rgba(0,0,0,.04);
+      border-color: rgba(130,98,40,.18);
+    }
+
+    [data-theme="light"] .pc-input {
+      color: #3a3020;
+    }
+
+    [data-theme="light"] .pc-field-label {
+      color: #7a6c52;
+    }
+
+    [data-theme="light"] .pc-meta-val {
+      color: #7a5c20;
+    }
+
+    [data-theme="light"] .pc-save-btn {
+      background: linear-gradient(90deg, #d8d3c8, #eeeae0);
+      color: #3a3020;
+    }
+
+    [data-theme="light"] .pc-cancel-btn {
+      background: #e8e4dc;
+      color: #5c5038;
+    }
+  </style>
+</head>
+<body>
+
+<!-- PROFILE CARD MODAL -->
+<div id="profileCardOverlay" class="modal-overlay" onclick="handlePCOverlayClick(event)">
+  <div id="pcFlipCard" class="pc-flip-card">
+    <div id="pcFlipInner" class="pc-flip-inner">
+      <!-- FRONT -->
+      <div id="pcFront" class="pc-face pc-front">
+        <div class="pc-gold-bar"></div>
+        <div class="pc-photo-wrap">
+          <div class="pc-photo-inner">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop" alt="" id="pcFrontImg" class="pc-photo"/>
+            <div class="pc-photo-grad"></div>
+            <span class="pc-status-dot"></span>
+            <button onclick="pcFlipToBack()" class="pc-details-btn"><i class="fas fa-plus" style="font-size:12px;"></i></button>
+          </div>
+          <div class="pc-name-block"><h2 id="pcFrontName" class="pc-name"></h2><p id="pcFrontRole" class="pc-role-badge"></p></div>
+        </div>
+        <div class="pc-contact-strip">
+          <div class="pc-contact-icons">
+            <div class="pc-icon-col"><div class="pc-icon-circle"><i class="fas fa-clock" style="color:#D9B573;font-size:15px;"></i></div><span id="pcTimeIn" class="pc-icon-label">--:--</span></div>
+            <div class="pc-icon-col"><div class="pc-icon-circle"><i class="fas fa-phone" style="color:#D9B573;font-size:14px;"></i></div><span id="pcPhone" class="pc-icon-label" style="color:#888;"></span></div>
+            <div class="pc-icon-col"><div class="pc-icon-circle"><i class="fas fa-envelope" style="color:#D9B573;font-size:13px;"></i></div><span id="pcEmail" class="pc-icon-label" style="color:#888;max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span></div>
+          </div>
+          <div class="pc-divider"></div>
+          <div class="pc-meta-row">
+            <div class="pc-meta-col"><div class="pc-meta-label">Time In</div><div id="pcMetaTimeIn" class="pc-meta-val"></div></div>
+            <div class="pc-meta-col"><div class="pc-meta-label">Status</div><div class="pc-meta-status"><span class="status-dot-green"></span><span id="pcMetaStatus" class="pc-meta-val" style="color:#10b981;"></span></div></div>
+            <div class="pc-meta-col"><div class="pc-meta-label">Sign-in</div><div id="pcMetaShift" class="pc-meta-val"></div></div>
+          </div>
+        </div>
+        <button onclick="closeProfileCard()" class="pc-close-btn">✕</button>
+      </div>
+      <!-- BACK -->
+      <div id="pcBack" class="pc-face pc-back">
+        <div class="pc-gold-bar"></div>
+        <div id="pcBackScroll" class="pc-back-scroll">
+          <div class="pc-back-topbar">
+            <button onclick="pcFlipToFront()" class="pc-see-less-btn"><i class="fas fa-chevron-left" style="font-size:10px;"></i> See Less</button>
+            <button id="editBtn" onclick="toggleEdit()" class="pc-edit-btn"><i class="fas fa-pen" style="font-size:11px;"></i><span id="editBtnTxt">Edit</span></button>
+          </div>
+          <div class="pc-back-avatar-wrap"><div class="relative"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop" alt="" id="pcBackImg" class="pc-back-avatar"/><span class="pc-back-status-dot"></span></div></div>
+          <div class="pc-back-name-block"><div id="pcBackName" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;"></div><div id="pcBackRole" style="color:#A67F38;font-size:10px;letter-spacing:1px;text-transform:uppercase;"></div></div>
+          <div class="pc-back-divider"></div>
+          <div class="pc-fields-list">
+            <div class="pc-field-group"><div class="pc-field-label">Email</div><div class="pc-field-row"><i class="fas fa-envelope-open pc-field-icon"></i><input type="email" id="pcFieldEmail" disabled class="pc-input"/></div></div>
+            <div class="pc-field-group"><div class="pc-field-label">Secondary Email</div><div class="pc-field-row"><i class="fas fa-envelope-open pc-field-icon"></i><input type="email" id="pcFieldEmail2" disabled class="pc-input"/></div></div>
+            <div class="pc-field-group"><div class="pc-field-label">Contact Number</div><div class="pc-field-row"><i class="fas fa-phone pc-field-icon"></i><input type="text" id="pcFieldPhone" disabled class="pc-input"/></div></div>
+            <div class="pc-field-group"><div class="pc-field-label">Birthday</div><div class="pc-field-row"><i class="fas fa-birthday-cake pc-field-icon"></i><input type="text" id="pcFieldBday" disabled class="pc-input"/></div></div>
+            <div class="pc-field-group"><div class="pc-field-label">Address</div><div class="pc-field-row"><i class="fas fa-map-marker-alt pc-field-icon"></i><input type="text" id="pcFieldAddr" disabled class="pc-input"/></div></div>
+            <div class="pc-field-group"><div class="pc-field-label">Gender</div><div class="pc-field-row"><i class="fas fa-venus-mars pc-field-icon"></i><input type="text" id="pcFieldGender" disabled class="pc-input"/></div></div>
+          </div>
+          <div id="pcActionBtns" class="pc-action-btns hidden">
+            <button onclick="saveProfileChanges()" class="pc-save-btn"><i class="fas fa-check mr-1"></i>Save</button>
+            <button onclick="cancelEdit()" class="pc-cancel-btn"><i class="fas fa-times mr-1"></i>Cancel</button>
+          </div>
+          <div style="height:16px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ════════════════════════════
+     USER DATA
+  ════════════════════════════ */
+  const USER = {
+    name:     'John Doe',
+    email:    'johndoe@gmail.com',
+    email2:   'johndoe.alt@gmail.com',
+    role:     'Customer',
+    phone:    '09312345678',
+    birthday: 'April 20, 1999',
+    address:  'Makati City, Metro Manila',
+    gender:   'Male',
+    photo:    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
+  };
+
+  /* ════════════════════════════
+     EDIT MODE STATE
+  ════════════════════════════ */
+  let isEditMode = false;
+
+  /* ════════════════════════════
+     HELPERS
+  ════════════════════════════ */
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  function setVal(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val || '';
+  }
+
+  function getVal(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+  }
+
+  function fmtTime(d) {
+    return d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true });
+  }
+
+  /* ════════════════════════════
+     PROFILE CARD FUNCTIONS
+  ════════════════════════════ */
+  function openProfileCard() {
+    const overlay = document.getElementById('profileCardOverlay');
+    const card = document.getElementById('pcFlipCard');
+    if (overlay) overlay.classList.add('open');
+    if (card) {
+      setTimeout(() => card.classList.add('visible'), 50);
+    }
+    populateProfileCard();
+  }
+
+  function closeProfileCard() {
+    const overlay = document.getElementById('profileCardOverlay');
+    const card = document.getElementById('pcFlipCard');
+    if (card) card.classList.remove('visible');
+    setTimeout(() => {
+      if (overlay) overlay.classList.remove('open');
+      resetFlip();
+    }, 300);
+  }
+
+  function resetFlip() {
+    const card = document.getElementById('pcFlipCard');
+    if (card) card.classList.remove('flipped');
+    isEditMode = false;
+  }
+
+  function pcFlipToBack() {
+    const card = document.getElementById('pcFlipCard');
+    if (card) card.classList.add('flipped');
+  }
+
+  function pcFlipToFront() {
+    const card = document.getElementById('pcFlipCard');
+    if (card) card.classList.remove('flipped');
+    cancelEdit();
+  }
+
+  function handlePCOverlayClick(event) {
+    if (event.target === event.currentTarget) closeProfileCard();
+  }
+
+  /* ════════════════════════════
+     POPULATE PROFILE CARD
+  ════════════════════════════ */
+  function populateProfileCard() {
+    // Front face
+    setText('pcFrontName', USER.name);
+    setText('pcFrontRole', USER.role);
+    setText('pcPhone', USER.phone);
+    setText('pcEmail', USER.email);
+    setText('pcTimeIn', fmtTime(new Date()));
+    setText('pcMetaTimeIn', new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true }));
+    setText('pcMetaStatus', 'Online');
+    setText('pcMetaShift', 'Today');
+
+    // Back face
+    setText('pcBackName', USER.name);
+    setText('pcBackRole', USER.role);
+    setVal('pcFieldEmail', USER.email);
+    setVal('pcFieldEmail2', USER.email2);
+    setVal('pcFieldPhone', USER.phone);
+    setVal('pcFieldBday', USER.birthday);
+    setVal('pcFieldAddr', USER.address);
+    setVal('pcFieldGender', USER.gender);
+
+    // Images
+    document.getElementById('pcFrontImg').src = USER.photo;
+    document.getElementById('pcBackImg').src = USER.photo;
+  }
+
+  /* ════════════════════════════
+     EDIT MODE
+  ════════════════════════════ */
+  function toggleEdit() {
+    isEditMode = !isEditMode;
+    const fields = document.querySelectorAll('.pc-input');
+    const btnTxt = document.getElementById('editBtnTxt');
+    const actionBtns = document.getElementById('pcActionBtns');
+
+    fields.forEach(f => f.disabled = !isEditMode);
+    if (btnTxt) btnTxt.textContent = isEditMode ? 'Cancel' : 'Edit';
+    if (actionBtns) actionBtns.classList.toggle('hidden', !isEditMode);
+  }
+
+  function saveProfileChanges() {
+    // Update USER object with new values
+    USER.email = getVal('pcFieldEmail');
+    USER.email2 = getVal('pcFieldEmail2');
+    USER.phone = getVal('pcFieldPhone');
+    USER.birthday = getVal('pcFieldBday');
+    USER.address = getVal('pcFieldAddr');
+    USER.gender = getVal('pcFieldGender');
+
+    // Exit edit mode
+    isEditMode = false;
+    const fields = document.querySelectorAll('.pc-input');
+    fields.forEach(f => f.disabled = true);
+    const actionBtns = document.getElementById('pcActionBtns');
+    if (actionBtns) actionBtns.classList.add('hidden');
+    const btnTxt = document.getElementById('editBtnTxt');
+    if (btnTxt) btnTxt.textContent = 'Edit';
+
+    console.log('Profile updated:', USER);
+    alert('Profile changes saved successfully!');
+  }
+
+  function cancelEdit() {
+    if (!isEditMode) return;
+    isEditMode = false;
+    const fields = document.querySelectorAll('.pc-input');
+    fields.forEach(f => f.disabled = true);
+    const actionBtns = document.getElementById('pcActionBtns');
+    if (actionBtns) actionBtns.classList.add('hidden');
+    const btnTxt = document.getElementById('editBtnTxt');
+    if (btnTxt) btnTxt.textContent = 'Edit';
+    // Reset values to original
+    populateProfileCard();
+  }
+
+  /* ════════════════════════════
+     INITIALIZATION
+  ════════════════════════════ */
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('Profile Card initialized');
+    // Optional: Uncomment to show card on load
+    // openProfileCard();
+  });
+
+  // Allow opening from console
+  window.openProfileCard = openProfileCard;
+  window.closeProfileCard = closeProfileCard;
+  window.pcFlipToBack = pcFlipToBack;
+  window.pcFlipToFront = pcFlipToFront;
+  window.toggleEdit = toggleEdit;
+  window.saveProfileChanges = saveProfileChanges;
+  window.cancelEdit = cancelEdit;
+  window.handlePCOverlayClick = handlePCOverlayClick;
+</script>
+
+</body>
+</html>

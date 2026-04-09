@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>REV — Booking Page</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-kxQdonb2Y0N9oIYlwD0HwgW/D1qr6nlQ4NZOQORl9uRi/9k99eXn2HlY0K6Qj0E4xJYlOE6c7iK1Uj2+yX1g2w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #080808;
+  --surface: #141414;
+  --surface-strong: #0e0e0e;
+  --border: rgba(166,127,56,0.18);
+  --accent: #A67F38;
+  --accent-soft: rgba(166,127,56,0.12);
+  --text: #f5f1e7;
+  --muted: #999;
+  --muted-strong: #333;
+  --success: #10b981;
+  --danger: #f87171;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html, body {
+  min-height: 100%;
+}
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: radial-gradient(circle at top left, rgba(242,219,148,0.12), transparent 28%),
+              radial-gradient(circle at bottom right, rgba(255,255,255,0.05), transparent 25%),
+              var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  padding: 24px;
+}
+::selection {
+  background: rgba(166,127,56,0.25);
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(166,127,56,0.4);
+  border-radius: 999px;
+}
+.gt {
+  background: linear-gradient(135deg, #F2E1AE, #F2DB94, #A67F38);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.page-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2rem, 2.6vw, 3rem);
+  font-weight: 900;
+  margin-top: 6px;
+}
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.section-header .label {
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(242,219,148,0.6);
+  font-weight: 700;
+}
+.card {
+  background: linear-gradient(180deg, #141414 0%, #0f0f0f 100%);
+  border: 1px solid rgba(166,127,56,0.14);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 18px 55px rgba(0,0,0,0.35);
+}
+.card-padding {
+  padding: 16px 18px;
+}
+.btn-g,
+.btn-gh {
+  border: none;
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+.btn-g {
+  background: linear-gradient(135deg, #A67F38, #D9B573);
+  color: #080808;
+}
+.btn-g:hover {
+  transform: translateY(-1px);
+}
+.btn-gh {
+  background: rgba(255,255,255,0.04);
+  color: #f5f1e7;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.btn-gh:hover {
+  background: rgba(255,255,255,0.08);
+}
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.filter-button {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03);
+  color: #c6c6c6;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.filter-button.active,
+.filter-button:hover {
+  background: rgba(166,127,56,0.18);
+  color: var(--text);
+  border-color: rgba(166,127,56,0.32);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dt th,
+.dt td {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 0.92rem;
+}
+.dt th {
+  background: rgba(255,255,255,0.04);
+  color: rgba(242,219,148,0.9);
+  letter-spacing: 0.14em;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.dt td {
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: #c8c8c8;
+}
+.dt tbody tr:hover {
+  background: rgba(166,127,56,0.07);
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+}
+.status-confirmed { background: rgba(59,130,246,0.16); color: #60a5fa; }
+.status-pending   { background: rgba(166,127,56,0.16); color: #F2DB94; }
+.status-completed { background: rgba(16,185,129,0.14); color: #34d399; }
+.status-cancelled { background: rgba(239,68,68,0.14); color: #f87171; }
+.action-button {
+  appearance: none;
+  border: none;
+  background: linear-gradient(135deg, rgba(166,127,56,0.16), rgba(242,219,148,0.08));
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.action-button:hover {
+  background: rgba(242,219,148,0.12);
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-backdrop.open {
+  display: flex;
+}
+.modal-panel {
+  width: min(520px, 92%);
+  background: linear-gradient(160deg, #161616, #0d0d0d);
+  border: 1px solid rgba(166,127,56,0.2);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 28px 80px rgba(0,0,0,0.5);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.modal-header h3 {
+  margin: 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+.modal-close {
+  border: none;
+  background: transparent;
+  color: #ccc;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.modal-content {
+  display: grid;
+  gap: 12px;
+}
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+}
+.detail-row span:first-child {
+  color: #999;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.detail-row span:last-child {
+  color: #f5f1e7;
+  font-weight: 700;
+}
+@media (max-width: 720px) {
+  .section-header,
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-button {
+    width: 100%;
+  }
+}
+</style>
+</head>
+<body>
+<main>
+  <section class="section-header">
+    <div>
+      <div class="label">Manage</div>
+      <h1 class="page-title gt">Bookings</h1>
+    </div>
+    <button class="btn-g" id="newBookingBtn"><i class="fas fa-plus" style="margin-right:8px;"></i>New Booking</button>
+  </section>
+
+  <div class="filter-bar" id="bookingFilters">
+    <button class="filter-button active" data-filter="All">All</button>
+    <button class="filter-button" data-filter="pending">Pending</button>
+    <button class="filter-button" data-filter="confirmed">Confirmed</button>
+    <button class="filter-button" data-filter="completed">Completed</button>
+    <button class="filter-button" data-filter="cancelled">Cancelled</button>
+    <div style="margin-left:auto;font-size:0.88rem;color:var(--accent);font-weight:700;" id="bookingCount">0 bookings</div>
+  </div>
+
+  <div class="card">
+    <div class="card-padding" style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.95rem;color:var(--accent);" id="summaryCount">0 Bookings</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-gh">Export</button>
+        <button class="btn-gh">New Report</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="dt" style="min-width:760px;">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Customer</th>
+            <th>Service</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="bkTb"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div class="modal-backdrop" id="bookingModal">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">
+    <div class="modal-header">
+      <h3 id="bookingModalTitle" class="gt">Booking Details</h3>
+      <button class="modal-close" type="button" aria-label="Close" id="closeBookingModal">&times;</button>
+    </div>
+    <div class="modal-content" id="bookingDetails"></div>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn-g" id="confirmBookingBtn">Confirm</button>
+      <button class="btn-gh" id="cancelBookingBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const bookings = [
+  {id:'BK-001', customer:'Maria Santos', service:'Oil Change', date:'2024-12-01', time:'10:00 AM', status:'confirmed'},
+  {id:'BK-002', customer:'Jose Reyes', service:'Brake Repair', date:'2024-12-01', time:'11:30 AM', status:'pending'},
+  {id:'BK-003', customer:'Ana Cruz', service:'Engine Tune-Up', date:'2024-12-02', time:'9:00 AM', status:'confirmed'},
+  {id:'BK-004', customer:'Carlos Lim', service:'Tire Rotation', date:'2024-12-02', time:'2:00 PM', status:'completed'},
+  {id:'BK-005', customer:'Eva Mendoza', service:'Battery Check', date:'2024-12-03', time:'10:30 AM', status:'cancelled'},
+  {id:'BK-006', customer:'Ramon Torres', service:'AC Service', date:'2024-12-03', time:'1:00 PM', status:'pending'}
+];
+
+let currentFilter = 'All';
+let currentBooking = null;
+
+const statusMap = {
+  confirmed: 'status-confirmed',
+  pending: 'status-pending',
+  completed: 'status-completed',
+  cancelled: 'status-cancelled'
+};
+
+function badge(status) {
+  const key = status.toLowerCase();
+  const style = statusMap[key] || 'status-pending';
+  return `<span class="status-pill ${style}">${status}</span>`;
+}
+
+function renderBookingTable() {
+  const tbody = document.getElementById('bkTb');
+  const filtered = bookings.filter(b => currentFilter === 'All' || b.status === currentFilter);
+  tbody.innerHTML = filtered.map((booking, index) => `
+    <tr>
+      <td style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent);">${booking.id}</td>
+      <td>${booking.customer}</td>
+      <td>${booking.service}</td>
+      <td>${booking.date}</td>
+      <td>${booking.time}</td>
+      <td>${badge(booking.status)}</td>
+      <td><button class="action-button" type="button" data-index="${index}"><i class="fas fa-eye" style="margin-right:6px;"></i>View</button></td>
+    </tr>
+  `).join('');
+  document.getElementById('bookingCount').textContent = `${filtered.length} booking${filtered.length === 1 ? '' : 's'}`;
+  document.getElementById('summaryCount').textContent = `${filtered.length} Bookings`;
+  attachRowActions();
+}
+
+function attachRowActions() {
+  document.querySelectorAll('#bkTb button[data-index]').forEach(button => {
+    button.addEventListener('click', () => {
+      const idx = Number(button.dataset.index);
+      showBookingDetail(bookings[idx]);
+    });
+  });
+}
+
+function showBookingDetail(booking) {
+  currentBooking = booking;
+  const details = document.getElementById('bookingDetails');
+  details.innerHTML = [
+    ['Booking ID', booking.id],
+    ['Customer', booking.customer],
+    ['Service', booking.service],
+    ['Date', booking.date],
+    ['Time', booking.time],
+    ['Status', booking.status]
+  ].map(pair => `
+    <div class="detail-row">
+      <span>${pair[0]}</span>
+      <span>${pair[1]}</span>
+    </div>
+  `).join('');
+  openModal('bookingModal');
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function setFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('#bookingFilters .filter-button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  renderBookingTable();
+}
+
+function init() {
+  document.getElementById('bookingFilters').addEventListener('click', event => {
+    const button = event.target.closest('.filter-button');
+    if (!button) return;
+    setFilter(button.dataset.filter);
+  });
+
+  document.getElementById('closeBookingModal').addEventListener('click', () => closeModal('bookingModal'));
+  document.getElementById('cancelBookingBtn').addEventListener('click', () => closeModal('bookingModal'));
+  document.getElementById('newBookingBtn').addEventListener('click', () => alert('Add a new booking flow can be implemented here.'));
+
+  document.getElementById('confirmBookingBtn').addEventListener('click', () => {
+    if (!currentBooking) return;
+    currentBooking.status = 'confirmed';
+    renderBookingTable();
+    closeModal('bookingModal');
+  });
+
+  renderBookingTable();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
