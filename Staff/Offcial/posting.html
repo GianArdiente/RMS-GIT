@@ -502,47 +502,6 @@
   </div>
 </div>
 
-<!-- ASSIGN TASK MODAL -->
-<div id="assignModal" class="assign-modal">
-  <div style="position:absolute;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);" onclick="closeAssignModal()"></div>
-  <div class="assign-modal-box">
-    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#A67F38,#F2DB94,#A67F38,transparent);"></div>
-    <div style="padding:24px 26px;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
-        <div>
-          <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#A67F38;font-family:'Rajdhani',sans-serif;font-weight:700;margin-bottom:4px;">Task Assignment</div>
-          <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:#fff;line-height:1;">Assign Technician</h2>
-        </div>
-        <button onclick="closeAssignModal()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:#555;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-times" style="font-size:13px;"></i></button>
-      </div>
-      <div id="assignBookingInfo" style="background:rgba(166,127,56,.06);border:1px solid rgba(166,127,56,.18);border-radius:12px;padding:14px;margin-bottom:18px;"></div>
-      <div style="margin-bottom:16px;">
-        <div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;font-weight:700;color:#3a3a3a;margin-bottom:8px;">PRIORITY LEVEL</div>
-        <div style="display:flex;gap:7px;">
-          <button class="priority-btn active" id="pri-low"    onclick="setPriority('Low')"   style="background:rgba(16,185,129,.1);color:#10b981;border-color:rgba(16,185,129,.3);">Low</button>
-          <button class="priority-btn"        id="pri-normal" onclick="setPriority('Normal')" style="background:rgba(166,127,56,.08);color:#D9B573;border-color:rgba(166,127,56,.2);">Normal</button>
-          <button class="priority-btn"        id="pri-high"   onclick="setPriority('High')"  style="background:rgba(217,119,6,.08);color:#d97706;border-color:rgba(217,119,6,.2);">High</button>
-          <button class="priority-btn"        id="pri-urgent" onclick="setPriority('Urgent')" style="background:rgba(239,68,68,.08);color:#f87171;border-color:rgba(239,68,68,.2);">Urgent</button>
-        </div>
-      </div>
-      <div style="margin-bottom:18px;">
-        <div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;font-weight:700;color:#3a3a3a;margin-bottom:6px;">NOTES FOR TECHNICIAN</div>
-        <textarea id="assignNotes" class="ci" rows="2" placeholder="Special instructions, parts needed, etc..." style="resize:none;font-size:12px;"></textarea>
-      </div>
-      <div style="margin-bottom:20px;">
-        <div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;font-weight:700;color:#3a3a3a;margin-bottom:10px;">SELECT TECHNICIAN</div>
-        <div id="techSelectList" style="display:flex;flex-direction:column;gap:7px;max-height:210px;overflow-y:auto;"></div>
-      </div>
-      <div style="display:flex;gap:9px;">
-        <button onclick="closeAssignModal()" class="btn-gh" style="flex:1;padding:12px;border-radius:10px;font-size:13px;">Cancel</button>
-        <button onclick="confirmAssign()" class="btn-shine btn-g" style="flex:2;padding:12px;border-radius:10px;font-size:13px;box-shadow:0 4px 20px rgba(166,127,56,.28);">
-          <i class="fas fa-wrench" style="margin-right:6px;font-size:11px;"></i>Assign Task
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ═══════════════════════════════════════════
      CUSTOMER DETAIL MODAL
 ═══════════════════════════════════════════ -->
@@ -715,7 +674,7 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <div class="hsr"><i class="fas fa-search" style="color:#252525;font-size:11px;"></i><input type="text" placeholder="Search..."></div>
+        <div class="hsr"><i class="fas fa-search" style="color:#252525;font-size:11px;"></i><input type="text" id="globalSearch" placeholder="Search..."></div>
         <div id="clkWrap" style="text-align:right;">
           <div id="clkTime" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;color:#A67F38;"></div>
           <div id="clkDate" style="font-size:9px;color:#252525;"></div>
@@ -1118,7 +1077,7 @@ let bookingQueue = [
   {id:'BK-006',customer:'Luis Garcia',  service:'AC Repair',     vehicle:'Hyundai Tucson 2021',date:'Dec 3',time:'1:00 PM', priority:'Normal',status:'assigned',  assignedTo:2},
   {id:'BK-007',customer:'Rosa Flores',  service:'Wheel Alignment',vehicle:'Toyota Vios 2020',  date:'Dec 4',time:'3:00 PM', priority:'Low',   status:'assigned',  assignedTo:2},
 ];
-let assignLog=[],assigningBookingId=null,selectedTechId=null,selectedPriority='Low',techFilter='all';
+let assignLog=[],techFilter='all';
 
 /* ══════════════════════════════════
    CUSTOMERS DATA
@@ -1206,7 +1165,7 @@ function renderTechRoster(){
     const workload=Math.min(tasks.length/4,1);
     const wColor=workload>.7?'#f87171':workload>.4?'#d97706':'#10b981';
     const card=document.createElement('div');card.className=`tech-card ${t.status}`;card.style.cssText=`padding:16px;animation:fadeUp .35s ease ${i*.06}s both;`;
-    card.innerHTML=`<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;"><div class="tech-avatar" style="background:${t.gradient};">${t.initials}<div class="status-pip" style="background:${sc.pipBg};"></div></div><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#ddd;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</div><div style="font-size:10px;color:#555;margin-top:2px;">${t.role}</div><span style="display:inline-block;margin-top:5px;padding:2px 8px;border-radius:20px;font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:${sc.bg};color:${sc.color};border:1px solid ${sc.color}33;">${sc.label}</span></div></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">${t.specialties.map(s=>`<span style="padding:2px 7px;border-radius:20px;font-family:'Rajdhani',sans-serif;font-size:8.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(166,127,56,.07);color:#5a5a5a;border:1px solid rgba(166,127,56,.12);">${s}</span>`).join('')}</div><div style="margin-bottom:12px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"><span style="font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;font-weight:700;color:#3a3a3a;">Workload</span><span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;color:${wColor};">${tasks.length} task${tasks.length!==1?'s':''}</span></div><div class="workload-bar"><div class="workload-fill" style="width:${workload*100}%;background:${wColor};"></div></div></div><div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">${tasks.length===0?`<div class="assignment-slot" style="text-align:center;font-size:10px;"><i class="fas fa-inbox" style="margin-right:5px;"></i>No tasks assigned</div>`:tasks.map(b=>{const pc=PRIORITY_CFG[b.priority]||PRIORITY_CFG.Normal;return`<div class="assignment-slot filled" style="display:flex;align-items:center;justify-content:space-between;" onclick="unassignBooking('${b.id}')" title="Click to unassign"><div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.service}</div><div style="font-size:9px;color:#444;">${b.customer} · ${b.time}</div></div><div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:8px;"><span style="padding:1px 6px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:${pc.bg};color:${pc.color};border:1px solid ${pc.border};">${b.priority}</span><i class="fas fa-times" style="color:#2a2a2a;font-size:9px;cursor:pointer;"></i></div></div>`;}).join('')}</div><button onclick="openAssignModal(null,${t.id})" class="btn-shine btn-g" style="width:100%;padding:9px;font-size:11px;border-radius:9px;${t.status==='busy'?'opacity:.6;':''}"><i class="fas fa-plus" style="margin-right:5px;font-size:10px;"></i>Assign Booking</button>`;
+    card.innerHTML=`<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;"><div class="tech-avatar" style="background:${t.gradient};">${t.initials}<div class="status-pip" style="background:${sc.pipBg};"></div></div><div style="flex:1;min-width:0;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#ddd;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</div><div style="font-size:10px;color:#555;margin-top:2px;">${t.role}</div><span style="display:inline-block;margin-top:5px;padding:2px 8px;border-radius:20px;font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:${sc.bg};color:${sc.color};border:1px solid ${sc.color}33;">${sc.label}</span></div></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">${t.specialties.map(s=>`<span style="padding:2px 7px;border-radius:20px;font-family:'Rajdhani',sans-serif;font-size:8.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(166,127,56,.07);color:#5a5a5a;border:1px solid rgba(166,127,56,.12);">${s}</span>`).join('')}</div><div style="margin-bottom:12px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"><span style="font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;font-weight:700;color:#3a3a3a;">Workload</span><span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;color:${wColor};">${tasks.length} task${tasks.length!==1?'s':''}</span></div><div class="workload-bar"><div class="workload-fill" style="width:${workload*100}%;background:${wColor};"></div></div></div><div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">${tasks.length===0?`<div class="assignment-slot" style="text-align:center;font-size:10px;"><i class="fas fa-inbox" style="margin-right:5px;"></i>No tasks assigned</div>`:tasks.map(b=>{const pc=PRIORITY_CFG[b.priority]||PRIORITY_CFG.Normal;return`<div class="assignment-slot filled" style="display:flex;align-items:center;justify-content:space-between;" onclick="unassignBooking('${b.id}')" title="Click to unassign"><div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.service}</div><div style="font-size:9px;color:#444;">${b.customer} · ${b.time}</div></div><div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:8px;"><span style="padding:1px 6px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:${pc.bg};color:${pc.color};border:1px solid ${pc.border};">${b.priority}</span><i class="fas fa-times" style="color:#2a2a2a;font-size:9px;cursor:pointer;"></i></div></div>`;}).join('')}</div>`;
     el.appendChild(card);
   });
   updateTechStats();
@@ -1234,70 +1193,9 @@ function renderBookingQueue(){
     const isAssigned=b.status==='assigned';
     const tech=isAssigned?technicians.find(t=>t.id===b.assignedTo):null;
     const chip=document.createElement('div');chip.className=`booking-chip ${isAssigned?'assigned':''}`;chip.style.animationDelay=(i*.04)+'s';
-    chip.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;"><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span style="font-family:'Rajdhani',sans-serif;font-weight:900;font-size:10px;letter-spacing:1.5px;color:#A67F38;">${b.id}</span><span style="padding:1px 6px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:${pc.bg};color:${pc.color};border:1px solid ${pc.border};">${b.priority}</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:#ddd;line-height:1.1;">${b.service}</div></div>${isAssigned?`<span style="padding:2px 7px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);flex-shrink:0;">Assigned</span>`:`<span class="unassigned-badge" style="padding:2px 7px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(166,127,56,.1);color:#D9B573;border:1px solid rgba(166,127,56,.25);flex-shrink:0;">Pending</span>`}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"><div style="display:flex;align-items:center;gap:4px;"><i class="fas fa-user" style="color:#3a3a3a;font-size:9px;"></i><span style="font-size:11px;color:#666;">${b.customer}</span></div><div style="display:flex;align-items:center;gap:4px;"><i class="fas fa-car" style="color:#3a3a3a;font-size:9px;"></i><span style="font-size:11px;color:#555;">${b.vehicle}</span></div></div><div style="display:flex;align-items:center;justify-content:space-between;"><div style="display:flex;align-items:center;gap:4px;"><i class="fas fa-clock" style="color:#3a3a3a;font-size:9px;"></i><span style="font-size:10px;color:#444;">${b.date} · ${b.time}</span></div>${isAssigned&&tech?`<div style="display:flex;align-items:center;gap:5px;"><div style="width:18px;height:18px;border-radius:50%;background:${tech.gradient};display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:900;color:#080808;">${tech.initials}</div><span style="font-size:10px;color:#A67F38;font-family:'Rajdhani',sans-serif;font-weight:700;">${tech.name.split(' ')[0]}</span><button onclick="unassignBooking('${b.id}')" style="padding:2px 7px;border-radius:6px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);color:#f87171;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:8.5px;cursor:pointer;letter-spacing:.5px;">Unassign</button></div>`:`<button onclick="openAssignModal('${b.id}',null)" class="btn-shine btn-g" style="font-size:10px;padding:5px 11px;border-radius:7px;"><i class="fas fa-wrench" style="margin-right:4px;font-size:9px;"></i>Assign</button>`}</div>`;
+    chip.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;"><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span style="font-family:'Rajdhani',sans-serif;font-weight:900;font-size:10px;letter-spacing:1.5px;color:#A67F38;">${b.id}</span><span style="padding:1px 6px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:${pc.bg};color:${pc.color};border:1px solid ${pc.border};">${b.priority}</span></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:#ddd;line-height:1.1;">${b.service}</div></div>${isAssigned?`<span style="padding:2px 7px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);flex-shrink:0;">Assigned</span>`:`<span class="unassigned-badge" style="padding:2px 7px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(166,127,56,.1);color:#D9B573;border:1px solid rgba(166,127,56,.25);flex-shrink:0;">Pending</span>`}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"><div style="display:flex;align-items:center;gap:4px;"><i class="fas fa-user" style="color:#3a3a3a;font-size:9px;"></i><span style="font-size:11px;color:#666;">${b.customer}</span></div><div style="display:flex;align-items:center;gap:4px;"><i class="fas fa-car" style="color:#3a3a3a;font-size:9px;"></i><span style="font-size:11px;color:#555;">${b.vehicle}</span></div></div><div style="display:flex;align-items:center;justify-content:space-between;"><div style="display:flex;align-items:center;gap:4px;"><i class="fas fa-clock" style="color:#3a3a3a;font-size:9px;"></i><span style="font-size:10px;color:#444;">${b.date} · ${b.time}</span></div>${isAssigned&&tech?`<div style="display:flex;align-items:center;gap:5px;"><div style="width:18px;height:18px;border-radius:50%;background:${tech.gradient};display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:900;color:#080808;">${tech.initials}</div><span style="font-size:10px;color:#A67F38;font-family:'Rajdhani',sans-serif;font-weight:700;">${tech.name.split(' ')[0]}</span><button onclick="unassignBooking('${b.id}')" style="padding:2px 7px;border-radius:6px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);color:#f87171;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:8.5px;cursor:pointer;letter-spacing:.5px;">Unassign</button></div>`:''}</div>`;
     el.appendChild(chip);
   });
-}
-
-function openAssignModal(bookingId,techId){
-  assigningBookingId=bookingId;selectedTechId=techId;selectedPriority='Normal';
-  const infoEl=document.getElementById('assignBookingInfo');
-  if(bookingId){
-    const b=bookingQueue.find(x=>x.id===bookingId);
-    if(b){selectedPriority=b.priority;infoEl.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div><div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#3a3a3a;font-family:'Rajdhani',sans-serif;font-weight:700;margin-bottom:3px;">Booking ID</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:#F2DB94;">${b.id}</div></div><div><div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#3a3a3a;font-family:'Rajdhani',sans-serif;font-weight:700;margin-bottom:3px;">Service</div><div style="font-size:13px;font-weight:600;color:#ccc;">${b.service}</div></div><div><div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#3a3a3a;font-family:'Rajdhani',sans-serif;font-weight:700;margin-bottom:3px;">Customer</div><div style="font-size:12px;color:#aaa;">${b.customer}</div></div><div><div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#3a3a3a;font-family:'Rajdhani',sans-serif;font-weight:700;margin-bottom:3px;">Schedule</div><div style="font-size:12px;color:#aaa;">${b.date} · ${b.time}</div></div><div style="grid-column:span 2;"><div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#3a3a3a;font-family:'Rajdhani',sans-serif;font-weight:700;margin-bottom:3px;">Vehicle</div><div style="font-size:12px;color:#aaa;">${b.vehicle}</div></div></div>`;}
-  } else {
-    infoEl.innerHTML=`<div style="display:flex;align-items:center;gap:8px;"><i class="fas fa-info-circle" style="color:#A67F38;font-size:13px;"></i><span style="font-size:12px;color:#777;">Select a booking from the list below.</span></div>`;
-  }
-  const tl=document.getElementById('techSelectList');tl.innerHTML='';
-  technicians.forEach(t=>{
-    const sc=STATUS_CFG[t.status]||STATUS_CFG.available;
-    const tasks=bookingQueue.filter(b=>b.assignedTo===t.id).length;
-    const isSelected=t.id===selectedTechId;
-    const row=document.createElement('div');row.className=`tech-select-row ${isSelected?'selected':''}`;row.id=`tsr-${t.id}`;row.onclick=()=>selectTech(t.id);
-    row.innerHTML=`<div class="tech-avatar" style="width:38px;height:38px;border-radius:10px;background:${t.gradient};font-size:14px;position:relative;flex-shrink:0;">${t.initials}<div class="status-pip" style="background:${sc.pipBg};"></div></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:#ccc;">${t.name}</div><div style="font-size:10px;color:#555;">${t.role}</div></div><div style="text-align:right;flex-shrink:0;"><span style="padding:2px 7px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:8.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:${sc.bg};color:${sc.color};border:1px solid ${sc.color}33;display:block;margin-bottom:4px;">${sc.label}</span><div class="workload-bar" style="width:60px;"><div class="workload-fill" style="width:${Math.min(tasks/4,1)*100}%;background:${tasks>3?'#f87171':tasks>1?'#d97706':'#10b981'};"></div></div><div style="font-size:9px;color:#444;margin-top:2px;font-family:'Rajdhani',sans-serif;">${tasks} task${tasks!==1?'s':''}</div></div>`;
-    tl.appendChild(row);
-  });
-  if(!bookingId){
-    const existing=document.getElementById('bookingSelectorWrap');if(existing)existing.remove();
-    const bSel=document.createElement('div');bSel.id='bookingSelectorWrap';bSel.style.cssText='margin-bottom:16px;';
-    bSel.innerHTML=`<div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;font-family:'Rajdhani',sans-serif;font-weight:700;color:#3a3a3a;margin-bottom:8px;">SELECT BOOKING</div><select id="bookingSelect" class="ci" style="font-size:12px;color-scheme:dark;cursor:pointer;"><option value="">— Choose an unassigned booking —</option>${bookingQueue.filter(b=>b.status==='unassigned').map(b=>`<option value="${b.id}">${b.id} · ${b.service} — ${b.customer}</option>`).join('')}</select>`;
-    tl.parentElement.insertBefore(bSel,tl);
-  }
-  setPriority(selectedPriority);
-  document.getElementById('assignNotes').value='';
-  document.getElementById('assignModal').classList.add('open');
-}
-
-function closeAssignModal(){
-  document.getElementById('assignModal').classList.remove('open');
-  const bSel=document.getElementById('bookingSelectorWrap');if(bSel)bSel.remove();
-  assigningBookingId=null;selectedTechId=null;
-}
-
-function selectTech(id){
-  selectedTechId=id;
-  document.querySelectorAll('.tech-select-row').forEach(r=>r.classList.remove('selected'));
-  const row=document.getElementById(`tsr-${id}`);if(row)row.classList.add('selected');
-}
-
-function setPriority(p){
-  selectedPriority=p;
-  ['low','normal','high','urgent'].forEach(k=>{const btn=document.getElementById(`pri-${k}`);if(!btn)return;btn.classList.toggle('active',k===p.toLowerCase());});
-}
-
-function confirmAssign(){
-  let bId=assigningBookingId;
-  if(!bId){const sel=document.getElementById('bookingSelect');if(sel&&sel.value)bId=sel.value;}
-  if(!bId){showToast('Please select a booking','error');return;}
-  if(!selectedTechId){showToast('Please select a technician','error');return;}
-  const booking=bookingQueue.find(b=>b.id===bId);const tech=technicians.find(t=>t.id===selectedTechId);if(!booking||!tech)return;
-  const notes=document.getElementById('assignNotes')?.value.trim()||'';
-  if(booking.assignedTo){const oldTech=technicians.find(t=>t.id===booking.assignedTo);if(oldTech)oldTech.status='available';}
-  booking.assignedTo=selectedTechId;booking.status='assigned';booking.priority=selectedPriority;booking.notes=notes;
-  tech.status='busy';
-  assignLog.unshift({techName:tech.name,techInitials:tech.initials,techGradient:tech.gradient,bookingId:booking.id,service:booking.service,customer:booking.customer,priority:selectedPriority,notes,time:new Date().toLocaleTimeString('en-US',{hour12:false})});
-  closeAssignModal();renderTechRoster();renderBookingQueue();renderAssignLog();updateTechStats();
-  showToast(`${booking.id} assigned to ${tech.name.split(' ')[0]}`,'ok');
 }
 
 function unassignBooking(bId){
@@ -1685,7 +1583,7 @@ function renderBkList(){
       <td style="color:#666;font-size:12px;">${b.time}</td>
       <td><span style="padding:2px 8px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:${pc.bg};color:${pc.color};border:1px solid ${pc.border};">${b.priority}</span></td>
       <td><span style="padding:3px 9px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:${sc.bg};color:${sc.color};border:1px solid ${sc.color}33;">${displayStatus}</span></td>
-      <td onclick="event.stopPropagation();"><div style="display:flex;gap:5px;"><button onclick="showBkDetails(${bookingQueue.indexOf(b)})" class="btn-e" style="padding:5px 9px;font-size:10px;"><i class="fas fa-eye"></i></button>${b.status==='unassigned'?`<button onclick="openAssignModal('${b.id}',null)" class="btn-g" style="padding:5px 9px;font-size:10px;"><i class="fas fa-wrench"></i></button>`:''}</div></td>
+      <td onclick="event.stopPropagation();"><div style="display:flex;gap:5px;"><button onclick="showBkDetails(${bookingQueue.indexOf(b)})" class="btn-e" style="padding:5px 9px;font-size:10px;"><i class="fas fa-eye"></i></button></div></td>
     </tr>`;
   }).join('');
 }

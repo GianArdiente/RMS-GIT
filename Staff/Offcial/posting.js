@@ -61,6 +61,7 @@ let assigningBookingId = null;
 let selectedTechId = null;
 let selectedPriority = 'Low';
 let techFilter = 'all';
+let techSearch = '';
 
 /* ══════════════════════════════════
    TECHNICIANS RENDER
@@ -80,7 +81,18 @@ const PRIORITY_CFG = {
 
 function renderTechRoster() {
   const el = document.getElementById('techRoster'); if (!el) return;
-  const filtered = techFilter === 'all' ? technicians : technicians.filter(t => t.status === techFilter);
+  let filtered = techFilter === 'all' ? technicians : technicians.filter(t => t.status === techFilter);
+  
+  // Apply search filter
+  if (techSearch.trim()) {
+    const query = techSearch.toLowerCase().trim();
+    filtered = filtered.filter(t => 
+      t.name.toLowerCase().includes(query) || 
+      t.role.toLowerCase().includes(query) || 
+      t.specialties.some(s => s.toLowerCase().includes(query))
+    );
+  }
+  
   el.innerHTML = '';
   filtered.forEach((t, i) => {
     const sc  = STATUS_CFG[t.status] || STATUS_CFG.available;
@@ -703,6 +715,27 @@ window.addEventListener('resize',onResize);onResize();
 /* INIT */
 renderFeatGrid(); renderShopDash(); renderRecent(); renderChart(); renderLive(); renderNotifs(); updateStats(); renderPostsList();
 renderTechRoster(); renderBookingQueue(); renderAssignLog(); updateTechStats();
+
+// Global search functionality
+let searchTimeout;
+function handleGlobalSearch() {
+  const input = document.getElementById('globalSearch');
+  if (input) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      techSearch = input.value;
+      renderTechRoster();
+    }, 300); // 300ms debounce
+  }
+}
+
+// Add event listener for global search
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('globalSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', handleGlobalSearch);
+  }
+});
 
 
 

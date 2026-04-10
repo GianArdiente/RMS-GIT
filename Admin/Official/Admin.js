@@ -1387,5 +1387,91 @@ buildHistoryRows(allRecords);
     render();
 
     // DASHBOARD
+
+    // PROFILE CARD FUNCTIONS
+    function openProfileCard() {
+      const overlay = document.getElementById('profileCardOverlay');
+      const card = document.getElementById('pcFlipCard');
+      if (overlay && card) {
+        overlay.classList.add('open');
+        setTimeout(() => card.classList.add('visible'), 10);
+        // Populate with sample data (replace with actual user data)
+        document.getElementById('pcFrontImg').src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop';
+        document.getElementById('pcFrontName').textContent = 'John Doe';
+        document.getElementById('pcFrontRole').textContent = 'Administrator';
+        document.getElementById('pcTimeIn').textContent = '08:30 AM';
+        document.getElementById('pcPhone').textContent = '+1 555-0123';
+        document.getElementById('pcEmail').textContent = 'john.doe@revauto.com';
+        document.getElementById('pcMetaTimeIn').textContent = '08:30 AM';
+        document.getElementById('pcMetaStatus').textContent = 'Active';
+        document.getElementById('pcMetaShift').textContent = 'Morning';
+        document.getElementById('pcBackImg').src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop';
+        document.getElementById('pcBackName').textContent = 'John Doe';
+        document.getElementById('pcBackRole').textContent = 'Administrator';
+        document.getElementById('pcFieldEmail').value = 'john.doe@revauto.com';
+        document.getElementById('pcFieldEmail2').value = 'johndoe@gmail.com';
+        document.getElementById('pcFieldPhone').value = '+1 555-0123';
+        document.getElementById('pcFieldBday').value = '1990-01-15';
+        document.getElementById('pcFieldAddr').value = '123 Admin St, City, State';
+        document.getElementById('pcFieldGender').value = 'Male';
+      }
+    }
+
+    function closeProfileCard() {
+      const overlay = document.getElementById('profileCardOverlay');
+      const card = document.getElementById('pcFlipCard');
+      if (overlay && card) {
+        card.classList.remove('visible');
+        setTimeout(() => overlay.classList.remove('open'), 300);
+        // Reset flip state
+        card.classList.remove('flipped');
+      }
+    }
+
+    function handlePCOverlayClick(event) {
+      if (event.target.id === 'profileCardOverlay') {
+        closeProfileCard();
+      }
+    }
+
+    function pcFlipToBack() {
+      document.getElementById('pcFlipCard').classList.add('flipped');
+    }
+
+    function pcFlipToFront() {
+      document.getElementById('pcFlipCard').classList.remove('flipped');
+    }
+
+    function toggleEdit() {
+      const btn = document.getElementById('editBtn');
+      const txt = document.getElementById('editBtnTxt');
+      const inputs = document.querySelectorAll('.pc-input');
+      const actions = document.getElementById('pcActionBtns');
+      
+      if (btn.classList.contains('editing')) {
+        // Cancel edit
+        btn.classList.remove('editing');
+        txt.textContent = 'Edit';
+        inputs.forEach(input => input.disabled = true);
+        actions.classList.add('hidden');
+      } else {
+        // Start edit
+        btn.classList.add('editing');
+        txt.textContent = 'Cancel';
+        inputs.forEach(input => input.disabled = false);
+        actions.classList.remove('hidden');
+      }
+    }
+
+    function saveProfileChanges() {
+      // Implement save logic here
+      toast('ok', 'Profile updated successfully!');
+      toggleEdit();
+    }
+
+    function cancelEdit() {
+      // Reset values if needed
+      toggleEdit();
+    }
     
  
