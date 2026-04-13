@@ -84,7 +84,6 @@ document.getElementById("loginForm").addEventListener("submit", function(e){
     .catch((error) => {
       showToast(error.message, "error");
     });
-
 });
 
 
