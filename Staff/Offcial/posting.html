@@ -453,7 +453,7 @@
             <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop" alt="" id="pcFrontImg" class="pc-photo"/>
             <div class="pc-photo-grad"></div>
             <span class="pc-status-dot"></span>
-            <button onclick="pcFlipToBack()" class="pc-details-btn"><i class="fas fa-plus" style="font-size:12px;"></i></button>
+            <button onclick="pcFlipToBack()" class="pc-details-btn" aria-label="See More"><i class="fas fa-eye" style="font-size:12px;"></i> See More</button>
           </div>
           <div class="pc-name-block"><h2 id="pcFrontName" class="pc-name"></h2><p id="pcFrontRole" class="pc-role-badge"></p></div>
         </div>
@@ -656,7 +656,7 @@
       </div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:600;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">John Doe</div>
-        <div style="font-size:9.5px;color:#3a3a3a;">Cashier</div>
+        <div style="font-size:9.5px;color:#3a3a3a;">Staff</div>
       </div>
       <span style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;animation:glowGreen 1.8s infinite;"></span>
     </div>
@@ -1659,16 +1659,16 @@ window.addEventListener('resize',onResize);onResize();
 /* ══════════════════════════════════
    PROFILE CARD
 ══════════════════════════════════ */
-const PROFILE_USER = {
-  name:     'John Doe',
+const PROFILE_USER = {  
+  name:     'John Jasper',
   email:    'john.doe@revmotors.com',
   email2:   'john.doe.personal@gmail.com',
-  role:     'Cashier',
+  role:     'Staff',
   phone:    '09312345678',
   birthday: 'April 20, 1999',
   address:  'Makati City, Metro Manila',
   gender:   'Male',
-  photo:    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
+  photo:    '../../Assets (1)/image.png',
 };
 
 let pcEditMode = false;

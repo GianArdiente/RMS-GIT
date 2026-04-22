@@ -1388,58 +1388,160 @@ buildHistoryRows(allRecords);
 
     // DASHBOARD
 
-    // PROFILE CARD FUNCTIONS
+    // PROFILE CARD
+    const PROFILE_USER = {
+      name:     'John Jasper',
+      email:    'john.doe@revmotors.com',
+      email2:   'john.doe.personal@gmail.com',
+      role:     'Admin',
+      phone:    '09312345678',
+      birthday: 'April 20, 1999',
+      address:  'Makati City, Metro Manila',
+      gender:   'Male',
+      photo:    '../../Assets (1)/image.png',
+    };
+
+    let pcEditMode = false;
+
+    function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+    function setVal(id, val) { const el = document.getElementById(id); if (el) el.value = val || ''; }
+    function getVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+    function fmtTime(d) { return d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true }); }
+
     function openProfileCard() {
       const overlay = document.getElementById('profileCardOverlay');
       const card = document.getElementById('pcFlipCard');
-      if (overlay && card) {
-        overlay.classList.add('open');
-        setTimeout(() => card.classList.add('visible'), 10);
-        // Populate with sample data (replace with actual user data)
-        document.getElementById('pcFrontImg').src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop';
-        document.getElementById('pcFrontName').textContent = 'John Doe';
-        document.getElementById('pcFrontRole').textContent = 'Administrator';
-        document.getElementById('pcTimeIn').textContent = '08:30 AM';
-        document.getElementById('pcPhone').textContent = '+1 555-0123';
-        document.getElementById('pcEmail').textContent = 'john.doe@revauto.com';
-        document.getElementById('pcMetaTimeIn').textContent = '08:30 AM';
-        document.getElementById('pcMetaStatus').textContent = 'Active';
-        document.getElementById('pcMetaShift').textContent = 'Morning';
-        document.getElementById('pcBackImg').src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop';
-        document.getElementById('pcBackName').textContent = 'John Doe';
-        document.getElementById('pcBackRole').textContent = 'Administrator';
-        document.getElementById('pcFieldEmail').value = 'john.doe@revauto.com';
-        document.getElementById('pcFieldEmail2').value = 'johndoe@gmail.com';
-        document.getElementById('pcFieldPhone').value = '+1 555-0123';
-        document.getElementById('pcFieldBday').value = '1990-01-15';
-        document.getElementById('pcFieldAddr').value = '123 Admin St, City, State';
-        document.getElementById('pcFieldGender').value = 'Male';
-      }
+      if (overlay) overlay.classList.add('open');
+      if (card) { setTimeout(() => card.classList.add('visible'), 50); }
+      populateProfileCard();
     }
 
     function closeProfileCard() {
       const overlay = document.getElementById('profileCardOverlay');
       const card = document.getElementById('pcFlipCard');
-      if (overlay && card) {
-        card.classList.remove('visible');
-        setTimeout(() => overlay.classList.remove('open'), 300);
-        // Reset flip state
-        card.classList.remove('flipped');
-      }
+      if (card) card.classList.remove('visible');
+      setTimeout(() => {
+        if (overlay) overlay.classList.remove('open');
+        resetFlip();
+      }, 300);
     }
 
-    function handlePCOverlayClick(event) {
-      if (event.target.id === 'profileCardOverlay') {
-        closeProfileCard();
-      }
+    function resetFlip() {
+      const card = document.getElementById('pcFlipCard');
+      if (card) card.classList.remove('flipped');
+      pcEditMode = false;
     }
 
     function pcFlipToBack() {
-      document.getElementById('pcFlipCard').classList.add('flipped');
+      const card = document.getElementById('pcFlipCard');
+      if (card) card.classList.add('flipped');
     }
 
     function pcFlipToFront() {
-      document.getElementById('pcFlipCard').classList.remove('flipped');
+      const card = document.getElementById('pcFlipCard');
+      if (card) card.classList.remove('flipped');
+      cancelEdit();
+    }
+
+    function populateProfileCard() {
+      setText('pcFrontName', PROFILE_USER.name);
+      setText('pcFrontRole', PROFILE_USER.role);
+      setText('pcPhone', PROFILE_USER.phone);
+      setText('pcEmail', PROFILE_USER.email);
+      setText('pcTimeIn', fmtTime(new Date()));
+      setText('pcMetaTimeIn', new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true }));
+      setText('pcMetaStatus', 'Online');
+      setText('pcMetaShift', 'Today');
+      setText('pcBackName', PROFILE_USER.name);
+      setText('pcBackRole', PROFILE_USER.role);
+      setVal('pcFieldEmail', PROFILE_USER.email);
+      setVal('pcFieldEmail2', PROFILE_USER.email2);
+      setVal('pcFieldPhone', PROFILE_USER.phone);
+      setVal('pcFieldBday', PROFILE_USER.birthday);
+      setVal('pcFieldAddr', PROFILE_USER.address);
+      setVal('pcFieldGender', PROFILE_USER.gender);
+      document.getElementById('pcFrontImg').src = PROFILE_USER.photo;
+      document.getElementById('pcBackImg').src = PROFILE_USER.photo;
+    }
+
+    function toggleEdit() {
+      pcEditMode = !pcEditMode;
+      const fields = document.querySelectorAll('.pc-input');
+      const btnTxt = document.getElementById('editBtnTxt');
+      const actionBtns = document.getElementById('pcActionBtns');
+      fields.forEach(f => f.disabled = !pcEditMode);
+      if (btnTxt) btnTxt.textContent = pcEditMode ? 'Cancel' : 'Edit';
+      if (actionBtns) actionBtns.classList.toggle('hidden', !pcEditMode);
+    }
+
+    function saveProfileChanges() {
+      PROFILE_USER.email = getVal('pcFieldEmail');
+      PROFILE_USER.email2 = getVal('pcFieldEmail2');
+      PROFILE_USER.phone = getVal('pcFieldPhone');
+      PROFILE_USER.birthday = getVal('pcFieldBday');
+      PROFILE_USER.address = getVal('pcFieldAddr');
+      PROFILE_USER.gender = getVal('pcFieldGender');
+      pcEditMode = false;
+      const fields = document.querySelectorAll('.pc-input');
+      fields.forEach(f => f.disabled = true);
+      const actionBtns = document.getElementById('pcActionBtns');
+      if (actionBtns) actionBtns.classList.add('hidden');
+      const btnTxt = document.getElementById('editBtnTxt');
+      if (btnTxt) btnTxt.textContent = 'Edit';
+      toast('ok', 'Profile updated successfully!');
+    }
+
+    function cancelEdit() {
+      if (!pcEditMode) return;
+      pcEditMode = false;
+      const fields = document.querySelectorAll('.pc-input');
+      fields.forEach(f => f.disabled = true);
+      const actionBtns = document.getElementById('pcActionBtns');
+      if (actionBtns) actionBtns.classList.add('hidden');
+      const btnTxt = document.getElementById('editBtnTxt');
+      if (btnTxt) btnTxt.textContent = 'Edit';
+      populateProfileCard();
+    }
+
+    // Expose profile card functions globally
+    window.openProfileCard = openProfileCard;
+    window.closeProfileCard = closeProfileCard;
+    window.pcFlipToBack = pcFlipToBack;
+    window.pcFlipToFront = pcFlipToFront;
+    window.toggleEdit = toggleEdit;
+    window.saveProfileChanges = saveProfileChanges;
+    window.cancelEdit = cancelEdit;
+
+    function pcFlipToBack() {
+      const card = document.getElementById('pcFlipCard');
+      if (card) card.classList.add('flipped');
+    }
+
+    function pcFlipToFront() {
+      const card = document.getElementById('pcFlipCard');
+      if (card) card.classList.remove('flipped');
+      cancelEdit();
+    }
+
+    function populateProfileCard() {
+      setText('pcFrontName', PROFILE_USER.name);
+      setText('pcFrontRole', PROFILE_USER.role);
+      setText('pcPhone', PROFILE_USER.phone);
+      setText('pcEmail', PROFILE_USER.email);
+      setText('pcTimeIn', fmtTime(new Date()));
+      setText('pcMetaTimeIn', new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true }));
+      setText('pcMetaStatus', 'Online');
+      setText('pcMetaShift', 'Today');
+      setText('pcBackName', PROFILE_USER.name);
+      setText('pcBackRole', PROFILE_USER.role);
+      setVal('pcFieldEmail', PROFILE_USER.email);
+      setVal('pcFieldEmail2', PROFILE_USER.email2);
+      setVal('pcFieldPhone', PROFILE_USER.phone);
+      setVal('pcFieldBday', PROFILE_USER.birthday);
+      setVal('pcFieldAddr', PROFILE_USER.address);
+      setVal('pcFieldGender', PROFILE_USER.gender);
+      document.getElementById('pcFrontImg').src = PROFILE_USER.photo;
+      document.getElementById('pcBackImg').src = PROFILE_USER.photo;
     }
 
     function toggleEdit() {
@@ -1473,5 +1575,17 @@ buildHistoryRows(allRecords);
       // Reset values if needed
       toggleEdit();
     }
+
+    // Expose profile card functions globally
+    window.openProfileCard = openProfileCard;
+    window.closeProfileCard = closeProfileCard;
+    window.handlePCOverlayClick = handlePCOverlayClick;
+    window.pcFlipToBack = pcFlipToBack;
+    window.pcFlipToFront = pcFlipToFront;
+    window.toggleEdit = toggleEdit;
+    window.saveProfileChanges = saveProfileChanges;
+    window.cancelEdit = cancelEdit;
+  };
+
     
  
