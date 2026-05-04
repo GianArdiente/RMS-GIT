@@ -28,6 +28,7 @@
 
   <!-- Your Stylesheet -->
   <link rel="stylesheet" href="Admin.css"/>
+  <link rel="stylesheet" href="AdminResponsive.css"/>
 </head>
 <body>
 
@@ -824,23 +825,8 @@
       </div>
 
       <!-- ═══ INVENTORY PAGE ═══ -->
-      <div id="page-inventory" class="page">
-        <div class="page-header">
-          <div class="sec-title">🗃 Inventory Management</div>
-        </div>
-        <div class="summary-grid">
-          <div class="summary-card"><div class="label">Total Products</div><div class="value" id="sum-total">0</div><div class="sub">In catalog</div></div>
-          <div class="summary-card"><div class="label">Low Stock</div><div class="value alert" id="sum-low">0</div><div class="sub">≤ 5 units remaining</div></div>
-          <div class="summary-card"><div class="label">Total Units</div><div class="value" id="sum-units">0</div><div class="sub">Across all products</div></div>
-        </div>
-        <table class="a-table">
-          <thead>
-            <tr><th></th><th>Product</th><th>SKU</th><th>Stock</th><th>Status</th><th>Adjust</th></tr>
-          </thead>
-          <tbody id="inv-tbody"></tbody>
-        </table>
-        <div class="toast" id="toast"><span id="t-ico"></span><span id="t-msg"></span></div>
-      </div>
+      <div id="page-inventory" class="page"></div>
+
 
       <!-- ═══ SHOP PAGE ═══ -->
       <div id="page-shop" class="page">
@@ -1096,19 +1082,19 @@
             <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#F2DB94;font-family:'Rajdhani',sans-serif;font-weight:700;margin-bottom:3px;">People</div>
             <h2 class="gt" style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;">Customers</h2>
           </div>
-          <button class="btn-g" style="font-size:13px;padding:9px 16px;"><i class="fas fa-user-plus" style="margin-right:5px;"></i>Add Customer</button>
+          <button onclick="openAddCustomer()" class="btn-g" style="font-size:13px;padding:9px 16px;"><i class="fas fa-user-plus" style="margin-right:5px;"></i>Add Customer</button>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:12px;">
-          <div class="sc"><div class="sc-v gt">50</div><div style="font-size:11px;color:#333;margin-top:3px;">Total</div></div>
-          <div class="sc"><div class="sc-v gt">38</div><div style="font-size:11px;color:#333;margin-top:3px;">Active</div></div>
-          <div class="sc"><div class="sc-v gt">12</div><div style="font-size:11px;color:#333;margin-top:3px;">New This Month</div></div>
-          <div class="sc"><div class="sc-v gt">4.9</div><div style="font-size:11px;color:#333;margin-top:3px;">Avg Rating</div></div>
+          <div class="sc"><div class="sc-v gt" id="cusTotal">--</div><div style="font-size:11px;color:#333;margin-top:3px;">Total</div></div>
+          <div class="sc"><div class="sc-v gt" id="cusActive">--</div><div style="font-size:11px;color:#333;margin-top:3px;">Active</div></div>
+          <div class="sc"><div class="sc-v gt" id="cusNewMonth">--</div><div style="font-size:11px;color:#333;margin-top:3px;">New This Month</div></div>
+          <div class="sc"><div class="sc-v gt" id="cusRating">--</div><div style="font-size:11px;color:#333;margin-top:3px;">Avg Rating</div></div>
         </div>
         <div class="card" style="overflow:hidden;">
           <div style="overflow-x:auto;">
             <table class="dt">
               <thead style="background:rgba(0,0,0,.2);">
-                <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Visits</th><th>Status</th></tr>
+                <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Visits</th><th>Status</th><th>Action</th></tr>
               </thead>
               <tbody id="cusTb"></tbody>
             </table>
@@ -1285,7 +1271,10 @@
 <!-- ══════════ SCRIPTS ══════════ -->
 <script src="Admin.js"></script>
 <script type="module" src="BackendAdmin.js"></script>
+<script type="module" src="inventorybackend.js"></script>
 <script type="module" src="Profilecard.js"></script>
+<script type="module" src="bookingbackend.js"></script>
+<script type="module" src="Customerbackend.js"></script>
 
 </body>
 </html>

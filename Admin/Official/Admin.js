@@ -38,12 +38,7 @@ const D = {
     { id: 'BK-005', customer: 'Eva Mendoza',  service: 'Battery Check', date: '2024-12-03', time: '10:30 AM', status: 'cancelled' },
     { id: 'BK-006', customer: 'Ramon Torres', service: 'AC Service',    date: '2024-12-03', time: '1:00 PM',  status: 'pending'   },
   ],
-  customers: [
-    { id: 'CU-001', name: 'Maria Santos', email: 'maria@gmail.com', phone: '09171234567', visits: 8,  status: 'active'   },
-    { id: 'CU-002', name: 'Jose Reyes',   email: 'jose@gmail.com',  phone: '09181234567', visits: 3,  status: 'active'   },
-    { id: 'CU-003', name: 'Ana Cruz',     email: 'ana@gmail.com',   phone: '09191234567', visits: 12, status: 'active'   },
-    { id: 'CU-004', name: 'Carlos Lim',   email: 'carlos@gmail.com',phone: '09201234567', visits: 1,  status: 'inactive' },
-  ],
+  customers: [], // populated by CustomersBackend.js
   joborders: [
     { id: 'JO-001', vehicle: 'Toyota Camry 2020',   customer: 'Maria Santos', tech: 'Ricky Dela Rosa', service: 'Oil Change',    progress: 100, status: 'completed'   },
     { id: 'JO-002', vehicle: 'Honda Civic 2019',    customer: 'Jose Reyes',   tech: 'Carlo Bautista',  service: 'Brake Repair',  progress: 65,  status: 'in-progress' },
@@ -152,6 +147,7 @@ const pNames = {
 };
 
 function nav(page) {
+   if (page === "inventory") return;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
   const pg = document.getElementById('page-' + page);
@@ -167,7 +163,7 @@ function nav(page) {
 function renderPage(p) {
   if (p === 'booking')     renderTb('bkTb',  D.bookings,  ['id','customer','service','date','time','status'], true);
   if (p === 'records')     renderTb('recTb', D.records,   ['id','customer','vehicle','service','date','cost','status']);
-  if (p === 'customers')   renderTb('cusTb', D.customers, ['id','name','email','phone','visits','status']);
+  if (p === 'customers')   { if (typeof loadCustomers === 'function') loadCustomers(); }
   if (p === 'receipts')    renderTb('rcTb',  D.receipts,  ['id','customer','service','amount','date','method','status']);
   if (p === 'joborders')   renderJO();
   if (p === 'technicians') renderTechs();
