@@ -284,7 +284,7 @@ function wireLogout() {
     closeProfileDD?.();
     if (!confirm("Log out of REV?")) return;
     await signOut(auth);
-    window.location.href = "../../Login/Login.html";
+    window.location.href = "../Landingpage (1)/landingpage (1).html";
   };
 }
 
@@ -333,3 +333,4 @@ function showToast(msg, type = "success") {
     setTimeout(() => t.remove(), 300);
   }, 2800);
 }
+

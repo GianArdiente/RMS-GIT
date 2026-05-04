@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <title>LibraPrint – Borrowing</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:         #1a2744;
+      --navy-mid:     #23304e;
+      --navy-light:   #2e3f65;
+      --accent-blue:  #2563eb;
+      --accent-soft:  #3b82f6;
+      --accent-green: #16a34a;
+      --white:        #ffffff;
+      --offwhite:     #f5f7fa;
+      --light-grey:   #e8edf3;
+      --mid-grey:     #9ba8b5;
+      --dark-text:    #111827;
+      --body-text:    #374151;
+      --ease:         cubic-bezier(0.22, 1, 0.36, 1);
+      --dur:          0.32s;
+    }
+
+    html, body { height: 100%; font-family: 'DM Sans', sans-serif; color: var(--dark-text); background: var(--offwhite); }
+
+    .borrow-page { min-height: 100%; display: flex; flex-direction: column; }
+
+    /* ── HERO ── */
+    .borrow-hero {
+      background: linear-gradient(135deg, #0f1c38 0%, #1a2744 50%, #1e3564 100%);
+      padding: 40px 40px 44px; position: relative; overflow: hidden;
+    }
+    .borrow-hero::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px; pointer-events: none;
+    }
+    .borrow-hero::after {
+      content: ''; position: absolute; top: -60px; right: -60px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(37,99,235,0.2) 0%, transparent 70%); pointer-events: none;
+    }
+    .borrow-hero-inner { position: relative; z-index: 2; }
+    .borrow-hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,99,235,0.2); border: 1px solid rgba(59,130,246,0.35);
+      border-radius: 999px; padding: 5px 14px;
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+      color: #93c5fd; margin-bottom: 14px;
+    }
+    .borrow-hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.7rem, 3.5vw, 2.4rem); font-weight: 800; color: #fff;
+      line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 8px;
+    }
+    .borrow-hero p { font-size: 0.88rem; color: rgba(255,255,255,0.48); line-height: 1.6; }
+
+    /* ── STEP PROGRESS ── */
+    .step-progress {
+      display: flex; align-items: center; gap: 0; margin-top: 32px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; overflow: hidden; width: fit-content;
+    }
+    .step-item {
+      display: flex; align-items: center; gap: 12px; padding: 14px 24px;
+      border-right: 1px solid rgba(255,255,255,0.08); transition: background 0.3s;
+    }
+    .step-item:last-child { border-right: none; }
+    .step-item.done   { background: rgba(22,163,74,0.12); }
+    .step-item.active { background: rgba(37,99,235,0.18); }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 800; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.4); transition: all 0.3s;
+    }
+    .step-item.done   .step-num { background: var(--accent-green); border-color: var(--accent-green); color: #fff; }
+    .step-item.active .step-num { background: var(--accent-blue);  border-color: var(--accent-blue);  color: #fff; }
+    .step-label strong { font-size: 0.78rem; color: rgba(255,255,255,0.4); font-weight: 600; display: block; transition: color 0.3s; }
+    .step-label span   { font-size: 0.67rem; color: rgba(255,255,255,0.28); display: block; margin-top: 1px; }
+    .step-item.done   .step-label strong { color: #4ade80; }
+    .step-item.active .step-label strong { color: #fff; }
+    .step-arrow { color: rgba(255,255,255,0.18); font-size: 11px; padding: 0 4px; }
+
+    /* ── BODY ── */
+    .borrow-body { flex: 1; padding: 36px 40px 48px; display: flex; flex-direction: column; gap: 24px; }
+
+    /* ── STAGES ── */
+    .stage { display: none; animation: fadeUp 0.45s var(--ease) both; flex-direction: column; gap: 24px; }
+    .stage.active { display: flex; }
+    .success-stage { display: none; flex-direction: column; align-items: center; padding: 60px 40px; gap: 20px; text-align: center; animation: fadeUp 0.5s var(--ease) both; }
+    .success-stage.active { display: flex; }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── SCAN CARD ── */
+    .scan-card { background: #fff; border-radius: 20px; border: 1px solid var(--light-grey); box-shadow: 0 2px 16px rgba(0,0,0,0.05); overflow: hidden; }
+    .scan-card-head { padding: 22px 28px; border-bottom: 1px solid var(--light-grey); display: flex; align-items: center; gap: 14px; }
+    .scan-card-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .scan-card-icon.blue  { background: #eff6ff; color: var(--accent-blue); }
+    .scan-card-icon.green { background: #f0fdf4; color: var(--accent-green); }
+    .scan-card-head h3 { font-size: 0.95rem; font-weight: 700; color: var(--dark-text); }
+    .scan-card-head p  { font-size: 0.74rem; color: var(--mid-grey); margin-top: 2px; }
+
+    /* ── FINGERPRINT ── */
+    .fp-area { padding: 48px 28px; display: flex; flex-direction: column; align-items: center; gap: 28px; }
+    .fp-ring {
+      width: 160px; height: 160px; border-radius: 50%;
+      border: 3px solid var(--light-grey);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; transition: border-color 0.4s;
+    }
+    .fp-ring.scanning { border-color: var(--accent-blue); animation: pulse-ring 1.4s ease infinite; }
+    .fp-ring.success  { border-color: var(--accent-green); }
+    .fp-ring.error    { border-color: #ef4444; }
+    @keyframes pulse-ring { 0%{box-shadow:0 0 0 0 rgba(37,99,235,0.35);} 70%{box-shadow:0 0 0 20px rgba(37,99,235,0);} 100%{box-shadow:0 0 0 0 rgba(37,99,235,0);} }
+    .fp-ring.scanning::before, .fp-ring.scanning::after {
+      content:''; position:absolute; inset:-14px; border-radius:50%;
+      border:1.5px solid rgba(37,99,235,0.2); animation:ripple 1.8s linear infinite;
+    }
+    .fp-ring.scanning::after { inset:-28px; animation-delay:0.6s; }
+    @keyframes ripple { 0%{transform:scale(0.9);opacity:0.6;} 100%{transform:scale(1.1);opacity:0;} }
+    .fp-icon-inner {
+      width: 90px; height: 90px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px; background: var(--offwhite); color: var(--mid-grey); transition: background 0.4s, color 0.4s;
+    }
+    .fp-ring.scanning .fp-icon-inner { background: #eff6ff; color: var(--accent-blue); }
+    .fp-ring.success  .fp-icon-inner { background: #f0fdf4; color: var(--accent-green); }
+    .fp-ring.error    .fp-icon-inner { background: #fef2f2; color: #ef4444; }
+    .fp-status { text-align: center; }
+    .fp-status-label { font-size: 1rem; font-weight: 700; color: var(--dark-text); margin-bottom: 4px; }
+    .fp-status-sub   { font-size: 0.78rem; color: var(--mid-grey); }
+    .fp-scan-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--navy); color: #fff; border: none; border-radius: 12px;
+      padding: 13px 32px; font-size: 0.88rem; font-weight: 700; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; transition: background 0.2s, transform 0.2s var(--ease), box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(26,39,68,0.3);
+    }
+    .fp-scan-btn:hover { background: var(--navy-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,39,68,0.35); }
+    .fp-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── BORROWER CARD ── */
+    .borrower-card {
+      margin: 0 28px 0; border-radius: 14px;
+      border: 1.5px solid #86efac; background: #f0fdf4;
+      padding: 20px 22px; display: flex; align-items: center; gap: 18px;
+      animation: fadeUp 0.4s var(--ease) both;
+    }
+    .borrower-avatar {
+      width: 54px; height: 54px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-green), #15803d);
+      color: #fff; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .borrower-info { flex: 1; }
+    .borrower-name { font-size: 1rem; font-weight: 700; color: var(--dark-text); }
+    .borrower-meta { font-size: 0.76rem; color: #16a34a; margin-top: 3px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .borrower-meta span { display: flex; align-items: center; gap: 4px; }
+    .borrower-meta i { font-size: 10px; }
+    .verified-badge { display: flex; align-items: center; gap: 6px; background: #dcfce7; color: #15803d; border-radius: 10px; padding: 8px 14px; font-size: 0.76rem; font-weight: 700; flex-shrink: 0; }
+
+    /* ── MODE PILLS ── */
+    .mode-pills { display: flex; gap: 10px; padding: 20px 28px 28px; }
+    .mode-pill {
+      flex: 1; padding: 13px 20px; border-radius: 12px;
+      border: 2px solid var(--light-grey); background: var(--offwhite);
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; transition: all 0.22s var(--ease);
+    }
+    .mode-pill:hover { border-color: var(--mid-grey); background: #fff; }
+    .mode-pill.sel-green { border-color: var(--accent-green); background: #f0fdf4; }
+    .mode-pill.sel-blue  { border-color: var(--accent-blue);  background: #eff6ff; }
+    .mode-pill-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+    .mode-pill-icon.green { background: #dcfce7; color: var(--accent-green); }
+    .mode-pill-icon.blue  { background: #dbeafe; color: var(--accent-blue); }
+    .mode-pill-text strong { font-size: 0.82rem; font-weight: 700; color: var(--dark-text); display: block; }
+    .mode-pill-text span   { font-size: 0.7rem; color: var(--mid-grey); }
+    .mode-pill-radio { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--light-grey); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .mode-pill-radio::after { content:''; width:7px; height:7px; border-radius:50%; background:transparent; transition:background 0.2s; }
+    .mode-pill.sel-green .mode-pill-radio { border-color: var(--accent-green); background: var(--accent-green); }
+    .mode-pill.sel-blue  .mode-pill-radio { border-color: var(--accent-blue);  background: var(--accent-blue); }
+    .mode-pill.sel-green .mode-pill-radio::after,
+    .mode-pill.sel-blue  .mode-pill-radio::after { background: #fff; }
+
+    /* ── BARCODE AREA ── */
+    .barcode-area { padding: 36px 28px 28px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+    .barcode-scanner-box {
+      width: 100%; max-width: 420px;
+      border: 2px dashed var(--light-grey); border-radius: 16px;
+      background: var(--offwhite); padding: 32px 24px;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      transition: border-color 0.3s, background 0.3s; position: relative; overflow: hidden;
+    }
+    .barcode-scanner-box.scanning-book { border-color: var(--accent-blue); background: #f0f6ff; }
+    .barcode-scanner-box.book-found { border-style: solid; border-color: var(--accent-green); background: #f0fdf4; }
+    .scan-line {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+      display: none; animation: scan-sweep 1.5s ease-in-out infinite;
+    }
+    .barcode-scanner-box.scanning-book .scan-line { display: block; }
+    @keyframes scan-sweep { 0%{top:15%;opacity:1;} 50%{top:80%;opacity:0.8;} 100%{top:15%;opacity:1;} }
+    .barcode-icon { font-size: 40px; color: var(--mid-grey); transition: color 0.3s; }
+    .barcode-scanner-box.scanning-book .barcode-icon { color: var(--accent-blue); }
+    .barcode-scanner-box.book-found    .barcode-icon { color: var(--accent-green); }
+    .barcode-scanner-label { font-size: 0.84rem; color: var(--mid-grey); text-align: center; }
+    .barcode-scanner-box.scanning-book .barcode-scanner-label { color: var(--accent-blue); font-weight: 600; }
+    .barcode-input-row { display: flex; gap: 10px; width: 100%; max-width: 420px; }
+    .barcode-input {
+      flex: 1; padding: 11px 16px; border: 1.5px solid var(--light-grey); border-radius: 10px;
+      font-size: 0.85rem; font-family: 'DM Sans', sans-serif; color: var(--dark-text);
+      background: var(--offwhite); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .barcode-input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); background: #fff; }
+    .scan-barcode-btn {
+      padding: 11px 20px; background: var(--navy); color: #fff; border: none; border-radius: 10px;
+      font-size: 0.82rem; font-weight: 700; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s, transform 0.15s;
+    }
+    .scan-barcode-btn:hover { background: var(--navy-light); transform: translateY(-1px); }
+
+    /* ── BOOK RESULT ── */
+    .book-result {
+      width: 100%; max-width: 480px; background: #fff;
+      border: 1.5px solid #86efac; border-radius: 14px;
+      padding: 20px; display: flex; align-items: flex-start; gap: 16px;
+      animation: fadeUp 0.35s var(--ease) both;
+    }
+    .book-thumb { width:48px;height:64px;border-radius:6px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);display:flex;align-items:center;justify-content:center;color:var(--accent-green);font-size:20px;flex-shrink:0; }
+    .book-result-title { font-size: 0.95rem; font-weight: 700; color: var(--dark-text); }
+    .book-result-author { font-size: 0.76rem; color: var(--mid-grey); margin-top: 2px; }
+    .book-result-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .book-tag { border-radius: 999px; padding: 3px 10px; font-size: 0.68rem; font-weight: 600; }
+    .book-tag.green { background: #dcfce7; color: #15803d; }
+    .book-tag.blue  { background: #dbeafe; color: #1d4ed8; }
+    .book-tag.amber { background: #fef3c7; color: #92400e; }
+
+    /* ── CONFIRM PANEL ── */
+    .confirm-panel { background:#fff;border-radius:20px;border:1px solid var(--light-grey);box-shadow:0 2px 16px rgba(0,0,0,0.05);overflow:hidden; }
+    .confirm-head { padding:20px 28px;border-bottom:1px solid var(--light-grey);display:flex;align-items:center;gap:12px; }
+    .confirm-head-icon { width:38px;height:38px;border-radius:11px;background:#f0fdf4;color:var(--accent-green);display:flex;align-items:center;justify-content:center;font-size:15px; }
+    .confirm-head h3 { font-size:0.92rem;font-weight:700;color:var(--dark-text); }
+    .confirm-head p  { font-size:0.73rem;color:var(--mid-grey);margin-top:2px; }
+    .confirm-body { padding:24px 28px;display:flex;flex-direction:column;gap:14px; }
+    .confirm-row { display:flex;align-items:center;gap:16px;padding:16px 18px;border-radius:12px;border:1px solid var(--light-grey);background:var(--offwhite); }
+    .confirm-row-icon { width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0; }
+    .confirm-row-icon.green { background:#dcfce7;color:var(--accent-green); }
+    .confirm-row-icon.blue  { background:#dbeafe;color:var(--accent-blue); }
+    .confirm-row-icon.amber { background:#fef3c7;color:#d97706; }
+    .confirm-row-label { font-size:0.7rem;color:var(--mid-grey);text-transform:uppercase;letter-spacing:0.06em; }
+    .confirm-row-val   { font-size:0.88rem;font-weight:700;color:var(--dark-text);margin-top:1px; }
+    .confirm-row-sub   { font-size:0.72rem;color:var(--mid-grey);margin-top:1px; }
+    .confirm-bar { padding:18px 28px;border-top:1px solid var(--light-grey);background:#fafbfc;display:flex;align-items:center;justify-content:space-between;gap:12px; }
+    .confirm-note { font-size:0.74rem;color:var(--mid-grey);display:flex;align-items:center;gap:7px; }
+    .confirm-note i { color:#fbbf24; }
+    .btn-reset { padding:10px 20px;border:1.5px solid var(--light-grey);border-radius:10px;background:transparent;font-size:0.82rem;font-weight:600;font-family:'DM Sans',sans-serif;color:var(--body-text);cursor:pointer;transition:background 0.2s; }
+    .btn-reset:hover { background:var(--light-grey); }
+    .btn-confirm { padding:11px 30px;border:none;border-radius:10px;font-size:0.88rem;font-weight:700;font-family:'DM Sans',sans-serif;color:#fff;cursor:pointer;display:flex;align-items:center;gap:9px;transition:transform 0.2s var(--ease),box-shadow 0.2s; }
+    .btn-confirm.green { background:linear-gradient(135deg,#16a34a,#15803d);box-shadow:0 4px 16px rgba(22,163,74,0.35); }
+    .btn-confirm.blue  { background:linear-gradient(135deg,#2563eb,#1d4ed8);box-shadow:0 4px 16px rgba(37,99,235,0.35); }
+    .btn-confirm:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.22); }
+
+    /* ── SUCCESS ── */
+    .success-ring { width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#16a34a,#22c55e);display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;box-shadow:0 8px 32px rgba(22,163,74,0.4);animation:pop 0.4s var(--ease) both; }
+    @keyframes pop { from{transform:scale(0.7);opacity:0;} to{transform:scale(1);opacity:1;} }
+    .success-title { font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:800;color:var(--dark-text); }
+    .success-sub   { font-size:0.88rem;color:var(--mid-grey);max-width:340px;line-height:1.6; }
+    .success-summary { background:#fff;border:1px solid var(--light-grey);border-radius:16px;padding:20px 28px;width:100%;max-width:400px;text-align:left;display:flex;flex-direction:column;gap:12px; }
+    .ss-row { display:flex;justify-content:space-between;align-items:center; }
+    .ss-key { font-size:0.74rem;color:var(--mid-grey); }
+    .ss-val { font-size:0.82rem;font-weight:700;color:var(--dark-text); }
+    .btn-new-txn { padding:13px 32px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-size:0.9rem;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:9px;transition:background 0.2s,transform 0.2s;box-shadow:0 4px 16px rgba(26,39,68,0.3); }
+    .btn-new-txn:hover { background:var(--navy-light);transform:translateY(-2px); }
+
+    /* ── FEATURE STRIP ── */
+    .feature-strip { display:grid;grid-template-columns:1fr 1fr 1fr;background:#fff;border-radius:18px;border:1px solid var(--light-grey);overflow:hidden; }
+    .feature-item { padding:20px 22px;display:flex;align-items:flex-start;gap:14px;border-right:1px solid var(--light-grey); }
+    .feature-item:last-child { border-right:none; }
+    .feature-icon { width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0; }
+    .feature-icon.blue   { background:#eff6ff;color:var(--accent-blue); }
+    .feature-icon.green  { background:#f0fdf4;color:var(--accent-green); }
+    .feature-icon.purple { background:#f5f3ff;color:#7c3aed; }
+    .feature-text strong { font-size:0.8rem;font-weight:700;color:var(--dark-text);display:block; }
+    .feature-text span   { font-size:0.7rem;color:var(--mid-grey);margin-top:2px;display:block;line-height:1.5; }
+  </style>
+</head>
+<body>
+<div class="borrow-page">
+
+  <!-- HERO -->
+  <div class="borrow-hero">
+    <div class="borrow-hero-inner">
+      <div class="borrow-hero-eyebrow"><i class="fas fa-book-open"></i> Book Borrowing</div>
+      <h1>Borrow a Book</h1>
+      <p>Scan fingerprint to identify the borrower, then scan the book barcode to process the transaction.</p>
+      <div class="step-progress">
+        <div class="step-item active" id="step1">
+          <div class="step-num">1</div>
+          <div class="step-label"><strong>Fingerprint Scan</strong><span>Identify borrower</span></div>
+        </div>
+        <div class="step-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="step-item" id="step2">
+          <div class="step-num">2</div>
+          <div class="step-label"><strong>Book Barcode</strong><span>Select title &amp; mode</span></div>
+        </div>
+        <div class="step-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="step-item" id="step3">
+          <div class="step-num">3</div>
+          <div class="step-label"><strong>Confirm</strong><span>Review &amp; submit</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="borrow-body">
+
+    <!-- ══ STAGE 1: FINGERPRINT ══ -->
+    <div class="stage active" id="stage1">
+      <div class="scan-card">
+        <div class="scan-card-head">
+          <div class="scan-card-icon blue"><i class="fas fa-fingerprint"></i></div>
+          <div>
+            <h3>Step 1 — Fingerprint Scan</h3>
+            <p>Ask the borrower to place their finger on the biometric reader</p>
+          </div>
+        </div>
+        <div class="fp-area">
+          <div class="fp-ring" id="fpRing">
+            <div class="fp-icon-inner">
+              <i class="fas fa-fingerprint" id="fpIconI"></i>
+            </div>
+          </div>
+          <div class="fp-status">
+            <div class="fp-status-label" id="fpStatusLabel">Waiting for fingerprint…</div>
+            <div class="fp-status-sub"   id="fpStatusSub">Place finger on biometric scanner to begin</div>
+          </div>
+          <button class="fp-scan-btn" id="fpBtn" onclick="simulateFpScan()">
+            <i class="fas fa-fingerprint"></i> Scan Fingerprint
+          </button>
+        </div>
+      </div>
+      <div class="feature-strip">
+        <div class="feature-item">
+          <div class="feature-icon blue"><i class="fas fa-bolt"></i></div>
+          <div class="feature-text"><strong>Fast Identification</strong><span>Biometric match in under 2 seconds</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon green"><i class="fas fa-qrcode"></i></div>
+          <div class="feature-text"><strong>Barcode Scanning</strong><span>Instant book lookup after identification</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon purple"><i class="fas fa-shield-halved"></i></div>
+          <div class="feature-text"><strong>Secure &amp; Logged</strong><span>All transactions are timestamped &amp; recorded</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ STAGE 2: BOOK SCAN ══ -->
+    <div class="stage" id="stage2">
+      <!-- Borrower confirmed -->
+      <div class="scan-card">
+        <div class="scan-card-head">
+          <div class="scan-card-icon green"><i class="fas fa-circle-check"></i></div>
+          <div>
+            <h3>Borrower Identified</h3>
+            <p>Fingerprint matched successfully</p>
+          </div>
+        </div>
+        <div class="borrower-card" style="margin-bottom:0;">
+          <div class="borrower-avatar" id="borrowerAvatar">MS</div>
+          <div class="borrower-info">
+            <div class="borrower-name" id="borrowerName">Maria Santos</div>
+            <div class="borrower-meta">
+              <span><i class="fas fa-graduation-cap"></i> <span id="borrowerYear">Grade 11 — STEM-A</span></span>
+              <span><i class="fas fa-id-card"></i> <span id="borrowerId">STU-2024-00142</span></span>
+            </div>
+          </div>
+          <div class="verified-badge"><i class="fas fa-fingerprint"></i> Verified</div>
+        </div>
+        <!-- Borrow mode -->
+        <div class="mode-pills">
+          <div class="mode-pill sel-green" id="modeRead" onclick="selectMode('read')">
+            <div class="mode-pill-icon green"><i class="fas fa-book-reader"></i></div>
+            <div class="mode-pill-text"><strong>Read in Library</strong><span>No due date</span></div>
+            <div class="mode-pill-radio"></div>
+          </div>
+          <div class="mode-pill" id="modeHome" onclick="selectMode('home')">
+            <div class="mode-pill-icon blue"><i class="fas fa-house"></i></div>
+            <div class="mode-pill-text"><strong>Borrow for Home</strong><span>7-day period</span></div>
+            <div class="mode-pill-radio"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Book barcode -->
+      <div class="scan-card">
+        <div class="scan-card-head">
+          <div class="scan-card-icon blue"><i class="fas fa-barcode"></i></div>
+          <div>
+            <h3>Step 2 — Scan Book Barcode</h3>
+            <p>Scan the barcode on the book the borrower has selected</p>
+          </div>
+        </div>
+        <div class="barcode-area">
+          <div class="barcode-scanner-box" id="barcodeBox">
+            <div class="scan-line"></div>
+            <i class="fas fa-barcode barcode-icon"></i>
+            <div class="barcode-scanner-label" id="barcodeLabel">Point scanner at book barcode</div>
+          </div>
+          <div class="barcode-input-row">
+            <input class="barcode-input" type="text" id="barcodeInput" placeholder="Or enter barcode manually…" />
+            <button class="scan-barcode-btn" onclick="simulateBookScan()">
+              <i class="fas fa-barcode"></i> Scan
+            </button>
+          </div>
+          <div id="bookResult" style="display:none;">
+            <div class="book-result">
+              <div class="book-thumb"><i class="fas fa-book-open"></i></div>
+              <div>
+                <div class="book-result-title" id="bookTitle">To Kill a Mockingbird</div>
+                <div class="book-result-author" id="bookAuthor">Harper Lee · 1960 · 281 pages</div>
+                <div class="book-result-tags">
+                  <span class="book-tag green"><i class="fas fa-circle-check"></i> Available</span>
+                  <span class="book-tag blue"  id="bookCat">Fiction</span>
+                  <span class="book-tag amber" id="bookAcc">ACC-2021-0847</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="fp-scan-btn" id="proceedBtn" style="display:none;" onclick="goToConfirm()">
+            <i class="fas fa-arrow-right"></i> Review Transaction
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ STAGE 3: CONFIRM ══ -->
+    <div class="stage" id="stage3">
+      <div class="confirm-panel">
+        <div class="confirm-head">
+          <div class="confirm-head-icon"><i class="fas fa-clipboard-check"></i></div>
+          <div>
+            <h3>Step 3 — Review &amp; Confirm</h3>
+            <p>Verify all details before completing the transaction</p>
+          </div>
+        </div>
+        <div class="confirm-body">
+          <div class="confirm-row">
+            <div class="confirm-row-icon green"><i class="fas fa-fingerprint"></i></div>
+            <div>
+              <div class="confirm-row-label">Borrower</div>
+              <div class="confirm-row-val" id="cBorrowerName">Maria Santos</div>
+              <div class="confirm-row-sub" id="cBorrowerMeta">Grade 11 – STEM-A · STU-2024-00142</div>
+            </div>
+          </div>
+          <div class="confirm-row">
+            <div class="confirm-row-icon blue"><i class="fas fa-book"></i></div>
+            <div>
+              <div class="confirm-row-label">Book</div>
+              <div class="confirm-row-val" id="cBookTitle">To Kill a Mockingbird</div>
+              <div class="confirm-row-sub" id="cBookMeta">Harper Lee · ACC-2021-0847</div>
+            </div>
+          </div>
+          <div class="confirm-row">
+            <div class="confirm-row-icon green"><i class="fas fa-book-reader"></i></div>
+            <div>
+              <div class="confirm-row-label">Transaction Type</div>
+              <div class="confirm-row-val" id="cMode">Read in Library</div>
+              <div class="confirm-row-sub" id="cModeNote">No due date — book stays within premises</div>
+            </div>
+          </div>
+          <div class="confirm-row" id="cDueRow" style="display:none;">
+            <div class="confirm-row-icon amber"><i class="fas fa-calendar-xmark"></i></div>
+            <div>
+              <div class="confirm-row-label">Due Date</div>
+              <div class="confirm-row-val" id="cDueDate">—</div>
+              <div class="confirm-row-sub">₱5/day fine for overdue returns</div>
+            </div>
+          </div>
+          <div class="confirm-row">
+            <div class="confirm-row-icon blue"><i class="fas fa-clock"></i></div>
+            <div>
+              <div class="confirm-row-label">Transaction Time</div>
+              <div class="confirm-row-val" id="cTime">—</div>
+              <div class="confirm-row-sub">Auto-logged by system</div>
+            </div>
+          </div>
+        </div>
+        <div class="confirm-bar">
+          <div class="confirm-note"><i class="fas fa-triangle-exclamation"></i> Confirm details are correct before submitting</div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-reset" onclick="goBack()"><i class="fas fa-arrow-left"></i> Back</button>
+            <button class="btn-confirm green" id="confirmBtn" onclick="submitTransaction()">
+              <i class="fas fa-circle-check"></i> <span id="confirmLabel">Confirm Transaction</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SUCCESS ══ -->
+    <div class="success-stage" id="stageSuccess">
+      <div class="success-ring"><i class="fas fa-check"></i></div>
+      <div class="success-title">Transaction Complete!</div>
+      <div class="success-sub" id="successMsg">Book has been successfully checked out.</div>
+      <div class="success-summary">
+        <div class="ss-row"><span class="ss-key">Borrower</span><span class="ss-val" id="sBorrower">—</span></div>
+        <div class="ss-row"><span class="ss-key">Book</span><span class="ss-val" id="sBook">—</span></div>
+        <div class="ss-row"><span class="ss-key">Type</span><span class="ss-val" id="sType">—</span></div>
+        <div class="ss-row" id="sDueRow" style="display:none;"><span class="ss-key">Due Date</span><span class="ss-val" id="sDue">—</span></div>
+        <div class="ss-row"><span class="ss-key">Time</span><span class="ss-val" id="sTime">—</span></div>
+      </div>
+      <button class="btn-new-txn" onclick="resetAll()"><i class="fas fa-plus"></i> New Transaction</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let currentMode = 'read';
+  let borrower = null;
+  let book = null;
+
+  function setStep(n) {
+    [1,2,3].forEach(i => {
+      const el = document.getElementById('step'+i);
+      el.classList.remove('active','done');
+      if (i < n)  el.classList.add('done');
+      if (i === n) el.classList.add('active');
+    });
+  }
+
+  function showStage(id) {
+    ['stage1','stage2','stage3','stageSuccess'].forEach(s => {
+      const el = document.getElementById(s);
+      if (s === 'stageSuccess') { el.classList.remove('active'); }
+      else el.classList.remove('active');
+    });
+    const t = document.getElementById(id);
+    t.classList.add('active');
+  }
+
+  /* STAGE 1 */
+  function simulateFpScan() {
+    const ring  = document.getElementById('fpRing');
+    const label = document.getElementById('fpStatusLabel');
+    const sub   = document.getElementById('fpStatusSub');
+    const btn   = document.getElementById('fpBtn');
+    const icon  = document.getElementById('fpIconI');
+
+    btn.disabled = true;
+    ring.classList.add('scanning');
+    icon.className = 'fas fa-fingerprint';
+    label.textContent = 'Reading fingerprint…';
+    sub.textContent   = 'Hold still — matching biometric data';
+
+    setTimeout(() => {
+      ring.classList.remove('scanning');
+      ring.classList.add('success');
+      icon.className = 'fas fa-circle-check';
+      label.textContent = 'Fingerprint Matched!';
+      sub.textContent   = 'Borrower identified successfully';
+
+      borrower = { name:'Maria Santos', initials:'MS', year:'Grade 11 — STEM-A', id:'STU-2024-00142' };
+
+      setTimeout(() => { setStep(2); showStage('stage2'); }, 700);
+    }, 2200);
+  }
+
+  /* STAGE 2: MODE */
+  function selectMode(mode) {
+    currentMode = mode;
+    document.getElementById('modeRead').className = 'mode-pill' + (mode==='read' ? ' sel-green' : '');
+    document.getElementById('modeHome').className = 'mode-pill' + (mode==='home' ? ' sel-blue'  : '');
+  }
+
+  /* STAGE 2: BOOK */
+  function simulateBookScan() {
+    const box   = document.getElementById('barcodeBox');
+    const label = document.getElementById('barcodeLabel');
+    box.className = 'barcode-scanner-box scanning-book';
+    label.textContent = 'Scanning barcode…';
+    document.getElementById('bookResult').style.display = 'none';
+    document.getElementById('proceedBtn').style.display = 'none';
+    document.getElementById('barcodeInput').value = '';
+
+    setTimeout(() => {
+      book = { title:'To Kill a Mockingbird', author:'Harper Lee · 1960 · 281 pages', cat:'Fiction', acc:'ACC-2021-0847', barcode:'LIB-978-0-06-112008-4' };
+      document.getElementById('barcodeInput').value = book.barcode;
+      box.className = 'barcode-scanner-box book-found';
+      label.textContent = 'Book found!';
+      document.getElementById('bookTitle').textContent  = book.title;
+      document.getElementById('bookAuthor').textContent = book.author;
+      document.getElementById('bookCat').textContent    = book.cat;
+      document.getElementById('bookAcc').textContent    = book.acc;
+      document.getElementById('bookResult').style.display = 'block';
+      document.getElementById('proceedBtn').style.display = 'inline-flex';
+    }, 1600);
+  }
+
+  /* STAGE 3 */
+  function goToConfirm() {
+    if (!book) return;
+    const due = new Date(); due.setDate(due.getDate()+7);
+    const dueFmt = due.toLocaleDateString('en-PH',{month:'long',day:'numeric',year:'numeric'});
+    const now = new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',hour12:true});
+    const isHome = currentMode === 'home';
+
+    document.getElementById('cBorrowerName').textContent = borrower.name;
+    document.getElementById('cBorrowerMeta').textContent = borrower.year + ' · ' + borrower.id;
+    document.getElementById('cBookTitle').textContent    = book.title;
+    document.getElementById('cBookMeta').textContent     = 'Harper Lee · ' + book.acc;
+    document.getElementById('cTime').textContent         = now;
+    document.getElementById('cMode').textContent     = isHome ? 'Borrow for Home' : 'Read in Library';
+    document.getElementById('cModeNote').textContent  = isHome ? '7-day borrowing period applies' : 'No due date — book stays within premises';
+    document.getElementById('cDueRow').style.display  = isHome ? 'flex' : 'none';
+    document.getElementById('cDueDate').textContent   = isHome ? dueFmt : '—';
+    const btn = document.getElementById('confirmBtn');
+    btn.className = 'btn-confirm ' + (isHome ? 'blue' : 'green');
+    document.getElementById('confirmLabel').textContent = isHome ? 'Confirm Borrowing' : 'Confirm Read-in';
+
+    setStep(3); showStage('stage3');
+  }
+
+  function goBack() { setStep(2); showStage('stage2'); }
+
+  function submitTransaction() {
+    const due = new Date(); due.setDate(due.getDate()+7);
+    const dueFmt = due.toLocaleDateString('en-PH',{month:'long',day:'numeric',year:'numeric'});
+    const now = new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',hour12:true});
+    const isHome = currentMode === 'home';
+    document.getElementById('sBorrower').textContent  = borrower.name;
+    document.getElementById('sBook').textContent      = book.title;
+    document.getElementById('sType').textContent      = isHome ? 'Borrow for Home' : 'Read in Library';
+    document.getElementById('sTime').textContent      = now;
+    document.getElementById('sDueRow').style.display  = isHome ? 'flex' : 'none';
+    document.getElementById('sDue').textContent       = isHome ? dueFmt : '—';
+    document.getElementById('successMsg').textContent = isHome
+      ? 'Book has been borrowed. Due back by ' + dueFmt + '.'
+      : 'Book has been checked out for in-library reading.';
+    showStage('stageSuccess');
+  }
+
+  function resetAll() {
+    borrower = null; book = null; currentMode = 'read';
+    document.getElementById('fpRing').className = 'fp-ring';
+    document.getElementById('fpIconI').className = 'fas fa-fingerprint';
+    document.getElementById('fpStatusLabel').textContent = 'Waiting for fingerprint…';
+    document.getElementById('fpStatusSub').textContent   = 'Place finger on biometric scanner to begin';
+    document.getElementById('fpBtn').disabled = false;
+    document.getElementById('barcodeBox').className = 'barcode-scanner-box';
+    document.getElementById('barcodeLabel').textContent = 'Point scanner at book barcode';
+    document.getElementById('barcodeInput').value = '';
+    document.getElementById('bookResult').style.display = 'none';
+    document.getElementById('proceedBtn').style.display = 'none';
+    selectMode('read');
+    setStep(1); showStage('stage1');
+  }
+</script>
+</body>
+</html>

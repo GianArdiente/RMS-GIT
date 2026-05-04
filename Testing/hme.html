@@ -1,0 +1,54 @@
+<!--
+  ════════════════════════════════════════════════════════════
+  REPLACE the entire script block at the bottom of Home.html
+  (everything from the first <script> to the last </script>)
+  with EXACTLY this — order is critical.
+  ════════════════════════════════════════════════════════════
+
+  WHY ORDER MATTERS:
+  ┌─────────────────────────────────────────────────────────┐
+  │ 1. Home.js (non-module)                                 │
+  │    Runs first, synchronously. Sets up:                  │
+  │    • window.USER         (customer state object)        │
+  │    • window.CartDrawer   (stub — replaced by Shop.js)   │
+  │    • window.CatalogFilter                               │
+  │    • window.NewsFilter                                  │
+  │    FirebaseShop.js installs a queue shim over           │
+  │    window.CartDrawer immediately at module load,        │
+  │    BEFORE onAuthStateChanged fires.                     │
+  │                                                         │
+  │ 2. FirebaseDatabase.js (module)                         │
+  │    Initialises the ONE shared Firebase app instance.    │
+  │    Starts onSnapshot listeners for Products/Promos/News.│
+  │    Populates window.PRODUCTS (needed by Shop.js).       │
+  │    ⚠ Was incorrectly named "Firebasedatabase2.js" —     │
+  │      that file must be renamed to FirebaseDatabase.js   │
+  │      OR this tag updated to match your filename.        │
+  │                                                         │
+  │ 3. CustomerBackend.js (module)                          │
+  │    Reuses the app from step 2 (getApps()[0]).           │
+  │    Watches Auth state, loads customer Firestore doc,    │
+  │    overrides window.saveProfileChanges + handleLogout.  │
+  │                                                         │
+  │ 4. FirebaseHome.js (module)                             │
+  │    Home-page-specific Firebase logic.                   │
+  │                                                         │
+  │ 5. FirebaseBooking.js (module)                          │
+  │    Booking form Firestore writes.                       │
+  │                                                         │
+  │ 6. FirebaseShop.js (module)  ← loads LAST              │
+  │    Cart + checkout Firestore writes.                    │
+  │    Loads last so FirebaseDatabase's Products snapshot   │
+  │    has the most time to arrive before any addItem().    │
+  └─────────────────────────────────────────────────────────┘
+
+  ALL modules use SDK 10.7.2. Mixing versions creates
+  multiple Firebase app instances with no shared Auth state.
+-->
+
+<script src="Home.js"></script>
+<script type="module" src="FirebaseDatabase.js"></script>
+<script type="module" src="CustomerBackend.js"></script>
+<script type="module" src="FirebaseHome.js"></script>
+<script type="module" src="FirebaseBooking.js"></script>
+<script type="module" src="FirebaseShop.js"></script>

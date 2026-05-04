@@ -1,47 +1,48 @@
 // ============================================================
-//  FirebaseBooking.js  —  RMS Autoshop Booking Backend
+//  FirebaseBooking.js  —  RMS Autoshop Booking Backend (v2)
 //
-//  Handles saving confirmed bookings as transactions to
-//  Firestore so the admin panel and system can track them.
+//  ARCHITECTURE CHANGE (v2):
+//  The old hook-based approach (wrapping window.bkFinalConfirm)
+//  raced against CustomerBackend.js's own wrapper and fired
+//  before bkFinalize() had written the ref to the DOM, so
+//  the ref read was always empty and the write was skipped.
 //
-//  Firestore structure written by this module:
+//  New approach: bkFinalize() in Home.js calls
+//  window.BookingDB.save(ref, paymentInfo) directly.
+//  Single call, single write, no race conditions.
+//
+//  Firestore structure:
 //
 //  Bookings / {bookingRef}
-//    → uid, customerName, email, phone, vehicle,
-//      service, price, downpayment, balance,
-//      appointmentDate, appointmentTime, technician,
-//      dropoffPreference, hearAboutUs, notes,
-//      status, createdAt, updatedAt, paidPercent
+//    uid, customerName, email, phone,
+//    vehicleMake, vehicleModel, vehicleYear, vehicleFull,
+//    serviceName, servicePrice,
+//    appointmentDate, appointmentTime, technician,
+//    dropoffPreference, hearAboutUs, notes,
+//    downpayment, balance, paidPercent, paymentStatus,
+//    paymentMethod, paymentMethodLabel, paymentDetails,
+//    status, createdAt, updatedAt
 //
-//  User / Customer / Customers / {uid} / Bookings / {bookingRef}
-//    → (mirror of above — lightweight summary for profile view)
+//  User/Customer/Customers/{uid}/Bookings/{bookingRef}
+//    (lightweight mirror — same fields minus heavy ones)
 //
-//  Transactions / {transactionId}
-//    → uid, bookingRef, type ("downpayment" | "balance" | "full"),
-//      amount, serviceName, status, createdAt
-//
-//  Load order in Home.html (BOTTOM of <body>, after Home.js):
-//    <script src="Home.js"></script>
-//    <script type="module" src="CustomerBackend.js"></script>
-//    <script type="module" src="FirebaseHome.js"></script>
-//    <script type="module" src="FirebaseBooking.js"></script>   ← ADD THIS
+//  Transactions / TXN-{bookingRef}-DP
+//    uid, bookingRef, type, amount, serviceName,
+//    customerName, paymentMethod, paymentMethodLabel,
+//    paymentDetails, status, createdAt
 // ============================================================
 
-import { initializeApp, getApps }    from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { initializeApp, getApps }     from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 import {
   getFirestore,
   doc,
   setDoc,
   updateDoc,
-  collection,
   serverTimestamp,
-  Timestamp,
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-// ─────────────────────────────────────────
-//  FIREBASE INIT (reuse existing app if already initialised)
-// ─────────────────────────────────────────
+// ── Firebase init (reuse shared app) ─────────────────────────
 const firebaseConfig = {
   apiKey:            "AIzaSyD0g9EfP0DPIR7skzKOZ0DyWLlUi5f5LlM",
   authDomain:        "rmsautoshop.firebaseapp.com",
@@ -55,358 +56,231 @@ const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-// ─────────────────────────────────────────
-//  CURRENT USER (set once auth resolves)
-// ─────────────────────────────────────────
+console.log("[FirebaseBooking] SDK: 12.11.0 | app:", app.name);
+
+// ── Auth state ────────────────────────────────────────────────
 let _currentUser = null;
+onAuthStateChanged(auth, (user) => { _currentUser = user || null; });
 
-onAuthStateChanged(auth, (user) => {
-  _currentUser = user || null;
-});
-
-// ─────────────────────────────────────────
-//  BOOKING STATUS CONSTANTS
-//  Shared between customer UI and admin panel
-// ─────────────────────────────────────────
+// ── Status constants ──────────────────────────────────────────
 const BOOKING_STATUS = {
-  PENDING:     "pending",      // Submitted, awaiting confirmation
-  CONFIRMED:   "confirmed",    // Admin confirmed the slot
-  IN_PROGRESS: "in_progress",  // Vehicle is being serviced
-  COMPLETED:   "completed",    // Service done, ready for pickup
-  CANCELLED:   "cancelled",    // Cancelled by customer or admin
-  NO_SHOW:     "no_show",      // Customer did not arrive
+  PENDING:     "pending",
+  CONFIRMED:   "confirmed",
+  IN_PROGRESS: "in_progress",
+  COMPLETED:   "completed",
+  CANCELLED:   "cancelled",
+  NO_SHOW:     "no_show",
 };
 
-// ─────────────────────────────────────────
-//  SAVE BOOKING TRANSACTION
+// ── Firestore ref helpers ─────────────────────────────────────
+const bookingDocRef    = (ref)       => doc(db, "Bookings", ref);
+const customerBkRef    = (uid, ref)  => doc(db, "User", "Customer", "Customers", uid, "Bookings", ref);
+const transactionDocRef= (ref)       => doc(db, "Transactions", `TXN-${ref}-DP`);
+
+// ─────────────────────────────────────────────────────────────
+//  CORE SAVE — called directly by bkFinalize() in Home.js
 //
-//  Called automatically when the customer
-//  clicks "Confirm & Pay" and bkFinalConfirm()
-//  runs successfully. Hooked into the existing
-//  bkFinalConfirm flow below.
-// ─────────────────────────────────────────
-async function saveBookingTransaction(bookingData) {
+//  @param {string} bookingRef    e.g. "REV-847291"
+//  @param {object} paymentInfo   { method, methodLabel, details }
+// ─────────────────────────────────────────────────────────────
+async function saveBooking(bookingRef, paymentInfo = {}) {
   if (!_currentUser) {
-    console.error("❌ saveBookingTransaction: No authenticated user.");
+    console.error("[FirebaseBooking] ❌ No authenticated user — booking not saved.");
     return null;
   }
 
   const uid = _currentUser.uid;
 
-  // Build Firestore-safe booking document
-  const bookingDoc = {
-    // ── Identity ──────────────────────────
-    uid,
-    bookingRef:       bookingData.ref,           // e.g. "REV-847291"
-    status:           BOOKING_STATUS.PENDING,
+  // ── Collect form values ──────────────────────────────────
+  const get     = (id) => document.getElementById(id)?.value?.trim()       || "";
+  const getText = (id) => document.getElementById(id)?.textContent?.trim() || "";
 
-    // ── Customer info ─────────────────────
-    customerName:     bookingData.customerName,
-    email:            bookingData.email,
-    phone:            bookingData.phone,
-
-    // ── Vehicle ───────────────────────────
-    vehicleMake:      bookingData.vehicleMake,
-    vehicleModel:     bookingData.vehicleModel,
-    vehicleYear:      bookingData.vehicleYear,
-    vehicleFull:      bookingData.vehicleFull,   // "2020 Toyota Vios"
-
-    // ── Service ───────────────────────────
-    serviceName:      bookingData.serviceName,
-    servicePrice:     bookingData.servicePrice,  // number, e.g. 1500
-
-    // ── Schedule ──────────────────────────
-    appointmentDate:  bookingData.appointmentDate,
-    appointmentTime:  bookingData.appointmentTime,
-    technician:       bookingData.technician     || "No preference",
-    dropoffPreference:bookingData.dropoffPref    || "Drop off & leave",
-    hearAboutUs:      bookingData.hearAboutUs    || "",
-
-    // ── Payment ───────────────────────────
-    downpayment:      bookingData.downpayment,   // number
-    balance:          bookingData.balance,        // number
-    paidPercent:      bookingData.paidPercent,    // number 0-100
-    paymentStatus:    bookingData.balance === 0 ? "fully_paid" : "partially_paid",
-
-    // ── Notes ─────────────────────────────
-    notes:            bookingData.notes          || "",
-
-    // ── Timestamps ────────────────────────
-    createdAt:        serverTimestamp(),
-    updatedAt:        serverTimestamp(),
-  };
-
-  // ── Write to top-level Bookings collection (admin-visible) ──
-  const bookingRef = doc(db, "Bookings", bookingData.ref);
-  await setDoc(bookingRef, bookingDoc);
-
-  // ── Write lightweight summary to customer's sub-collection ──
-  const customerBookingRef = doc(
-    db,
-    "User", "Customer", "Customers", uid,
-    "Bookings", bookingData.ref
-  );
-  await setDoc(customerBookingRef, {
-    bookingRef:      bookingData.ref,
-    serviceName:     bookingData.serviceName,
-    servicePrice:    bookingData.servicePrice,
-    appointmentDate: bookingData.appointmentDate,
-    appointmentTime: bookingData.appointmentTime,
-    status:          BOOKING_STATUS.PENDING,
-    downpayment:     bookingData.downpayment,
-    balance:         bookingData.balance,
-    createdAt:       serverTimestamp(),
-  });
-
-  // ── Write downpayment transaction record ──────────────────
-  const txId  = `TXN-${bookingData.ref}-DP`;
-  const txRef = doc(db, "Transactions", txId);
-  await setDoc(txRef, {
-    uid,
-    bookingRef:   bookingData.ref,
-    type:         "downpayment",
-    amount:       bookingData.downpayment,
-    serviceName:  bookingData.serviceName,
-    customerName: bookingData.customerName,
-    status:       "completed",               // downpayment is collected at booking time
-    createdAt:    serverTimestamp(),
-  });
-
-  console.log("✅ Booking saved to Firestore:", bookingData.ref);
-  return bookingData.ref;
-}
-
-// ─────────────────────────────────────────
-//  COLLECT BOOKING FORM DATA
-//  Reads all Step 2/3/4 fields and returns
-//  a clean object ready for Firestore.
-// ─────────────────────────────────────────
-function collectBookingFormData(ref) {
-  const get    = (id) => document.getElementById(id)?.value?.trim() || "";
-  const getText= (id) => document.getElementById(id)?.textContent?.trim() || "";
-
-  const firstName = get("bkFirstName");
-  const lastName  = get("bkLastName");
-  const make      = get("bkMake");
-  const model     = get("bkModel");
-  const year      = get("bkYear");
-
-  // Downpayment and balance — parse from receipt display
   const parseAmt = (id) => {
-    const raw = getText(id).replace(/[₱,]/g, "");
+    const raw = getText(id).replace(/[₱,\s]/g, "");
     return parseFloat(raw) || 0;
   };
 
-  const servicePrice = typeof bkSelPrice !== "undefined" ? bkSelPrice : 0;
+  const firstName   = get("bkFirstName");
+  const lastName    = get("bkLastName");
+  const customerName= [firstName, lastName].filter(Boolean).join(" ");
+  const make        = get("bkMake");
+  const model       = get("bkModel");
+  const year        = get("bkYear");
+
+  const servicePrice = typeof window.bkSelPrice !== "undefined" ? Number(window.bkSelPrice) : 0;
   const downpayment  = parseAmt("bkRcptDownpayment");
   const balance      = parseAmt("bkRcptBalance");
-  const paidPercent  = servicePrice > 0
-    ? Math.round((downpayment / servicePrice) * 100)
-    : 0;
+  const paidPercent  = servicePrice > 0 ? Math.round((downpayment / servicePrice) * 100) : 0;
 
-  // Technician & dropoff from Step 3 selects
   const step3Selects = document.querySelectorAll("#bkStep3 select");
   const technician   = step3Selects[0]?.value || "No preference";
   const dropoffPref  = step3Selects[1]?.value || "Drop off & leave";
   const hearAboutUs  = step3Selects[2]?.value || "";
 
-  return {
-    ref,
-    customerName:    [firstName, lastName].filter(Boolean).join(" "),
-    email:           get("bkEmail"),
-    phone:           get("bkPhone"),
-    vehicleMake:     make,
-    vehicleModel:    model,
-    vehicleYear:     year,
-    vehicleFull:     [year, make, model].filter(Boolean).join(" "),
-    serviceName:     typeof bkSelSvc   !== "undefined" ? bkSelSvc   : "",
+  const safePayment = {
+    method:      paymentInfo.method      || "unknown",
+    methodLabel: paymentInfo.methodLabel || "Unknown",
+    details:     paymentInfo.details     || {},
+  };
+
+  // ── Build the main booking document ──────────────────────
+  const bookingDoc = {
+    uid,
+    bookingRef,
+    status:            BOOKING_STATUS.PENDING,
+
+    customerName,
+    email:             get("bkEmail"),
+    phone:             get("bkPhone"),
+
+    vehicleMake:       make,
+    vehicleModel:      model,
+    vehicleYear:       year,
+    vehicleFull:       [year, make, model].filter(Boolean).join(" "),
+
+    serviceName:       typeof window.bkSelSvc !== "undefined" ? window.bkSelSvc : "",
     servicePrice,
-    appointmentDate: get("bkDate"),
-    appointmentTime: typeof bkSelTime  !== "undefined" ? bkSelTime  : "",
+
+    appointmentDate:   get("bkDate"),
+    appointmentTime:   typeof window.bkSelTime !== "undefined" ? window.bkSelTime : "",
     technician,
-    dropoffPref,
+    dropoffPreference: dropoffPref,
     hearAboutUs,
+
     downpayment,
     balance,
     paidPercent,
-    notes:           get("bkNotes"),
+    paymentStatus:     balance === 0 ? "fully_paid" : "partially_paid",
+
+    paymentMethod:      safePayment.method,
+    paymentMethodLabel: safePayment.methodLabel,
+    paymentDetails:     safePayment.details,
+
+    notes:             get("bkNotes"),
+
+    createdAt:         serverTimestamp(),
+    updatedAt:         serverTimestamp(),
   };
+
+  // ── Write all three docs ──────────────────────────────────
+  try {
+    // 1. Top-level Bookings collection (admin-visible)
+    await setDoc(bookingDocRef(bookingRef), bookingDoc);
+    console.log("[FirebaseBooking] ✅ Bookings/" + bookingRef + " written.");
+
+    // 2. Customer sub-collection summary
+    await setDoc(customerBkRef(uid, bookingRef), {
+      bookingRef,
+      serviceName:        bookingDoc.serviceName,
+      servicePrice:       bookingDoc.servicePrice,
+      appointmentDate:    bookingDoc.appointmentDate,
+      appointmentTime:    bookingDoc.appointmentTime,
+      status:             BOOKING_STATUS.PENDING,
+      downpayment:        bookingDoc.downpayment,
+      balance:            bookingDoc.balance,
+      paidPercent:        bookingDoc.paidPercent,
+      paymentStatus:      bookingDoc.paymentStatus,
+      paymentMethod:      safePayment.method,
+      paymentMethodLabel: safePayment.methodLabel,
+      vehicleFull:        bookingDoc.vehicleFull,
+      customerName:       bookingDoc.customerName,
+      createdAt:          serverTimestamp(),
+      updatedAt:          serverTimestamp(),
+    });
+    console.log("[FirebaseBooking] ✅ Customers/" + uid + "/Bookings/" + bookingRef + " written.");
+
+    // 3. Downpayment transaction record
+    await setDoc(transactionDocRef(bookingRef), {
+      uid,
+      bookingRef,
+      type:               "downpayment",
+      amount:             bookingDoc.downpayment,
+      serviceName:        bookingDoc.serviceName,
+      customerName:       bookingDoc.customerName,
+      paymentMethod:      safePayment.method,
+      paymentMethodLabel: safePayment.methodLabel,
+      paymentDetails:     safePayment.details,
+      status:             "completed",
+      createdAt:          serverTimestamp(),
+    });
+    console.log("[FirebaseBooking] ✅ Transactions/TXN-" + bookingRef + "-DP written.");
+
+    return bookingRef;
+
+  } catch (err) {
+    console.error("[FirebaseBooking] ❌ Write failed:", err);
+    throw err;
+  }
 }
 
-// ─────────────────────────────────────────
-//  HOOK INTO bkFinalConfirm
-//
-//  Wraps the existing function defined in Home.js.
-//  After the original UI logic runs, we collect
-//  the form data and push it to Firestore.
-// ─────────────────────────────────────────
-(function hookBkFinalConfirm() {
-  // Wait until DOMContentLoaded so Home.js has fully executed
-  window.addEventListener("DOMContentLoaded", () => {
-    const original = window.bkFinalConfirm;
+// ─────────────────────────────────────────────────────────────
+//  ADMIN FUNCTIONS
+// ─────────────────────────────────────────────────────────────
 
-    window.bkFinalConfirm = async function () {
-      // 1. Run original UI logic (validation, receipt render, step 5 display)
-      original.call(this);
-
-      // 2. After original runs, the reference number is in #bkConfirmRef
-      //    (set by the original function). Give DOM a tick to settle.
-      await new Promise(r => setTimeout(r, 80));
-
-      const ref = document.getElementById("bkConfirmRef")?.textContent?.trim();
-      if (!ref || ref === "REV-000000") {
-        // Original function returned early (validation failed) — do nothing
-        return;
-      }
-
-      // 3. Collect all form data
-      const bookingData = collectBookingFormData(ref);
-
-      // 4. Save to Firestore
-      try {
-        await saveBookingTransaction(bookingData);
-        console.log("📋 Transaction recorded:", ref);
-      } catch (err) {
-        console.error("❌ Failed to save booking:", err);
-        // Non-blocking — customer already sees the confirmation UI
-        // Optionally surface a soft warning:
-        const t = document.createElement("div");
-        t.className = "toast-notif";
-        Object.assign(t.style, {
-          background: "#1a0808",
-          borderLeft: "3px solid #ef4444",
-          color:      "#f87171",
-        });
-        t.innerHTML = `<i class="fas fa-exclamation-circle"></i> Booking saved locally — sync issue. Contact support.`;
-        document.body.appendChild(t);
-        requestAnimationFrame(() => { t.style.opacity = "1"; });
-        setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 4000);
-      }
-    };
-  });
-})();
-
-// ─────────────────────────────────────────
-//  ADMIN / SYSTEM FUNCTIONS
-//
-//  These are exported on window.BookingAdmin
-//  so the admin panel can import and call them
-//  without needing to re-initialise Firebase.
-// ─────────────────────────────────────────
-
-/**
- * Update the status of a booking.
- * Called by admin panel when technician starts work,
- * completes the job, or cancels the appointment.
- *
- * @param {string} bookingRef   e.g. "REV-847291"
- * @param {string} newStatus    One of BOOKING_STATUS values
- * @param {string} [adminNote]  Optional note from admin/technician
- * @param {string} [uid]        Customer UID (required to update sub-collection)
- */
 async function adminUpdateBookingStatus(bookingRef, newStatus, adminNote = "", uid = null) {
-  const validStatuses = Object.values(BOOKING_STATUS);
-  if (!validStatuses.includes(newStatus)) {
-    console.error(`❌ Invalid status: "${newStatus}". Must be one of:`, validStatuses);
+  if (!Object.values(BOOKING_STATUS).includes(newStatus)) {
+    console.error(`[FirebaseBooking] ❌ Invalid status: "${newStatus}"`);
     return;
   }
-
-  const updatePayload = {
+  const payload = {
     status:    newStatus,
     updatedAt: serverTimestamp(),
     ...(adminNote && { adminNote }),
   };
-
-  // Update top-level booking doc
-  await updateDoc(doc(db, "Bookings", bookingRef), updatePayload);
-
-  // Update customer sub-collection if uid is provided
+  await updateDoc(bookingDocRef(bookingRef), payload);
   if (uid) {
-    await updateDoc(
-      doc(db, "User", "Customer", "Customers", uid, "Bookings", bookingRef),
-      { status: newStatus, updatedAt: serverTimestamp() }
-    );
+    await updateDoc(customerBkRef(uid, bookingRef), {
+      status:    newStatus,
+      updatedAt: serverTimestamp(),
+    });
   }
-
-  console.log(`✅ Booking ${bookingRef} → ${newStatus}`);
+  console.log(`[FirebaseBooking] ✅ ${bookingRef} → ${newStatus}`);
 }
 
-/**
- * Record the balance payment when the customer pays on vehicle drop-off.
- * Creates a new transaction record and marks the booking as fully paid.
- *
- * @param {string} bookingRef   e.g. "REV-847291"
- * @param {number} amount       Amount collected
- * @param {string} customerName For the transaction record
- * @param {string} serviceName  For the transaction record
- * @param {string} uid          Customer UID
- */
 async function adminRecordBalancePayment(bookingRef, amount, customerName, serviceName, uid) {
-  const txId  = `TXN-${bookingRef}-BAL`;
-  const txRef = doc(db, "Transactions", txId);
-
-  await setDoc(txRef, {
-    uid,
-    bookingRef,
-    type:         "balance",
+  await setDoc(doc(db, "Transactions", `TXN-${bookingRef}-BAL`), {
+    uid, bookingRef,
+    type:        "balance",
     amount,
     serviceName,
     customerName,
-    status:       "completed",
-    createdAt:    serverTimestamp(),
+    status:      "completed",
+    createdAt:   serverTimestamp(),
   });
-
-  // Mark booking as fully paid
-  await updateDoc(doc(db, "Bookings", bookingRef), {
+  await updateDoc(bookingDocRef(bookingRef), {
     balance:       0,
     paymentStatus: "fully_paid",
     updatedAt:     serverTimestamp(),
   });
-
-  console.log(`✅ Balance payment recorded for ${bookingRef}: ₱${amount}`);
+  console.log(`[FirebaseBooking] ✅ Balance payment recorded for ${bookingRef}: ₱${amount}`);
 }
 
-/**
- * Record any additional charge added during service
- * (e.g. extra parts, labour discovered during inspection).
- *
- * @param {string} bookingRef
- * @param {number} amount
- * @param {string} description   e.g. "Replacement air filter"
- * @param {string} uid
- */
 async function adminRecordAdditionalCharge(bookingRef, amount, description, uid) {
-  const txId  = `TXN-${bookingRef}-ADD-${Date.now()}`;
-  const txRef = doc(db, "Transactions", txId);
-
-  await setDoc(txRef, {
-    uid,
-    bookingRef,
+  await setDoc(doc(db, "Transactions", `TXN-${bookingRef}-ADD-${Date.now()}`), {
+    uid, bookingRef,
     type:        "additional_charge",
     amount,
     description,
     status:      "pending_collection",
     createdAt:   serverTimestamp(),
   });
-
-  // Increment balance on the booking doc
-  // (Use Firestore increment in a real env; here we keep it simple)
-  await updateDoc(doc(db, "Bookings", bookingRef), {
+  await updateDoc(bookingDocRef(bookingRef), {
     updatedAt: serverTimestamp(),
-    notes:     `Additional charge added: ${description} — ₱${amount}`,
+    notes:     `Additional charge: ${description} — ₱${amount}`,
   });
-
-  console.log(`✅ Additional charge recorded for ${bookingRef}: ₱${amount} — ${description}`);
+  console.log(`[FirebaseBooking] ✅ Additional charge for ${bookingRef}: ₱${amount}`);
 }
 
-// ─────────────────────────────────────────
-//  EXPOSE TO WINDOW (admin panel access)
-// ─────────────────────────────────────────
-window.BookingAdmin = {
-  BOOKING_STATUS,
-  updateStatus:          adminUpdateBookingStatus,
-  recordBalancePayment:  adminRecordBalancePayment,
-  recordAdditionalCharge:adminRecordAdditionalCharge,
+// ── Public API ────────────────────────────────────────────────
+window.BookingDB = {
+  save: saveBooking,
 };
 
-console.log("📦 FirebaseBooking.js loaded — BookingAdmin available on window.BookingAdmin");
+window.BookingAdmin = {
+  BOOKING_STATUS,
+  updateStatus:           adminUpdateBookingStatus,
+  recordBalancePayment:   adminRecordBalancePayment,
+  recordAdditionalCharge: adminRecordAdditionalCharge,
+};
+
+console.log("[FirebaseBooking] ✅ Loaded — window.BookingDB.save() ready.");

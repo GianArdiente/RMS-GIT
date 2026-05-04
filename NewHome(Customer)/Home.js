@@ -1062,7 +1062,7 @@ function scrollToCatalog() {
 /* ════════════════════════════
    CART DRAWER
 ════════════════════════════ */
-const CartDrawer = (() => {
+var CartDrawer = (() => {
   let _items = [];
   const FALLBACK = 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=200&q=80';
 
@@ -1074,7 +1074,40 @@ const CartDrawer = (() => {
     if (badge) { badge.textContent = total; badge.style.display = total > 0 ? 'flex' : 'none'; }
   }
 
+  function _getRemoteCartItems() {
+    if (window.FirebaseShop?.getCart) {
+      return window.FirebaseShop.getCart();
+    }
+    return null;
+  }
+
+  async function _refreshCartFromFirebase() {
+    if (!(window.FirebaseShop && window._FSCart && !window._FSCart._isShim)) return false;
+
+    try {
+      if (window.FirebaseShop.isReady && window.FirebaseShop.isReady()) {
+        const remote = await window.FirebaseShop.getCartFromFirestore();
+        if (Array.isArray(remote)) {
+          _items = remote.map(item => ({ ...item, id: Number(item.productId) }));
+          return true;
+        }
+      }
+    } catch (err) {
+      console.warn("[Home.js] Failed to refresh cart from Firestore:", err);
+    }
+
+    const cached = _getRemoteCartItems();
+    if (Array.isArray(cached)) {
+      _items = cached.map(item => ({ ...item, id: Number(item.productId) }));
+      return true;
+    }
+    return false;
+  }
+
   function addItem(id) {
+    if (window._FSCart && !window._FSCart._isShim) {
+      return window._FSCart.addItem(id);
+    }
     const p = PRODUCTS.find(x => x.id === id); if (!p) return;
     const ex = _find(id);
     if (ex) ex.qty++; else _items.push({ ...p, qty:1 });
@@ -1083,6 +1116,9 @@ const CartDrawer = (() => {
   }
 
   function changeQty(id, delta) {
+    if (window._FSCart && !window._FSCart._isShim) {
+      return window._FSCart.changeQty(id, delta);
+    }
     const item = _find(id); if (!item) return;
     item.qty += delta;
     if (item.qty <= 0) _items = _items.filter(i => i.id !== id);
@@ -1090,9 +1126,19 @@ const CartDrawer = (() => {
     _renderList();
   }
 
-  function removeItem(id) { _items = _items.filter(i => i.id !== id); _updateBadge(); _renderList(); }
+  function removeItem(id) {
+    if (window._FSCart && !window._FSCart._isShim) {
+      return window._FSCart.removeItem(id);
+    }
+    _items = _items.filter(i => i.id !== id);
+    _updateBadge();
+    _renderList();
+  }
 
   function checkout() {
+    if (window._FSCart && !window._FSCart._isShim) {
+      return window._FSCart.checkout();
+    }
     if (!_items.length) { showToast('Your cart is empty', 'error'); return; }
     showToast('Order placed — thank you!');
     _items = []; _updateBadge(); _renderList(); close();
@@ -1123,7 +1169,13 @@ const CartDrawer = (() => {
     document.getElementById('cart-total').textContent = '$' + total.toFixed(2);
   }
 
-  function open()  { _renderList(); document.getElementById('cart-overlay').classList.add('open');    document.getElementById('cart-drawer').classList.add('open'); }
+  async function open() {
+    await _refreshCartFromFirebase();
+    _updateBadge();
+    _renderList();
+    document.getElementById('cart-overlay').classList.add('open');
+    document.getElementById('cart-drawer').classList.add('open');
+  }
   function close() {                document.getElementById('cart-overlay').classList.remove('open'); document.getElementById('cart-drawer').classList.remove('open'); }
 
   return { addItem, changeQty, removeItem, checkout, open, close };
@@ -1739,4 +1791,336 @@ function closeArticle() {
 }
 
 
+/* ════════════════════════════
+   PAYMENT METHOD MODAL
+════════════════════════════ */
+const PayModal = (() => {
+  let _selected = null;
 
+  const METHODS = ['cod', 'gcash', 'card'];
+
+  function open() {
+    // Don't open if cart is empty
+    const items = window._FSCart?._isShim === false
+      ? (window.FirebaseShop?.getCart?.() || [])
+      : [];
+    if (!items.length && !window._FSCart?._isShim) {
+      showToast('Your cart is empty', 'error'); return;
+    }
+    _selected = null;
+    METHODS.forEach(m => {
+      document.getElementById('payOpt-' + m)?.classList.remove('selected');
+      document.getElementById('paySubForm-' + m)?.classList.remove('visible');
+    });
+    const btn = document.getElementById('payConfirmBtn');
+    if (btn) { btn.disabled = true; }
+    CartDrawer.close();
+    document.getElementById('payModal').classList.add('open');
+  }
+
+  function close() {
+    document.getElementById('payModal').classList.remove('open');
+  }
+
+  function select(method) {
+    _selected = method;
+    METHODS.forEach(m => {
+      document.getElementById('payOpt-' + m)?.classList.toggle('selected', m === method);
+      const sub = document.getElementById('paySubForm-' + m);
+      if (sub) sub.classList.toggle('visible', m === method);
+    });
+    const btn = document.getElementById('payConfirmBtn');
+    if (btn) { btn.disabled = false; }
+  }
+
+  function formatCard(input) {
+    let v = input.value.replace(/\D/g, '').slice(0, 16);
+    input.value = v.replace(/(.{4})/g, '$1 ').trim();
+  }
+
+  function formatExpiry(input) {
+    let v = input.value.replace(/\D/g, '').slice(0, 4);
+    if (v.length >= 3) v = v.slice(0, 2) + ' / ' + v.slice(2);
+    input.value = v;
+  }
+
+  function confirm() {
+    if (!_selected) { showToast('Please select a payment method.', 'error'); return; }
+
+    // Validate sub-form fields
+    if (_selected === 'gcash') {
+      const num  = document.getElementById('payGcashNum')?.value.trim();
+      const name = document.getElementById('payGcashName')?.value.trim();
+      if (!num || !/^09\d{9}$/.test(num)) {
+        showToast('Enter a valid GCash number (09XXXXXXXXX).', 'error'); return;
+      }
+      if (!name) { showToast('Enter the GCash account name.', 'error'); return; }
+    }
+
+    if (_selected === 'card') {
+      const num  = document.getElementById('payCardNum')?.value.replace(/\s/g,'').trim();
+      const exp  = document.getElementById('payCardExp')?.value.trim();
+      const cvv  = document.getElementById('payCardCvv')?.value.trim();
+      const name = document.getElementById('payCardName')?.value.trim();
+      if (!num || num.length < 15) { showToast('Enter a valid card number.', 'error'); return; }
+      if (!exp || exp.length < 7)  { showToast('Enter a valid expiry date.', 'error'); return; }
+      if (!cvv || cvv.length < 3)  { showToast('Enter the CVV.', 'error'); return; }
+      if (!name)                   { showToast('Enter the name on your card.', 'error'); return; }
+    }
+
+    const labels = { cod:'Cash on Delivery', gcash:'GCash', card:'Credit/Debit Card' };
+    close();
+
+    // Pass payment method to checkout
+    if (window._FSCart && !window._FSCart._isShim) {
+      window._FSCart.checkout(_selected, labels[_selected]);
+    } else {
+      // Fallback for local CartDrawer
+      CartDrawer.checkout();
+      showToast(`Order placed via ${labels[_selected]}!`);
+    }
+  }
+
+  return { open, close, select, confirm, formatCard, formatExpiry };
+})();
+
+/* ── Confirm & Pay button — now opens payment modal first ── */
+function bkFinalConfirm() {
+  const pay     = parseFloat(document.getElementById('bkPayAmt')?.value) || 0;
+  const minDown = bkSelPrice * 0.5;
+  const errEl   = document.getElementById('bkPayErr');
+
+  if (pay < minDown) {
+    if (errEl) errEl.style.display = 'flex';
+    document.getElementById('bkPayAmt')?.focus();
+    return;
+  }
+  if (errEl) errEl.style.display = 'none';
+
+  /* Open payment method modal instead of finalising immediately */
+  BkPayModal.open();
+}
+
+/* ── Internal: called by BkPayModal after payment method confirmed ── */
+function bkFinalize(paymentInfo) {
+  const pay      = parseFloat(document.getElementById('bkPayAmt')?.value) || 0;
+  const balance  = bkSelPrice - pay;
+  const ref      = 'REV-' + Math.floor(100000 + Math.random() * 900000);
+  const fn       = document.getElementById('bkFirstName').value.trim();
+  const ln       = document.getElementById('bkLastName').value.trim();
+  const fullName = [fn, ln].filter(Boolean).join(' ');
+  const appt     = document.getElementById('bkSumAppt')?.textContent || '—';
+
+  setText('bkConfirmRef',      ref);
+  setText('bkRcptRef',         ref);
+  setText('bkRcptName',        fullName || '—');
+  setText('bkRcptService',     bkSelSvc || '—');
+  setText('bkRcptAppt',        appt);
+  setText('bkRcptTotal',       '₱' + Number(bkSelPrice).toLocaleString('en-PH', { minimumFractionDigits:2 }));
+  setText('bkRcptDownpayment', '₱' + pay.toLocaleString('en-PH', { minimumFractionDigits:2 }));
+  setText('bkRcptBalance',     '₱' + balance.toLocaleString('en-PH', { minimumFractionDigits:2 }));
+  setText('bkRcptPaidPct',     Math.round((pay / bkSelPrice) * 100) + '% paid');
+  setText('bkRcptBalancePct',  Math.round((balance / bkSelPrice) * 100) + '% remaining');
+
+  /* Store payment info on window so FirebaseBooking can read it */
+  window._bkLastPaymentInfo = paymentInfo;
+
+  const paidFill = document.getElementById('bkRcptPaidFill');
+  const balFill  = document.getElementById('bkRcptBalanceFill');
+  if (paidFill) paidFill.style.width = Math.round((pay / bkSelPrice) * 100) + '%';
+  if (balFill)  balFill.style.width  = Math.round((balance / bkSelPrice) * 100) + '%';
+
+  const step1El = document.getElementById('bkStep1');
+  if (step1El) step1El.style.display = 'none';
+  ['bkStep2','bkStep3','bkStep4'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('active');
+  });
+  const s5 = document.getElementById('bkStep5');
+  if (s5) s5.classList.add('active');
+
+  bkUpdateStepper(4);
+  const fill = document.getElementById('bkStepFill');
+  if (fill) fill.style.width = '100%';
+  bkCurStep = 5;
+
+  document.getElementById('tab-booking')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  if (window.showToast) showToast('Booking confirmed! Reference: ' + ref);
+}
+
+/* ════════════════════════════
+   BOOKING PAYMENT METHOD MODAL
+════════════════════════════ */
+const BkPayModal = (() => {
+  let _sel = null;
+  const METHODS = ['gcash', 'maya', 'bank', 'card'];
+  const LABELS  = { gcash:'GCash', maya:'Maya', bank:'Bank Transfer', card:'Credit/Debit Card' };
+
+  function open() {
+    _sel = null;
+    METHODS.forEach(m => {
+      document.getElementById('bkPmOpt-' + m)?.classList.remove('selected');
+      document.getElementById('bkPmSub-' + m)?.classList.remove('visible');
+    });
+    const btn = document.getElementById('bkPmConfirmBtn');
+    if (btn) btn.disabled = true;
+    document.getElementById('bkPayModal').classList.add('open');
+  }
+
+  function close() {
+    document.getElementById('bkPayModal').classList.remove('open');
+  }
+
+  function select(method) {
+    _sel = method;
+    METHODS.forEach(m => {
+      document.getElementById('bkPmOpt-' + m)?.classList.toggle('selected', m === method);
+      document.getElementById('bkPmSub-' + m)?.classList.toggle('visible', m === method);
+    });
+    const btn = document.getElementById('bkPmConfirmBtn');
+    if (btn) btn.disabled = false;
+  }
+
+  function fmtCard(input) {
+    let v = input.value.replace(/\D/g, '').slice(0, 16);
+    input.value = v.replace(/(.{4})/g, '$1 ').trim();
+  }
+
+  function fmtExpiry(input) {
+    let v = input.value.replace(/\D/g, '').slice(0, 4);
+    if (v.length >= 3) v = v.slice(0, 2) + ' / ' + v.slice(2);
+    input.value = v;
+  }
+
+  function _collectDetails() {
+    if (_sel === 'gcash') {
+      return {
+        accountNumber: document.getElementById('bkPmGcashNum')?.value.trim() || '',
+        accountName:   document.getElementById('bkPmGcashName')?.value.trim() || '',
+      };
+    }
+    if (_sel === 'maya') {
+      return {
+        accountNumber: document.getElementById('bkPmMayaNum')?.value.trim() || '',
+        accountName:   document.getElementById('bkPmMayaName')?.value.trim() || '',
+      };
+    }
+    if (_sel === 'bank') {
+      return {
+        bankName:      document.getElementById('bkPmBankName')?.value || '',
+        accountNumber: document.getElementById('bkPmBankAcct')?.value.trim() || '',
+        accountName:   document.getElementById('bkPmBankHolder')?.value.trim() || '',
+      };
+    }
+    if (_sel === 'card') {
+      const raw = document.getElementById('bkPmCardNum')?.value.replace(/\s/g,'') || '';
+      return {
+        lastFour:    raw.slice(-4),
+        expiry:      document.getElementById('bkPmCardExp')?.value.trim() || '',
+        cardHolder:  document.getElementById('bkPmCardName')?.value.trim() || '',
+      };
+    }
+    return {};
+  }
+
+  function confirm() {
+    if (!_sel) { showToast('Please select a payment method.', 'error'); return; }
+
+    /* Validate */
+    if (_sel === 'gcash' || _sel === 'maya') {
+      const num  = document.getElementById(`bkPm${_sel === 'gcash' ? 'Gcash' : 'Maya'}Num`)?.value.trim();
+      const name = document.getElementById(`bkPm${_sel === 'gcash' ? 'Gcash' : 'Maya'}Name`)?.value.trim();
+      if (!num || !/^09\d{9}$/.test(num)) {
+        showToast(`Enter a valid ${LABELS[_sel]} number (09XXXXXXXXX).`, 'error'); return;
+      }
+      if (!name) { showToast('Enter the account name.', 'error'); return; }
+    }
+
+    if (_sel === 'bank') {
+      const bank = document.getElementById('bkPmBankName')?.value;
+      const acct = document.getElementById('bkPmBankAcct')?.value.trim();
+      const name = document.getElementById('bkPmBankHolder')?.value.trim();
+      if (!bank) { showToast('Please select a bank.', 'error'); return; }
+      if (!acct) { showToast('Enter your account number.', 'error'); return; }
+      if (!name) { showToast('Enter the account name.', 'error'); return; }
+    }
+
+    if (_sel === 'card') {
+      const num  = document.getElementById('bkPmCardNum')?.value.replace(/\s/g,'').trim();
+      const exp  = document.getElementById('bkPmCardExp')?.value.trim();
+      const cvv  = document.getElementById('bkPmCardCvv')?.value.trim();
+      const name = document.getElementById('bkPmCardName')?.value.trim();
+      if (!num || num.length < 15) { showToast('Enter a valid card number.', 'error'); return; }
+      if (!exp || exp.length < 7)  { showToast('Enter the expiry date (MM / YY).', 'error'); return; }
+      if (!cvv || cvv.length < 3)  { showToast('Enter the CVV.', 'error'); return; }
+      if (!name)                   { showToast('Enter the name on your card.', 'error'); return; }
+    }
+
+    const paymentInfo = {
+      method:      _sel,
+      methodLabel: LABELS[_sel],
+      details:     _collectDetails(),
+    };
+
+    close();
+    bkFinalize(paymentInfo);
+  }
+
+  return { open, close, select, confirm, fmtCard, fmtExpiry };
+})();
+
+function bkFinalize(paymentInfo) {
+  const pay      = parseFloat(document.getElementById('bkPayAmt')?.value) || 0;
+  const balance  = bkSelPrice - pay;
+  const ref      = 'REV-' + Math.floor(100000 + Math.random() * 900000);
+  const fn       = document.getElementById('bkFirstName').value.trim();
+  const ln       = document.getElementById('bkLastName').value.trim();
+  const fullName = [fn, ln].filter(Boolean).join(' ');
+  const appt     = document.getElementById('bkSumAppt')?.textContent || '—';
+
+  setText('bkConfirmRef',      ref);
+  setText('bkRcptRef',         ref);
+  setText('bkRcptName',        fullName || '—');
+  setText('bkRcptService',     bkSelSvc || '—');
+  setText('bkRcptAppt',        appt);
+  setText('bkRcptTotal',       '₱' + Number(bkSelPrice).toLocaleString('en-PH', { minimumFractionDigits:2 }));
+  setText('bkRcptDownpayment', '₱' + pay.toLocaleString('en-PH', { minimumFractionDigits:2 }));
+  setText('bkRcptBalance',     '₱' + balance.toLocaleString('en-PH', { minimumFractionDigits:2 }));
+  setText('bkRcptPaidPct',     Math.round((pay / bkSelPrice) * 100) + '% paid');
+  setText('bkRcptBalancePct',  Math.round((balance / bkSelPrice) * 100) + '% remaining');
+
+  const paidFill = document.getElementById('bkRcptPaidFill');
+  const balFill  = document.getElementById('bkRcptBalanceFill');
+  if (paidFill) paidFill.style.width = Math.round((pay / bkSelPrice) * 100) + '%';
+  if (balFill)  balFill.style.width  = Math.round((balance / bkSelPrice) * 100) + '%';
+
+  /* ── Show step 5 ── */
+  const step1El = document.getElementById('bkStep1');
+  if (step1El) step1El.style.display = 'none';
+  ['bkStep2','bkStep3','bkStep4'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('active');
+  });
+  const s5 = document.getElementById('bkStep5');
+  if (s5) s5.classList.add('active');
+
+  bkUpdateStepper(4);
+  const fill = document.getElementById('bkStepFill');
+  if (fill) fill.style.width = '100%';
+  bkCurStep = 5;
+
+  document.getElementById('tab-booking')?.scrollIntoView({ behavior:'smooth', block:'start' });
+
+  /* ── Save to Firestore — single direct call, no hooks ── */
+  if (window.BookingDB?.save) {
+    window.BookingDB.save(ref, paymentInfo)
+      .then(() => {
+        showToast('Booking confirmed! Ref: ' + ref);
+      })
+      .catch((err) => {
+        console.error('[Home.js] Firestore booking save failed:', err);
+        showToast('Booking confirmed locally — sync issue. Contact support.', 'error');
+      });
+  } else {
+    /* BookingDB not loaded yet (e.g. dev without Firebase) */
+    showToast('Booking confirmed! Ref: ' + ref);
+  }
+}

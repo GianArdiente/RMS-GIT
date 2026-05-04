@@ -82,7 +82,11 @@
   <div class="cart-list" id="cart-list"></div>
   <div class="cart-ft">
     <div class="cart-subtotal"><span class="cart-subtotal-l">Total</span><span class="cart-subtotal-v" id="cart-total">$0.00</span></div>
-    <button class="checkout-btn" onclick="CartDrawer.checkout()">Complete Order →</button>
+<!-- In Home.html, inside the cart drawer footer -->
+<button class="checkout-btn btn-shine" onclick="PayModal.open()">
+  <i class="fas fa-lock" style="margin-right:8px;font-size:11px;"></i>
+  Proceed to Checkout
+</button>
   </div>
 </div>
 
@@ -866,9 +870,241 @@
     </div>
   </div>
 </div>
-<script src="Home.js"></script>
+<!-- ── Payment Method Modal ── -->
+<div class="pay-modal-overlay" id="payModal">
+  <div class="pay-modal-box">
+    <div class="pay-gold-bar"></div>
+    <div class="pay-header">
+      <div class="pay-title">Payment method</div>
+      <div class="pay-sub">Choose how you'd like to pay for your order</div>
+    </div>
+    <div class="pay-methods">
+
+      <!-- Cash on Delivery -->
+      <div class="pay-option" id="payOpt-cod" onclick="PayModal.select('cod')">
+        <div class="pay-radio"><div class="pay-radio-dot"></div></div>
+        <div class="pay-icon pay-icon-cod">🚚</div>
+        <div style="flex:1;min-width:0;">
+          <div class="pay-method-name">Cash on delivery</div>
+          <div class="pay-method-desc">Pay when your order arrives</div>
+        </div>
+        <span class="pay-badge-pill pay-badge-cod">No fee</span>
+      </div>
+
+      <!-- GCash -->
+      <div class="pay-option" id="payOpt-gcash" onclick="PayModal.select('gcash')">
+        <div class="pay-radio"><div class="pay-radio-dot"></div></div>
+        <div class="pay-icon pay-icon-gcash" style="font-size:14px;letter-spacing:-1px;">G₱</div>
+        <div style="flex:1;min-width:0;">
+          <div class="pay-method-name">GCash</div>
+          <div class="pay-method-desc">Instant mobile wallet payment</div>
+        </div>
+        <span class="pay-badge-pill pay-badge-gcash">Instant</span>
+      </div>
+      <div class="pay-sub-form" id="paySubForm-gcash">
+        <div class="pay-field">
+          <label>GCash number</label>
+          <input id="payGcashNum" type="tel" placeholder="09XX XXX XXXX" maxlength="11">
+        </div>
+        <div class="pay-field">
+          <label>Account name</label>
+          <input id="payGcashName" type="text" placeholder="Name registered to GCash">
+        </div>
+      </div>
+
+      <!-- Credit / Debit Card -->
+      <div class="pay-option" id="payOpt-card" onclick="PayModal.select('card')">
+        <div class="pay-radio"><div class="pay-radio-dot"></div></div>
+        <div class="pay-icon pay-icon-card">💳</div>
+        <div style="flex:1;min-width:0;">
+          <div class="pay-method-name">Credit / Debit card</div>
+          <div class="pay-method-desc">Visa, Mastercard, JCB</div>
+        </div>
+        <span class="pay-badge-pill pay-badge-card">Secure</span>
+      </div>
+      <div class="pay-sub-form" id="paySubForm-card">
+        <div class="pay-field">
+          <label>Card number</label>
+          <input id="payCardNum" type="text" placeholder="1234 5678 9012 3456" maxlength="19"
+                 oninput="PayModal.formatCard(this)">
+        </div>
+        <div class="pay-field-row">
+          <div class="pay-field">
+            <label>Expiry</label>
+            <input id="payCardExp" type="text" placeholder="MM / YY" maxlength="7"
+                   oninput="PayModal.formatExpiry(this)">
+          </div>
+          <div class="pay-field">
+            <label>CVV</label>
+            <input id="payCardCvv" type="password" placeholder="•••" maxlength="4">
+          </div>
+        </div>
+        <div class="pay-field">
+          <label>Name on card</label>
+          <input id="payCardName" type="text" placeholder="Full name as it appears on card">
+        </div>
+      </div>
+
+    </div>
+    <div class="pay-footer">
+      <button class="pay-btn-cancel" onclick="PayModal.close()">Cancel</button>
+      <button class="pay-btn-confirm" id="payConfirmBtn" disabled onclick="PayModal.confirm()">
+        Confirm order
+      </button>
+    </div>
+  </div>
+</div>
+<!-- ═══════════════════════════════
+     BOOKING PAYMENT METHOD MODAL
+═══════════════════════════════ -->
+<div class="bk-pay-modal-overlay" id="bkPayModal">
+  <div class="bk-pay-modal-box">
+    <div class="bk-pay-modal-gold-bar"></div>
+
+    <div class="bk-pay-modal-header">
+      <div class="bk-pay-modal-title">Select Payment</div>
+      <div class="bk-pay-modal-sub">Choose how you'd like to pay your downpayment</div>
+    </div>
+
+    <!-- Method list -->
+    <div class="bk-pm-methods">
+
+      <!-- GCash -->
+      <div class="bk-pm-option" id="bkPmOpt-gcash" onclick="BkPayModal.select('gcash')">
+        <div class="bk-pm-radio"><div class="bk-pm-radio-dot"></div></div>
+        <div class="bk-pm-icon bk-pm-icon-gcash">G</div>
+        <div style="flex:1;">
+          <div class="bk-pm-name">GCash</div>
+          <div class="bk-pm-desc">Mobile wallet — instant transfer</div>
+        </div>
+        <div class="bk-pm-badge">Popular</div>
+      </div>
+      <div class="bk-pm-subform" id="bkPmSub-gcash">
+        <div class="bk-pm-subform-inner">
+          <div class="bk-pm-field">
+            <label>GCash number</label>
+            <input type="tel" id="bkPmGcashNum" placeholder="09XXXXXXXXX" maxlength="11">
+          </div>
+          <div class="bk-pm-field">
+            <label>Account name</label>
+            <input type="text" id="bkPmGcashName" placeholder="Full name on GCash">
+          </div>
+        </div>
+      </div>
+
+      <!-- Maya -->
+      <div class="bk-pm-option" id="bkPmOpt-maya" onclick="BkPayModal.select('maya')">
+        <div class="bk-pm-radio"><div class="bk-pm-radio-dot"></div></div>
+        <div class="bk-pm-icon bk-pm-icon-maya">M</div>
+        <div style="flex:1;">
+          <div class="bk-pm-name">Maya</div>
+          <div class="bk-pm-desc">Mobile wallet — instant transfer</div>
+        </div>
+      </div>
+      <div class="bk-pm-subform" id="bkPmSub-maya">
+        <div class="bk-pm-subform-inner">
+          <div class="bk-pm-field">
+            <label>Maya number</label>
+            <input type="tel" id="bkPmMayaNum" placeholder="09XXXXXXXXX" maxlength="11">
+          </div>
+          <div class="bk-pm-field">
+            <label>Account name</label>
+            <input type="text" id="bkPmMayaName" placeholder="Full name on Maya">
+          </div>
+        </div>
+      </div>
+
+      <!-- Bank Transfer -->
+      <div class="bk-pm-option" id="bkPmOpt-bank" onclick="BkPayModal.select('bank')">
+        <div class="bk-pm-radio"><div class="bk-pm-radio-dot"></div></div>
+        <div class="bk-pm-icon bk-pm-icon-bank">B</div>
+        <div style="flex:1;">
+          <div class="bk-pm-name">Bank Transfer</div>
+          <div class="bk-pm-desc">BPI, BDO, UnionBank, Metrobank</div>
+        </div>
+      </div>
+      <div class="bk-pm-subform" id="bkPmSub-bank">
+        <div class="bk-pm-subform-inner">
+          <div class="bk-pm-field">
+            <label>Bank</label>
+            <select id="bkPmBankName">
+              <option value="">Select bank</option>
+              <option>BPI</option>
+              <option>BDO</option>
+              <option>UnionBank</option>
+              <option>Metrobank</option>
+              <option>PNB</option>
+              <option>Landbank</option>
+              <option>Security Bank</option>
+              <option>RCBC</option>
+            </select>
+          </div>
+          <div class="bk-pm-field">
+            <label>Account number</label>
+            <input type="text" id="bkPmBankAcct" placeholder="XXXX-XXXX-XXXX">
+          </div>
+          <div class="bk-pm-field">
+            <label>Account name</label>
+            <input type="text" id="bkPmBankHolder" placeholder="Full name on account">
+          </div>
+        </div>
+      </div>
+
+      <!-- Credit/Debit Card -->
+      <div class="bk-pm-option" id="bkPmOpt-card" onclick="BkPayModal.select('card')">
+        <div class="bk-pm-radio"><div class="bk-pm-radio-dot"></div></div>
+        <div class="bk-pm-icon bk-pm-icon-card">C</div>
+        <div style="flex:1;">
+          <div class="bk-pm-name">Credit / Debit Card</div>
+          <div class="bk-pm-desc">Visa, Mastercard, JCB</div>
+        </div>
+      </div>
+      <div class="bk-pm-subform" id="bkPmSub-card">
+        <div class="bk-pm-subform-inner">
+          <div class="bk-pm-field">
+            <label>Card number</label>
+            <input type="text" id="bkPmCardNum" placeholder="XXXX XXXX XXXX XXXX" maxlength="19"
+              oninput="BkPayModal.fmtCard(this)">
+          </div>
+          <div class="bk-pm-field-row">
+            <div class="bk-pm-field">
+              <label>Expiry</label>
+              <input type="text" id="bkPmCardExp" placeholder="MM / YY" maxlength="7"
+                oninput="BkPayModal.fmtExpiry(this)">
+            </div>
+            <div class="bk-pm-field">
+              <label>CVV</label>
+              <input type="text" id="bkPmCardCvv" placeholder="XXX" maxlength="4">
+            </div>
+          </div>
+          <div class="bk-pm-field">
+            <label>Name on card</label>
+            <input type="text" id="bkPmCardName" placeholder="As printed on card">
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.bk-pm-methods -->
+
+    <div class="bk-pm-footer">
+      <button class="bk-pm-cancel" onclick="BkPayModal.close()">Cancel</button>
+      <button class="bk-pm-confirm" id="bkPmConfirmBtn" disabled onclick="BkPayModal.confirm()">
+        Confirm &amp; Pay
+      </button>
+    </div>
+  </div>
+</div>
+<!--<script src="Home.js"></script>
 <script type="module" src="CustomerBackend.js"></script>
 <script type="module" src="FirebaseHome.js"></script>  ← ADD THIS
+<script type="module" src="FirebaseBooking.js"></script>
+<script type="module" src="FirebaseShop.js"></script>
+<script type="module" src="FirebaseDatabase.js"></script>-->
+
+<script src="Home.js"></script>
+<script type="module" src="FirebaseDatabase.js"></script>
+<script type="module" src="CustomerBackend.js"></script>
+<script type="module" src="FirebaseHome.js">  </script>
 <script type="module" src="FirebaseBooking.js"></script>
 <script type="module" src="FirebaseShop.js"></script>
 </body>
