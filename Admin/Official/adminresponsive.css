@@ -1,0 +1,376 @@
+/* ============================================================
+   AdminResponsive.css
+   Drop this AFTER Admin.css in your admin.html <head>
+   Fixes sidebar disappearing + text squeezing on small screens
+   ============================================================ */
+
+/* ── BREAKPOINTS USED ────────────────────────────────────
+   < 1024px  → mobile/tablet: sidebar becomes drawer
+   < 768px   → small tablet: collapse header elements
+   < 540px   → phone: single-column everything
+   ──────────────────────────────────────────────────────── */
+
+
+/* ============================================================
+   SIDEBAR — MOBILE DRAWER
+   ============================================================ */
+
+@media (max-width: 1023px) {
+
+  /* Sidebar slides in as overlay drawer */
+  #sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 50;
+    width: 248px;
+    transform: translateX(-100%);
+    box-shadow: 8px 0 40px rgba(0,0,0,.7);
+  }
+
+  #sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Darken overlay behind drawer */
+  #sbOv {
+    display: block !important;
+  }
+
+  /* Main content takes full width */
+  .main-col {
+    width: 100%;
+  }
+
+  /* Hamburger button visible */
+  #menuBtn {
+    display: flex !important;
+  }
+}
+
+/* ============================================================
+   HEADER — RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 767px) {
+
+  /* Shrink search bar */
+  .hsr {
+    display: none; /* hidden on very small — can re-enable if needed */
+  }
+
+  /* Clock still shows but smaller */
+  #clkWrap {
+    display: none !important; /* hidden below 768 already via JS — back it up in CSS */
+  }
+
+  /* Tighten header padding */
+  #hdr {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  /* Profile button: hide role label on tiny screens */
+  .pr-btn > div:last-child > div:last-child {
+    display: none;
+  }
+}
+
+/* ============================================================
+   CONTENT AREA — PADDING + OVERFLOW
+   ============================================================ */
+
+#ca {
+  /* Prevent content from being cut off */
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+@media (max-width: 767px) {
+  #ca {
+    padding: 12px;
+  }
+}
+
+/* ============================================================
+   DASHBOARD STAT CARDS — RESPONSIVE GRID
+   ============================================================ */
+
+/* The 4-col stat card row */
+#page-dashboard > div:first-child {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  #page-dashboard > div:first-child {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #page-dashboard > div:first-child {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+  }
+
+  .sc-v {
+    font-size: 26px !important;
+  }
+
+  .sc {
+    padding: 12px 14px !important;
+  }
+}
+
+/* ============================================================
+   BOOKING PAGE — TABLE RESPONSIVE
+   ============================================================ */
+
+/* Wrap table in horizontal scroll on small screens */
+#page-booking .card {
+  overflow-x: auto;
+}
+
+#page-booking table {
+  min-width: 640px; /* prevents columns from crushing */
+}
+
+/* Filter button row wraps */
+#page-booking > div:nth-child(2) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (max-width: 540px) {
+  /* "New Booking" button full width on phone */
+  #page-booking > div:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  #page-booking > div:first-child button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================================
+   SERVICES & INVENTORY — STATS GRID
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .svc-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .svc-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .svc-stat-val {
+    font-size: 26px !important;
+  }
+}
+
+/* Services toolbar wraps on tablet */
+@media (max-width: 720px) {
+  .svc-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .svc-toolbar-right {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .svc-search-box {
+    max-width: 100% !important;
+    width: 100%;
+  }
+}
+
+/* Inventory table horizontal scroll */
+#page-inventory .a-table,
+#page-services .svc-table {
+  min-width: 580px;
+}
+
+#page-inventory > .card,
+#page-services .svc-table-section {
+  overflow-x: auto;
+}
+
+/* Summary grid responsive */
+@media (max-width: 600px) {
+  .summary-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+/* ============================================================
+   MODALS — FULL SCREEN ON SMALL SCREENS
+   ============================================================ */
+
+@media (max-width: 540px) {
+
+  /* Generic modal boxes go edge-to-edge */
+  .mb {
+    border-radius: 14px 14px 0 0 !important;
+    max-height: 90vh !important;
+    margin-top: auto !important;
+  }
+
+  /* Align modal wrapper to bottom on phone */
+  .mw {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  /* New booking modal */
+  #bkNewModalBox {
+    border-radius: 14px 14px 0 0 !important;
+    max-height: 92vh !important;
+  }
+
+  #bkNewModal {
+    align-items: flex-end !important;
+  }
+
+  /* Form rows become single column */
+  .bk-form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Notification panel full width */
+  #nfPan {
+    width: 100% !important;
+  }
+}
+
+/* ============================================================
+   DATA TABLE — HIDE LESS IMPORTANT COLUMNS ON SMALL SCREENS
+   ============================================================ */
+
+@media (max-width: 767px) {
+
+  /* Booking table: hide Date/Time cols, keep ID, Customer, Status, Action */
+  #page-booking table th:nth-child(4),
+  #page-booking table td:nth-child(4),
+  #page-booking table th:nth-child(5),
+  #page-booking table td:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 540px) {
+
+  /* Also hide Service column on phone */
+  #page-booking table th:nth-child(3),
+  #page-booking table td:nth-child(3) {
+    display: none;
+  }
+}
+
+/* ============================================================
+   TYPOGRAPHY — PREVENT OVERFLOW
+   ============================================================ */
+
+/* Page titles don't overflow */
+.gt {
+  word-break: break-word;
+}
+
+/* Breadcrumb label */
+#bc {
+  font-size: clamp(13px, 2.5vw, 16px) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+/* ============================================================
+   DASHBOARD — CHART + RECENT BOOKINGS COLUMN
+   ============================================================ */
+
+/* Two-column layout on dashboard */
+@media (max-width: 860px) {
+
+  /* Stack chart and recent-bookings vertically */
+  #page-dashboard > div:nth-child(2) {
+    flex-direction: column !important;
+  }
+
+  /* Chart takes full width */
+  #page-dashboard > div:nth-child(2) > div:first-child {
+    width: 100% !important;
+  }
+
+  /* Recent bookings take full width */
+  #page-dashboard > div:nth-child(2) > div:last-child {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* ============================================================
+   NOTIFICATION PANEL — RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 420px) {
+  #nfPan {
+    width: 100% !important;
+  }
+}
+
+/* ============================================================
+   PROFILE CARD — RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 360px) {
+  .pc-flip-card {
+    width: 280px !important;
+    height: 450px !important;
+  }
+}
+
+/* ============================================================
+   PREVENT HORIZONTAL SCROLL ON BODY
+   ============================================================ */
+
+body, .layout {
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   REPORTS PAGE — RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 860px) {
+  /* Stack report charts vertically */
+  #page-reports > div[style*="display:flex"],
+  #page-reports > div[style*="display: flex"] {
+    flex-direction: column !important;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Year stepper stays inline */
+  .yr-step {
+    flex-shrink: 0;
+  }
+
+  /* Chart buttons wrap */
+  #page-reports div[style*="gap"] {
+    flex-wrap: wrap;
+  }
+}
