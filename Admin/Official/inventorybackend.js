@@ -202,6 +202,34 @@ window._invGetProducts = () => _products;
       display:flex; align-items:center; gap:8px;
     }
     #invToast.show { opacity:1; }
+
+    /* ── Custom Select Dropdown ── */
+    .inv-custom-select { position:relative; }
+    .inv-custom-select-val {
+      width:100%; padding:10px 13px; background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.1); border-radius:8px; color:#e0e0e0;
+      font-family:'Rajdhani',sans-serif; font-size:14px; cursor:pointer;
+      display:flex; align-items:center; justify-content:space-between;
+      transition:border-color .2s, background .2s; box-sizing:border-box; user-select:none;
+    }
+    .inv-custom-select-val:hover,
+    .inv-custom-select.open .inv-custom-select-val {
+      border-color:rgba(166,127,56,.6); background:rgba(166,127,56,.05);
+    }
+    .inv-custom-select-val i { transition:transform .2s; }
+    .inv-custom-select.open .inv-custom-select-val i { transform:rotate(180deg); }
+    .inv-custom-select-opts {
+      display:none; position:absolute; top:calc(100% + 4px); left:0; right:0;
+      background:#1c1c1c; border:1px solid rgba(166,127,56,.28); border-radius:8px;
+      overflow:hidden; z-index:99999; box-shadow:0 16px 48px rgba(0,0,0,.8);
+    }
+    .inv-custom-select.open .inv-custom-select-opts { display:block; }
+    .inv-custom-opt {
+      padding:10px 14px; font-family:'Rajdhani',sans-serif; font-size:14px;
+      color:#ccc; cursor:pointer; transition:background .15s;
+    }
+    .inv-custom-opt:hover { background:rgba(166,127,56,.14); color:#D9B573; }
+    .inv-custom-opt.selected { color:#D9B573; background:rgba(166,127,56,.1); font-weight:700; }
   `;
   document.head.appendChild(s);
 })();
@@ -322,7 +350,7 @@ async function fetchProducts() {
     } catch {
       snap = await getDocs(collection(db, PRODUCTS_COL));
     }
-    _products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _products = snap.docs.map(d => ({ ...d.data(), id: d.id }));
     _fetched  = true;
     _renderSummary();
     _renderTable(_filtered());
@@ -493,10 +521,19 @@ function _ensureAddModal() {
           </div>
           <div class="inv-form-group">
             <label class="inv-form-label">Category</label>
-            <select class="inv-form-input" id="invAddCategory">
-              <option>Fluid</option><option>Part</option><option>Accessory</option>
-              <option>Product</option><option>Tool</option><option>Other</option>
-            </select>
+            <div class="inv-custom-select" id="invAddCategoryWrap">
+              <div class="inv-custom-select-val" id="invAddCategory" data-value="Fluid" onclick="invToggleDropdown('invAddCategoryWrap')">
+                <span>Fluid</span><i class="fas fa-chevron-down" style="font-size:10px;"></i>
+              </div>
+              <div class="inv-custom-select-opts">
+                <div class="inv-custom-opt selected" onclick="invSelectOpt('invAddCategoryWrap','Fluid','Fluid')">Fluid</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invAddCategoryWrap','Part','Part')">Part</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invAddCategoryWrap','Accessory','Accessory')">Accessory</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invAddCategoryWrap','Engine','Engine')">Engine</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invAddCategoryWrap','Tool','Tool')">Tool</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invAddCategoryWrap','Other','Other')">Other</div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="inv-form-row">
@@ -516,11 +553,16 @@ function _ensureAddModal() {
           </div>
           <div class="inv-form-group">
             <label class="inv-form-label">Status</label>
-            <select class="inv-form-input" id="invAddStatus">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="sold-out">Sold Out</option>
-            </select>
+            <div class="inv-custom-select" id="invAddStatusWrap">
+              <div class="inv-custom-select-val" id="invAddStatus" data-value="active" onclick="invToggleDropdown('invAddStatusWrap')">
+                <span>Active</span><i class="fas fa-chevron-down" style="font-size:10px;"></i>
+              </div>
+              <div class="inv-custom-select-opts">
+                <div class="inv-custom-opt selected" onclick="invSelectOpt('invAddStatusWrap','active','Active')">Active</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invAddStatusWrap','inactive','Inactive')">Inactive</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invAddStatusWrap','sold-out','Sold Out')">Sold Out</div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="inv-form-group">
@@ -548,10 +590,8 @@ window.invOpenAdd = function() {
   });
   const skuEl = document.getElementById("invAddSku");
   if (skuEl) skuEl.value = genSku();
-  const catEl = document.getElementById("invAddCategory");
-  if (catEl) catEl.value = "Fluid";
-  const statusEl = document.getElementById("invAddStatus");
-  if (statusEl) statusEl.value = "active";
+  invSelectOpt("invAddCategoryWrap", "Fluid", "Fluid");
+  invSelectOpt("invAddStatusWrap", "active", "Active");
   const prev  = document.getElementById("invAddImgPreview");
   const label = document.getElementById("invAddImgLabel");
   if (prev)  prev.innerHTML = `<i class="fas fa-cloud-upload-alt" style="font-size:28px;color:#A67F38;display:block;margin-bottom:6px;"></i>`;
@@ -575,8 +615,8 @@ window.invSaveAdd = async function() {
   const sku      = document.getElementById("invAddSku").value.trim() || genSku();
   const price    = parseFloat(document.getElementById("invAddPrice").value) || 0;
   const stock    = parseInt(document.getElementById("invAddStock").value, 10) || 0;
-  const status   = document.getElementById("invAddStatus").value;
-  const category = document.getElementById("invAddCategory").value;
+  const status   = document.getElementById("invAddStatus").dataset.value;
+  const category = document.getElementById("invAddCategory").dataset.value;
   const desc     = document.getElementById("invAddDesc").value.trim();
 
   if (!name) {
@@ -643,10 +683,19 @@ function _ensureEditModal() {
           </div>
           <div class="inv-form-group">
             <label class="inv-form-label">Category</label>
-            <select class="inv-form-input" id="invEditCategory">
-              <option>Fluid</option><option>Part</option><option>Accessory</option>
-              <option>Product</option><option>Tool</option><option>Other</option>
-            </select>
+            <div class="inv-custom-select" id="invEditCategoryWrap">
+              <div class="inv-custom-select-val" id="invEditCategory" data-value="Fluid" onclick="invToggleDropdown('invEditCategoryWrap')">
+                <span>Fluid</span><i class="fas fa-chevron-down" style="font-size:10px;"></i>
+              </div>
+              <div class="inv-custom-select-opts">
+                <div class="inv-custom-opt" onclick="invSelectOpt('invEditCategoryWrap','Fluid','Fluid')">Fluid</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invEditCategoryWrap','Part','Part')">Part</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invEditCategoryWrap','Accessory','Accessory')">Accessory</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invEditCategoryWrap','Engine','Engine')">Engine</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invEditCategoryWrap','Tool','Tool')">Tool</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invEditCategoryWrap','Other','Other')">Other</div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="inv-form-row">
@@ -666,11 +715,16 @@ function _ensureEditModal() {
           </div>
           <div class="inv-form-group">
             <label class="inv-form-label">Status</label>
-            <select class="inv-form-input" id="invEditStatus">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="sold-out">Sold Out</option>
-            </select>
+            <div class="inv-custom-select" id="invEditStatusWrap">
+              <div class="inv-custom-select-val" id="invEditStatus" data-value="active" onclick="invToggleDropdown('invEditStatusWrap')">
+                <span>Active</span><i class="fas fa-chevron-down" style="font-size:10px;"></i>
+              </div>
+              <div class="inv-custom-select-opts">
+                <div class="inv-custom-opt selected" onclick="invSelectOpt('invEditStatusWrap','active','Active')">Active</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invEditStatusWrap','inactive','Inactive')">Inactive</div>
+                <div class="inv-custom-opt" onclick="invSelectOpt('invEditStatusWrap','sold-out','Sold Out')">Sold Out</div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="inv-form-group">
@@ -704,8 +758,10 @@ window.invOpenEdit = function(id) {
   document.getElementById("invEditSku").value          = p.sku         || "";
   document.getElementById("invEditPrice").value        = p.price       ?? "";
   document.getElementById("invEditStock").value        = p.stock       ?? 0;
-  document.getElementById("invEditStatus").value       = p.status      || "active";
-  document.getElementById("invEditCategory").value     = p.category    || "Product";
+  // custom dropdowns set after modal is in DOM
+  const _editStatus = p.status || "active";
+  const _editCat = p.category || "Fluid";
+  const _statusLabels = { active:"Active", inactive:"Inactive", "sold-out":"Sold Out" };
   document.getElementById("invEditDesc").value         = p.description || "";
   document.getElementById("invEditCurrentImg").value   = p.imageUrl    || "";
   document.getElementById("invEditErr").style.display  = "none";
@@ -721,6 +777,8 @@ window.invOpenEdit = function(id) {
   }
 
   document.getElementById("invEditModal").classList.add("open");
+  invSelectOpt("invEditStatusWrap", _editStatus, _statusLabels[_editStatus] || "Active");
+  invSelectOpt("invEditCategoryWrap", _editCat, _editCat);
 };
 
 window.invCloseEdit = function() {
@@ -737,8 +795,8 @@ window.invSaveEdit = async function() {
   const name     = document.getElementById("invEditName").value.trim();
   const price    = parseFloat(document.getElementById("invEditPrice").value) || 0;
   const stock    = parseInt(document.getElementById("invEditStock").value, 10) || 0;
-  const status   = document.getElementById("invEditStatus").value;
-  const category = document.getElementById("invEditCategory").value;
+  const status   = document.getElementById("invEditStatus").dataset.value;
+  const category = document.getElementById("invEditCategory").dataset.value;
   const desc     = document.getElementById("invEditDesc").value.trim();
   let   imageUrl = document.getElementById("invEditCurrentImg").value;
 
@@ -775,6 +833,34 @@ window.invSaveEdit = async function() {
     if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = `<i class="fas fa-save"></i>Save Changes`; }
   }
 };
+
+
+// ── Custom dropdown helpers ───────────────────────────────
+window.invToggleDropdown = function(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  const isOpen = wrap.classList.contains("open");
+  document.querySelectorAll(".inv-custom-select.open").forEach(el => el.classList.remove("open"));
+  if (!isOpen) wrap.classList.add("open");
+};
+
+window.invSelectOpt = function(wrapId, value, label) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  const val = wrap.querySelector(".inv-custom-select-val");
+  if (!val) return;
+  val.dataset.value = value;
+  val.querySelector("span").textContent = label;
+  wrap.classList.remove("open");
+  wrap.querySelectorAll(".inv-custom-opt").forEach(o =>
+    o.classList.toggle("selected", o.textContent.trim() === label)
+  );
+};
+
+// Close dropdowns on outside click
+document.addEventListener("click", e => {
+  if (!e.target.closest(".inv-custom-select"))
+    document.querySelectorAll(".inv-custom-select.open").forEach(el => el.classList.remove("open"));
+});
 
 // ── DELETE MODAL ──────────────────────────────────────────
 function _ensureDelModal() {

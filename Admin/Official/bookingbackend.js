@@ -267,6 +267,35 @@ let _fetched = false;
       color: #f87171; font-size: 12px; font-family: 'Rajdhani', sans-serif;
       display: none;
     }
+
+    /* ── Custom Select Dropdown ── */
+    .bk-custom-select { position: relative; }
+    .bk-custom-select-val {
+      width: 100%; padding: 10px 13px;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px; color: #e0e0e0;
+      font-family: 'Rajdhani', sans-serif; font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: border-color .2s, background .2s; box-sizing: border-box; user-select: none;
+    }
+    .bk-custom-select-val:hover,
+    .bk-custom-select.open .bk-custom-select-val {
+      border-color: rgba(166,127,56,.6); background: rgba(166,127,56,.05);
+    }
+    .bk-custom-select-val i { transition: transform .2s; }
+    .bk-custom-select.open .bk-custom-select-val i { transform: rotate(180deg); }
+    .bk-custom-select-opts {
+      display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: #1c1c1c; border: 1px solid rgba(166,127,56,.28); border-radius: 8px;
+      overflow: hidden; z-index: 99999; box-shadow: 0 16px 48px rgba(0,0,0,.8);
+    }
+    .bk-custom-select.open .bk-custom-select-opts { display: block; }
+    .bk-custom-opt {
+      padding: 10px 14px; font-family: 'Rajdhani', sans-serif; font-size: 14px;
+      color: #ccc; cursor: pointer; transition: background .15s;
+    }
+    .bk-custom-opt:hover { background: rgba(166,127,56,.14); color: #D9B573; }
+    .bk-custom-opt.selected { color: #D9B573; background: rgba(166,127,56,.1); font-weight: 700; }
   `;
   document.head.appendChild(s);
 })();
@@ -626,21 +655,39 @@ function _renderRecent() {
           </div>
           <div class="bk-form-group">
             <label class="bk-form-label">Time</label>
-            <select class="bk-form-input" id="bkNTime">
-              ${["7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM",
-                 "1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"]
-                .map(t => `<option>${t}</option>`).join("")}
-            </select>
+            <div class="bk-custom-select" id="bkNTimeWrap">
+              <div class="bk-custom-select-val" id="bkNTime" data-value="9:00 AM" onclick="bkToggleDropdown('bkNTimeWrap')">
+                <span>9:00 AM</span><i class="fas fa-chevron-down" style="font-size:10px;"></i>
+              </div>
+              <div class="bk-custom-select-opts">
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNTimeWrap','7:00 AM','7:00 AM')">7:00 AM</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNTimeWrap','8:00 AM','8:00 AM')">8:00 AM</div>
+                <div class="bk-custom-opt selected" onclick="bkSelectOpt('bkNTimeWrap','9:00 AM','9:00 AM')">9:00 AM</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNTimeWrap','10:00 AM','10:00 AM')">10:00 AM</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNTimeWrap','11:00 AM','11:00 AM')">11:00 AM</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNTimeWrap','12:00 PM','12:00 PM')">12:00 PM</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNTimeWrap','1:00 PM','1:00 PM')">1:00 PM</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNTimeWrap','2:00 PM','2:00 PM')">2:00 PM</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNTimeWrap','3:00 PM','3:00 PM')">3:00 PM</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNTimeWrap','4:00 PM','4:00 PM')">4:00 PM</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNTimeWrap','5:00 PM','5:00 PM')">5:00 PM</div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="bk-form-row">
           <div class="bk-form-group">
             <label class="bk-form-label">Drop-off Preference</label>
-            <select class="bk-form-input" id="bkNDropoff">
-              <option>Wait on-site</option>
-              <option>Drop off & pick up later</option>
-              <option>Shuttle service needed</option>
-            </select>
+            <div class="bk-custom-select" id="bkNDropoffWrap">
+              <div class="bk-custom-select-val" id="bkNDropoff" data-value="Wait on-site" onclick="bkToggleDropdown('bkNDropoffWrap')">
+                <span>Wait on-site</span><i class="fas fa-chevron-down" style="font-size:10px;"></i>
+              </div>
+              <div class="bk-custom-select-opts">
+                <div class="bk-custom-opt selected" onclick="bkSelectOpt('bkNDropoffWrap','Wait on-site','Wait on-site')">Wait on-site</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNDropoffWrap','Drop off & pick up later','Drop off & pick up later')">Drop off &amp; pick up later</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNDropoffWrap','Shuttle service needed','Shuttle service needed')">Shuttle service needed</div>
+              </div>
+            </div>
           </div>
           <div class="bk-form-group">
             <label class="bk-form-label">Technician</label>
@@ -657,11 +704,16 @@ function _renderRecent() {
           </div>
           <div class="bk-form-group">
             <label class="bk-form-label">Payment Status</label>
-            <select class="bk-form-input" id="bkNPayStatus">
-              <option value="unpaid">Unpaid</option>
-              <option value="partially_paid">Partially Paid</option>
-              <option value="paid">Paid</option>
-            </select>
+            <div class="bk-custom-select" id="bkNPayStatusWrap">
+              <div class="bk-custom-select-val" id="bkNPayStatus" data-value="unpaid" onclick="bkToggleDropdown('bkNPayStatusWrap')">
+                <span>Unpaid</span><i class="fas fa-chevron-down" style="font-size:10px;"></i>
+              </div>
+              <div class="bk-custom-select-opts">
+                <div class="bk-custom-opt selected" onclick="bkSelectOpt('bkNPayStatusWrap','unpaid','Unpaid')">Unpaid</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNPayStatusWrap','partially_paid','Partially Paid')">Partially Paid</div>
+                <div class="bk-custom-opt" onclick="bkSelectOpt('bkNPayStatusWrap','paid','Paid')">Paid</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -839,10 +891,10 @@ window.bkOpenNew = function() {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   document.getElementById("bkNDate").value      = new Date().toISOString().split("T")[0];
-  document.getElementById("bkNTime").value      = "9:00 AM";
-  document.getElementById("bkNDropoff").value   = "Wait on-site";
+  bkSelectOpt("bkNTimeWrap", "9:00 AM", "9:00 AM");
+  bkSelectOpt("bkNDropoffWrap", "Wait on-site", "Wait on-site");
   document.getElementById("bkNTech").value      = "";
-  document.getElementById("bkNPayStatus").value = "unpaid";
+  bkSelectOpt("bkNPayStatusWrap", "unpaid", "Unpaid");
   document.getElementById("bkNewErr").style.display = "none";
   document.getElementById("bkNewModal").classList.add("open");
   _loadCustomers();
@@ -868,12 +920,12 @@ window.bkSaveNew = async function() {
   const make    = document.getElementById("bkNMake").value.trim();
   const model   = document.getElementById("bkNModel").value.trim();
   const date    = document.getElementById("bkNDate").value;
-  const time    = document.getElementById("bkNTime").value;
-  const dropoff = document.getElementById("bkNDropoff").value;
+  const time    = document.getElementById("bkNTime").dataset.value;
+  const dropoff = document.getElementById("bkNDropoff").dataset.value;
   const tech    = document.getElementById("bkNTech").value.trim() || "No preference";
   const notes   = document.getElementById("bkNNotes").value.trim() || "none";
   const down    = parseFloat(document.getElementById("bkNDown").value) || 0;
-  const payStatus = document.getElementById("bkNPayStatus").value;
+  const payStatus = document.getElementById("bkNPayStatus").dataset.value;
 
   if (!name)    return show("Please search and select a customer.");
   if (!service) return show("Please enter a service name.");
@@ -942,4 +994,30 @@ document.addEventListener("DOMContentLoaded", () => {
   _initFilters();
   _patch();
   fetchBookings();
+});
+
+// ── Custom dropdown helpers ───────────────────────────────
+window.bkToggleDropdown = function(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  const isOpen = wrap.classList.contains("open");
+  document.querySelectorAll(".bk-custom-select.open").forEach(el => el.classList.remove("open"));
+  if (!isOpen) wrap.classList.add("open");
+};
+
+window.bkSelectOpt = function(wrapId, value, label) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  const val = wrap.querySelector(".bk-custom-select-val");
+  if (!val) return;
+  val.dataset.value = value;
+  val.querySelector("span").textContent = label;
+  wrap.classList.remove("open");
+  wrap.querySelectorAll(".bk-custom-opt").forEach(o =>
+    o.classList.toggle("selected", o.textContent.trim() === label)
+  );
+};
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".bk-custom-select"))
+    document.querySelectorAll(".bk-custom-select.open").forEach(el => el.classList.remove("open"));
 });

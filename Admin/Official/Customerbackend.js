@@ -4,7 +4,8 @@
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
 import {
-  getFirestore, collection, collectionGroup, getDocs, query, orderBy
+  getFirestore, collection, collectionGroup, getDocs,
+  query, where, orderBy
 } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
 
 // ── Firebase ──────────────────────────────────────────────
@@ -48,16 +49,29 @@ let _fetched      = false;
     .cus-badge.inactive { color:#f87171; background:rgba(248,113,113,.12); border:1px solid rgba(248,113,113,.25); }
     .cus-badge.new      { color:#60a5fa; background:rgba(96,165,250,.12);  border:1px solid rgba(96,165,250,.25);  }
 
-    /* ── View History button ── */
-    .cus-hist-btn {
-      padding: 5px 12px; border-radius: 6px; cursor: pointer;
+    /* ── View button ── */
+    .cus-view-btn {
+      padding: 5px 14px; border-radius: 6px; cursor: pointer;
       background: rgba(166,127,56,.1); border: 1px solid rgba(166,127,56,.3);
       color: #D9B573; font-family: 'Rajdhani', sans-serif;
       font-weight: 700; font-size: 11px; letter-spacing: .5px;
       display: inline-flex; align-items: center; gap: 5px;
       transition: background .15s;
     }
-    .cus-hist-btn:hover { background: rgba(166,127,56,.22); }
+    .cus-view-btn:hover { background: rgba(166,127,56,.22); }
+
+    /* ── Refresh button ── */
+    .cus-refresh-btn {
+      padding: 6px 14px; border-radius: 7px; cursor: pointer;
+      background: rgba(166,127,56,.08); border: 1px solid rgba(166,127,56,.25);
+      color: #A67F38; font-family: 'Rajdhani', sans-serif;
+      font-weight: 700; font-size: 12px; letter-spacing: .5px;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: background .15s, color .15s;
+    }
+    .cus-refresh-btn:hover { background: rgba(166,127,56,.18); color: #D9B573; }
+    .cus-refresh-btn.spinning i { animation: cusSpin .7s linear infinite; }
+    @keyframes cusSpin { to { transform: rotate(360deg); } }
 
     /* ── Table secondary text ── */
     .cus-sub { font-size: 11px; color: #777; margin-top: 2px; }
@@ -70,15 +84,15 @@ let _fetched      = false;
     }
     .cus-empty i { font-size: 28px; color: #333; display: block; margin-bottom: 10px; }
 
-    /* ── Customer History Modal ── */
-    #cusHistModal {
+    /* ── Customer View Modal ── */
+    #cusViewModal {
       display: none; position: fixed; inset: 0; z-index: 1000;
       background: rgba(0,0,0,.78); backdrop-filter: blur(5px);
       align-items: center; justify-content: center;
     }
-    #cusHistModal.open { display: flex; }
-    #cusHistModalBox {
-      width: min(560px, 95vw);
+    #cusViewModal.open { display: flex; }
+    #cusViewModalBox {
+      width: min(640px, 95vw);
       background: #111; border: 1px solid rgba(166,127,56,.22);
       border-radius: 14px; overflow: hidden;
       box-shadow: 0 40px 100px rgba(0,0,0,.85);
@@ -115,36 +129,106 @@ let _fetched      = false;
       margin-bottom: 18px;
     }
     .cus-info-avatar {
-      width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+      width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
       background: linear-gradient(135deg,#A67F38,#D9B573);
       display: flex; align-items: center; justify-content: center;
     }
     .cus-info-name {
       font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
-      font-size: 18px; color: #e8e8e8; line-height: 1.1;
+      font-size: 19px; color: #e8e8e8; line-height: 1.1;
     }
     .cus-info-sub {
-      font-size: 11px; color: #888; margin-top: 2px;
+      font-size: 11px; color: #888; margin-top: 3px;
       font-family: 'Rajdhani', sans-serif;
     }
 
-    /* ── Placeholder notice inside modal ── */
-    .cus-coming-soon {
-      text-align: center; padding: 36px 20px;
-      border: 1px dashed rgba(166,127,56,.2); border-radius: 10px;
-      background: rgba(166,127,56,.03);
+    /* ── Detail grid ── */
+    .cus-detail-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-bottom: 20px;
     }
-    .cus-coming-soon i {
-      font-size: 30px; color: #A67F38; display: block; margin-bottom: 10px; opacity:.6;
+    .cus-detail-item {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+      border-radius: 8px; padding: 10px 13px;
     }
-    .cus-coming-soon-title {
+    .cus-detail-label {
+      font-family: 'Rajdhani', sans-serif; font-size: 10px;
+      letter-spacing: .8px; text-transform: uppercase; color: #555;
+      margin-bottom: 3px;
+    }
+    .cus-detail-value {
+      font-size: 13px; color: #d0d0d0; font-weight: 500;
+      word-break: break-all;
+    }
+
+    /* ── Section heading inside modal ── */
+    .cus-section-heading {
       font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
-      font-size: 18px; color: #888; margin-bottom: 5px;
+      font-size: 15px; color: #A67F38; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 11px;
+      display: flex; align-items: center; gap: 7px;
     }
-    .cus-coming-soon-sub {
+    .cus-section-heading::after {
+      content: ''; flex: 1; height: 1px;
+      background: rgba(166,127,56,.18);
+    }
+
+    /* ── Transaction card ── */
+    .cus-txn-card {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 10px; padding: 13px 15px; margin-bottom: 9px;
+    }
+    .cus-txn-card:last-child { margin-bottom: 0; }
+    .cus-txn-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .cus-txn-id {
+      font-family: 'Rajdhani', sans-serif; font-weight: 700;
+      font-size: 12px; color: #A67F38; letter-spacing: .5px;
+    }
+    .cus-txn-date {
       font-size: 11px; color: #555; font-family: 'Rajdhani', sans-serif;
-      letter-spacing: .5px;
     }
+    .cus-txn-items { margin-bottom: 8px; }
+    .cus-txn-item-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+      font-size: 12px; color: #aaa;
+    }
+    .cus-txn-item-row:last-child { border-bottom: none; }
+    .cus-txn-item-name { flex: 1; }
+    .cus-txn-item-price { color: #D9B573; font-family: 'Rajdhani', sans-serif; font-weight: 700; }
+    .cus-txn-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 8px; border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .cus-txn-total-label { font-size: 11px; color: #555; font-family: 'Rajdhani', sans-serif; letter-spacing: .5px; }
+    .cus-txn-total-value {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+      font-size: 16px; color: #D9B573;
+    }
+    .cus-txn-status-badge {
+      font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700;
+      letter-spacing: .6px; text-transform: uppercase; border-radius: 4px;
+      padding: 2px 8px;
+    }
+    .cus-txn-status-badge.completed  { color:#34d399; background:rgba(52,211,153,.1);  border:1px solid rgba(52,211,153,.2);  }
+    .cus-txn-status-badge.pending    { color:#fbbf24; background:rgba(251,191,36,.1);  border:1px solid rgba(251,191,36,.2);  }
+    .cus-txn-status-badge.cancelled  { color:#f87171; background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.2); }
+    .cus-txn-empty {
+      text-align: center; padding: 30px 20px;
+      border: 1px dashed rgba(166,127,56,.18); border-radius: 10px;
+      font-family: 'Rajdhani', sans-serif; color: #444; font-size: 13px;
+    }
+    .cus-txn-empty i { display: block; font-size: 24px; color: #333; margin-bottom: 8px; }
+
+    /* ── Loading spinner in modal ── */
+    .cus-modal-loading {
+      text-align: center; padding: 36px 20px;
+      font-family: 'Rajdhani', sans-serif; color: #555; font-size: 13px;
+    }
+    .cus-modal-loading i { display: block; font-size: 24px; color: #A67F38; margin-bottom: 8px; }
 
     /* ── Source tag (Account vs Customer) ── */
     .cus-src-tag {
@@ -158,45 +242,36 @@ let _fetched      = false;
   document.head.appendChild(s);
 })();
 
-// ── Inject History Modal HTML ──────────────────────────────
+// ── Inject View Modal HTML ─────────────────────────────────
 (function injectModal() {
-  if (document.getElementById("cusHistModal")) return;
+  if (document.getElementById("cusViewModal")) return;
   const div = document.createElement("div");
-  div.id = "cusHistModal";
+  div.id = "cusViewModal";
   div.innerHTML = `
-    <div id="cusHistModalBox">
+    <div id="cusViewModalBox">
       <div class="cus-modal-header">
         <span class="cus-modal-header-title">
-          <i class="fas fa-history" style="margin-right:8px;font-size:16px;"></i>
-          Customer History
+          <i class="fas fa-user-circle" style="margin-right:8px;font-size:16px;"></i>
+          Customer Details
         </span>
-        <button class="cus-modal-close" onclick="cusCloseHistory()">
+        <button class="cus-modal-close" onclick="cusCloseView()">
           <i class="fas fa-times"></i>
         </button>
       </div>
-      <div class="cus-modal-body">
-        <div id="cusHistInfo" class="cus-info-strip">
-          <div class="cus-info-avatar">
-            <i class="fas fa-user" style="color:#080808;font-size:16px;"></i>
-          </div>
-          <div>
-            <div class="cus-info-name" id="cusHistName">—</div>
-            <div class="cus-info-sub" id="cusHistSub">—</div>
-          </div>
-        </div>
-        <!-- Placeholder — history functionality coming soon -->
-        <div class="cus-coming-soon">
-          <i class="fas fa-clock"></i>
-          <div class="cus-coming-soon-title">History Coming Soon</div>
-          <div class="cus-coming-soon-sub">
-            Booking & service history for this customer will appear here.
-          </div>
-        </div>
+      <div class="cus-modal-body" id="cusViewModalBody">
+        <!-- Populated dynamically -->
       </div>
     </div>
   `;
   document.body.appendChild(div);
+
+  // Close on backdrop click
+  div.addEventListener("click", function(e) {
+    if (e.target === this) cusCloseView();
+  });
 })();
+
+// ── Refresh button is injected in DOMContentLoaded (see Init section) ──
 
 // ── Fetch Customers from Firestore ────────────────────────
 async function fetchCustomers() {
@@ -217,7 +292,6 @@ async function fetchCustomers() {
     const seenIds = new Set();
 
     // ── Strategy 1: collectionGroup("Customers")
-    //    Catches the subcollection at Customer/*/Customers/* as seen in Firestore
     try {
       const groupSnap = await getDocs(collectionGroup(db, "Customers"));
       groupSnap.forEach(d => {
@@ -292,17 +366,31 @@ async function fetchCustomers() {
   }
 }
 
+// ── Refresh Handler ───────────────────────────────────────
+window.cusRefresh = async function() {
+  const btn = document.getElementById("cusRefreshBtn");
+  if (btn) {
+    btn.classList.add("spinning");
+    btn.disabled = true;
+  }
+  _fetched = false;
+  _allCustomers = [];
+  await fetchCustomers();
+  if (btn) {
+    btn.classList.remove("spinning");
+    btn.disabled = false;
+  }
+};
+
 // ── Update Stat Cards ─────────────────────────────────────
 function _updateStats() {
   const total = _allCustomers.length;
 
-  // "Active" = customers who have a status of "active", or users (always active)
   const active = _allCustomers.filter(c => {
     const st = (c.status || "").toLowerCase();
     return st === "active" || st === "" || c._source === "users";
   }).length;
 
-  // New this month = createdAt within the current calendar month
   const now = new Date();
   const newThisMonth = _allCustomers.filter(c => {
     if (!c.createdAt) return false;
@@ -310,7 +398,6 @@ function _updateStats() {
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   }).length;
 
-  // Avg rating — if customers have a rating field
   const rated = _allCustomers.filter(c => typeof c.rating === "number");
   const avgRating = rated.length
     ? (rated.reduce((s, c) => s + c.rating, 0) / rated.length).toFixed(1)
@@ -341,21 +428,17 @@ function _renderTable() {
 
   tbody.innerHTML = _allCustomers.map((c, i) => {
     const fullName  = `${c.fname || c.firstName || ""} ${c.lname || c.lastName || ""}`.trim()
-                    || c.displayName
-                    || c.name
-                    || "Unnamed";
+                    || c.displayName || c.name || "Unnamed";
     const email     = c.email   || "—";
     const phone     = c.phone   || c.phoneNumber || "—";
     const visits    = typeof c.visits === "number" ? c.visits : "—";
     const status    = (c.status || (c._source === "users" ? "active" : "new")).toLowerCase();
     const custId    = c.customerId || c.id?.slice(0, 8).toUpperCase() || `#${String(i + 1).padStart(4, "0")}`;
 
-    // Source tag
     const srcTag = c._source === "users"
       ? `<span class="cus-src-tag account">Account</span>`
       : `<span class="cus-src-tag customer">Customer</span>`;
 
-    // Status badge
     const badgeClass = status === "active"   ? "active"
                      : status === "inactive" ? "inactive"
                      : "new";
@@ -380,43 +463,197 @@ function _renderTable() {
           <span class="cus-badge ${badgeClass}">${badgeLabel}</span>
         </td>
         <td style="padding:12px 14px;">
-          <button class="cus-hist-btn" onclick="cusViewHistory('${c.id}')">
-            <i class="fas fa-history" style="font-size:10px;"></i> History
+          <button class="cus-view-btn" onclick="cusOpenView('${c.id}')">
+            <i class="fas fa-eye" style="font-size:10px;"></i> View
           </button>
         </td>
       </tr>`;
   }).join("");
 }
 
-// ── Open History Modal ────────────────────────────────────
-window.cusViewHistory = function(customerId) {
+// ── Open View Modal ───────────────────────────────────────
+window.cusOpenView = async function(customerId) {
   const c = _allCustomers.find(x => x.id === customerId);
   if (!c) return;
 
   const fullName = `${c.fname || c.firstName || ""} ${c.lname || c.lastName || ""}`.trim()
                  || c.displayName || c.name || "Unnamed";
-  const email = c.email || "No email";
-  const phone = c.phone || c.phoneNumber || "No phone";
+  const email    = c.email || "—";
+  const phone    = c.phone || c.phoneNumber || "—";
+  const status   = c.status || (c._source === "users" ? "Active" : "New");
+  const visits   = typeof c.visits === "number" ? c.visits : "—";
+  const joined   = c.createdAt
+    ? (c.createdAt.toDate ? c.createdAt.toDate() : new Date(c.createdAt)).toLocaleDateString("en-PH", { year:"numeric", month:"short", day:"numeric" })
+    : "—";
+  const custId   = c.customerId || c.id?.slice(0, 8).toUpperCase() || "—";
 
-  document.getElementById("cusHistName").textContent = fullName;
-  document.getElementById("cusHistSub").textContent  = `${email} · ${phone}`;
+  // Show modal with loading state for transactions
+  const body = document.getElementById("cusViewModalBody");
+  body.innerHTML = `
+    <!-- Info strip -->
+    <div class="cus-info-strip">
+      <div class="cus-info-avatar">
+        <i class="fas fa-user" style="color:#080808;font-size:18px;"></i>
+      </div>
+      <div>
+        <div class="cus-info-name">${fullName}</div>
+        <div class="cus-info-sub">${email} &middot; ${phone}</div>
+      </div>
+    </div>
 
-  document.getElementById("cusHistModal").classList.add("open");
+    <!-- Detail grid -->
+    <div class="cus-detail-grid">
+      <div class="cus-detail-item">
+        <div class="cus-detail-label">Customer ID</div>
+        <div class="cus-detail-value">${custId}</div>
+      </div>
+      <div class="cus-detail-item">
+        <div class="cus-detail-label">Status</div>
+        <div class="cus-detail-value">${status}</div>
+      </div>
+      <div class="cus-detail-item">
+        <div class="cus-detail-label">Phone</div>
+        <div class="cus-detail-value">${phone}</div>
+      </div>
+      <div class="cus-detail-item">
+        <div class="cus-detail-label">Total Visits</div>
+        <div class="cus-detail-value">${visits}</div>
+      </div>
+      <div class="cus-detail-item">
+        <div class="cus-detail-label">Email</div>
+        <div class="cus-detail-value">${email}</div>
+      </div>
+      <div class="cus-detail-item">
+        <div class="cus-detail-label">Member Since</div>
+        <div class="cus-detail-value">${joined}</div>
+      </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="cus-section-heading">
+      <i class="fas fa-receipt" style="font-size:13px;"></i>
+      Transaction History
+    </div>
+    <div id="cusViewTxnList">
+      <div class="cus-modal-loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        Loading transactions…
+      </div>
+    </div>
+  `;
+
+  document.getElementById("cusViewModal").classList.add("open");
+
+  // ── Fetch transactions from Firestore ──────────────────
+  try {
+    const txnSnap = await getDocs(
+      query(collection(db, "Transactions"), orderBy("__name__"))
+    );
+
+    // Filter transactions that belong to this customer by email or name
+    const customerEmail = (c.email || "").toLowerCase();
+    const customerName  = fullName.toLowerCase();
+
+    const txns = [];
+    txnSnap.forEach(d => {
+      const t = { id: d.id, ...d.data() };
+      const tEmail = (t.email || "").toLowerCase();
+      const tName  = (t.customerName || "").toLowerCase();
+      if (
+        (customerEmail && tEmail === customerEmail) ||
+        (customerName  && tName  === customerName)
+      ) {
+        txns.push(t);
+      }
+    });
+
+    const txnList = document.getElementById("cusViewTxnList");
+    if (!txnList) return;
+
+    if (!txns.length) {
+      txnList.innerHTML = `
+        <div class="cus-txn-empty">
+          <i class="fas fa-receipt"></i>
+          No transactions found for this customer.
+        </div>`;
+      return;
+    }
+
+    txnList.innerHTML = txns.map(t => {
+      // Date
+      let dateStr = "—";
+      if (t.createdAt) {
+        const d = t.createdAt.toDate ? t.createdAt.toDate() : new Date(t.createdAt);
+        dateStr = d.toLocaleDateString("en-PH", { year:"numeric", month:"short", day:"numeric" });
+      }
+
+      // Items list
+      const items = Array.isArray(t.items) ? t.items : [];
+      const itemsHtml = items.length
+        ? items.map(item => {
+            const name  = item.name || item.productName || item.description || "Item";
+            const qty   = item.quantity ?? item.qty ?? 1;
+            const price = typeof item.lineTotal === "number"  ? item.lineTotal
+                        : typeof item.price     === "number"  ? item.price * qty
+                        : null;
+            const priceStr = price !== null
+              ? `₱${price.toLocaleString("en-PH", { minimumFractionDigits:2 })}`
+              : "—";
+            return `
+              <div class="cus-txn-item-row">
+                <span class="cus-txn-item-name">${name} ×${qty}</span>
+                <span class="cus-txn-item-price">${priceStr}</span>
+              </div>`;
+          }).join("")
+        : `<div class="cus-txn-item-row" style="color:#444;">No item details.</div>`;
+
+      // Total
+      const total = typeof t.totalAmount === "number" ? t.totalAmount
+                  : typeof t.total       === "number" ? t.total
+                  : null;
+      const totalStr = total !== null
+        ? `₱${total.toLocaleString("en-PH", { minimumFractionDigits:2 })}`
+        : "—";
+
+      // Status
+      const txnStatus = (t.status || "completed").toLowerCase();
+      const statusClass = txnStatus.includes("complet") ? "completed"
+                        : txnStatus.includes("cancel")  ? "cancelled"
+                        : "pending";
+
+      return `
+        <div class="cus-txn-card">
+          <div class="cus-txn-top">
+            <span class="cus-txn-id">${t.id}</span>
+            <span class="cus-txn-date">${dateStr}</span>
+          </div>
+          <div class="cus-txn-items">${itemsHtml}</div>
+          <div class="cus-txn-footer">
+            <div>
+              <div class="cus-txn-total-label">TOTAL</div>
+              <div class="cus-txn-total-value">${totalStr}</div>
+            </div>
+            <span class="cus-txn-status-badge ${statusClass}">${txnStatus}</span>
+          </div>
+        </div>`;
+    }).join("");
+
+  } catch (err) {
+    console.error("[CustomersBackend] fetchTransactions error:", err);
+    const txnList = document.getElementById("cusViewTxnList");
+    if (txnList) {
+      txnList.innerHTML = `
+        <div class="cus-txn-empty">
+          <i class="fas fa-exclamation-triangle" style="color:#f87171;"></i>
+          Failed to load transactions.
+        </div>`;
+    }
+  }
 };
 
-window.cusCloseHistory = function() {
-  document.getElementById("cusHistModal").classList.remove("open");
-};
-
-// Close modal on backdrop click
-document.getElementById("cusHistModal")?.addEventListener("click", function(e) {
-  if (e.target === this) cusCloseHistory();
-});
-
-// ── Stub: openAddCustomer (button in HTML calls this) ─────
-window.openAddCustomer = window.openAddCustomer || function() {
-  if (typeof showToast === "function") showToast("Add customer coming soon.", "info");
-  else console.log("[CustomersBackend] openAddCustomer — not yet implemented.");
+// ── Close View Modal ──────────────────────────────────────
+window.cusCloseView = function() {
+  document.getElementById("cusViewModal").classList.remove("open");
 };
 
 // ── Patch renderPage to hook into nav ─────────────────────
@@ -436,6 +673,17 @@ function _patch() {
 
 // ── Init ──────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
+  // Inject refresh button into #cusToolbar (safe — DOM is ready)
+  const toolbar = document.getElementById("cusToolbar");
+  if (toolbar && !document.getElementById("cusRefreshBtn")) {
+    const btn = document.createElement("button");
+    btn.id        = "cusRefreshBtn";
+    btn.className = "cus-refresh-btn";
+    btn.innerHTML = `<i class="fas fa-sync-alt"></i> Refresh`;
+    btn.onclick   = cusRefresh;
+    toolbar.appendChild(btn);
+  }
+
   _patch();
   fetchCustomers();
 });
