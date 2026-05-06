@@ -99,8 +99,15 @@
   </div>
 </div>
 
-<script>
-  // Password toggle
+<!-- ============================================================
+     ADD THIS BLOCK inside login.html, replacing the old <script>
+     Make sure type="module" is set so Firebase imports work.
+     ============================================================ -->
+
+<script type="module">
+  import { loginTechnician } from "./technician-firebase.js";
+
+  // ── Password toggle ──────────────────────────────────────
   document.getElementById('togglePwd').addEventListener('click', function () {
     const inp = document.getElementById('password');
     inp.type = inp.type === 'password' ? 'text' : 'password';
@@ -108,20 +115,22 @@
     this.classList.toggle('fa-eye-slash');
   });
 
-  // Forgot password
+  // ── Forgot password ──────────────────────────────────────
   document.getElementById('forgotBtn').addEventListener('click', () => {
     toast('Password reset instructions sent to your email.', 'success');
   });
 
-  // Form submit
-  document.getElementById('loginForm').addEventListener('submit', function (e) {
+  // ── Form submit ──────────────────────────────────────────
+  document.getElementById('loginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
+
     const email = document.getElementById('email').value.trim();
     const pass  = document.getElementById('password').value;
 
     document.getElementById('email').classList.remove('error');
     document.getElementById('password').classList.remove('error');
 
+    // Basic client-side validation
     if (!email || !email.includes('@')) {
       document.getElementById('email').classList.add('error');
       return toast('Please enter a valid staff email.');
@@ -131,11 +140,41 @@
       return toast('Please enter your password.');
     }
 
-    toast('Authenticating…', 'success');
-    // Hook your auth logic here
+    // Disable button while authenticating
+    const btn = this.querySelector('.btn-submit');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>AUTHENTICATING…';
+
+    // Firebase login
+    const result = await loginTechnician(email, pass);
+
+    if (!result.ok) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-sign-in-alt"></i>ACCESS DASHBOARD';
+      document.getElementById('email').classList.add('error');
+      document.getElementById('password').classList.add('error');
+      return toast(result.error || 'Login failed.');
+    }
+
+    // Save "remember me" flag
+    if (document.getElementById('remember').checked) {
+      localStorage.setItem('techRemember', email);
+    } else {
+      localStorage.removeItem('techRemember');
+    }
+
+    toast('Access granted. Loading dashboard…', 'success');
+    setTimeout(() => { window.location.href = 'technician.html'; }, 900);
   });
 
-  // Toast
+  // ── Pre-fill email if remembered ─────────────────────────
+  const remembered = localStorage.getItem('techRemember');
+  if (remembered) {
+    document.getElementById('email').value = remembered;
+    document.getElementById('remember').checked = true;
+  }
+
+  // ── Toast helper ─────────────────────────────────────────
   function toast(msg, type = 'error') {
     const t = document.createElement('div');
     t.className = 'toast ' + type;
